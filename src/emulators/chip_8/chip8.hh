@@ -12,14 +12,13 @@ class Chip8 : public Emulator
 {
 public:
   Chip8();
-  ~Chip8();
 
-  void run() override;
+  int run() override;
 
   void loadProgram(const std::string& filename) override;
+  void setRenderer(SDL_Renderer* renderer) override;
 
 private:
-
   void handleInput();
 
   void clearKeyStates();
@@ -29,7 +28,7 @@ private:
 
   void drawGraphics();
 
-    // execute the opcode
+  // execute the opcode
   void executeOpcode(uint16_t opcode);
 
   // Fetch, decode, and execute one instruction.
@@ -72,9 +71,10 @@ private:
   // the CHIP-8 has a hexadecimal keypad with 16 keys (0x0-0xF)
   uint8_t key[16];
 
-  SDL_Window* window;
   SDL_Renderer* renderer;
 
   bool running;
   bool quit;
+
+  int returnValue;
 };
