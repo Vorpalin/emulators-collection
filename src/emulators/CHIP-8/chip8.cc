@@ -157,6 +157,7 @@ void Chip8::handleInput()
             {
             case SDLK_ESCAPE:
               this->quit = true;
+              this->running = false;
               break;
             case SDLK_SPACE:
               this->running = !this->running;
@@ -173,43 +174,40 @@ void Chip8::handleInput()
             case SDLK_3:
               this->key[0x3] = 1;
               break;
-            case SDLK_4:
+            case SDLK_c:
               this->key[0xC] = 1;
               break;
-            case SDLK_q:
+            case SDLK_4:
               this->key[0x4] = 1;
               break;
-            case SDLK_w:
+            case SDLK_5:
               this->key[0x5] = 1;
               break;
-            case SDLK_e:
+            case SDLK_6:
               this->key[0x6] = 1;
               break;
-            case SDLK_r:
+            case SDLK_d:
               this->key[0xD] = 1;
               break;
-            case SDLK_a:
+            case SDLK_7:
               this->key[0x7] = 1;
               break;
-            case SDLK_s:
+            case SDLK_8:
               this->key[0x8] = 1;
               break;
-            case SDLK_d:
+            case SDLK_9:
               this->key[0x9] = 1;
               break;
-            case SDLK_f:
+            case SDLK_e:
               this->key[0xE] = 1;
               break;
-            case SDLK_z:
+            case SDLK_a:
               this->key[0xA] = 1;
               break;
-            case SDLK_x:
-              this->key[0x0] = 1;
-              break;
-            case SDLK_c:
+            case SDLK_b:
               this->key[0xB] = 1;
               break;
-            case SDLK_v:
+            case SDLK_f:
               this->key[0xF] = 1;
               break;
             default:

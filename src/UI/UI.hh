@@ -16,6 +16,7 @@ class UI
         void handleInput();
         void render();
         void drawText(const std::string& text, int x, int y);
+        void updateFont(int winH);
 
         GameSelector gameSelector;
 
@@ -25,6 +26,8 @@ class UI
         SDL_Renderer* renderer;
 
         bool running;
+        std::string fontPath = "assets/fonts/PressStart2P-Regular.ttf";
+        int currentFontSize = 6;
 
         TTF_Font* font;
 };

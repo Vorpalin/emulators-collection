@@ -48,7 +48,7 @@ emulators-collection
 │   ├── emulator_schema     # Emulator Schema
 │   ├── game                # Game representation
 │   ├── game_selector       # Game handler
-│   └──  UI                 # UI of the app
+│   └── UI                  # UI of the app
 └── games/                  # Your collection of games
 ```
 

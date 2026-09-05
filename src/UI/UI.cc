@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 
 UI::UI()
@@ -11,7 +12,7 @@ UI::UI()
 {
     SDL_Init(SDL_INIT_VIDEO);
 
-    this->window = SDL_CreateWindow("Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN);
+    this->window = SDL_CreateWindow("Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
 
     this->running = true;
@@ -28,8 +29,8 @@ UI::UI()
     }
 
     this->font = TTF_OpenFont(
-        "assets/fonts/PressStart2P-Regular.ttf",
-        24
+        this->fontPath.c_str(),
+        this->currentFontSize
     );
 
     if (!this->font)
@@ -116,82 +117,84 @@ void UI::drawText(
     SDL_FreeSurface(surface);
 }
 
+void UI::updateFont(int winH)
+{
+    int newSize = winH / 30; // ratio à ajuster selon le rendu voulu
+    if (newSize < 6) newSize = 6;
+    if (newSize > 24) newSize = 24;
+
+    if (newSize == this->currentFontSize && this->font)
+        return;
+
+    TTF_Font* newFont = TTF_OpenFont(this->fontPath.c_str(), newSize);
+    if (!newFont)
+    {
+        std::cerr << "Failed to load font: " << TTF_GetError() << std::endl;
+        return;
+    }
+
+    if (this->font)
+        TTF_CloseFont(this->font);
+
+    this->font = newFont;
+    this->currentFontSize = newSize;
+}
+
 void UI::render()
 {
+    int winW, winH;
+    SDL_GetWindowSize(this->window, &winW, &winH);
+    this->updateFont(winH);
+
     SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
     SDL_RenderClear(this->renderer);
 
-    this->drawText(
-        "Emulator Collection",
-        250,
-        50
-    );
+    this->drawText("Emulator Collection", winW / 2.5, winH * 0.10);
 
     int selected = this->gameSelector.getSelectedGameIndex();
+    int totalGames = static_cast<int>(this->games.size());
 
-    int startX = 100;
-    int startY = 150;
-    int spacing = 40;
+    int listTop    = winH * 0.25;
+    int listBottom = winH * 0.85;
+    int listHeight = listBottom - listTop;
 
-    for (size_t i = 0; i < games.size(); ++i)
+    int spacing = std::max(this->currentFontSize + 10, 20);
+    int visibleCount = std::max(listHeight / spacing, 1);
+    visibleCount = std::min(visibleCount, totalGames); // pas plus de lignes que de jeux
+
+    int startX = winW * 0.10;
+
+    if (totalGames > 0)
     {
-        int x = startX;
-        int y = startY + i * spacing;
-
-        // Selection background
-        if (static_cast<int>(i) == selected)
+        for (int row = 0; row < visibleCount; ++row)
         {
-            SDL_Rect selection{
-                x - 20,
-                y - 5,
-                400,
-                35
-            };
+            int gameIndex = (selected + row) % totalGames;
+            int y = listTop + row * spacing;
 
-            SDL_SetRenderDrawColor(
-                this->renderer,
-                50, 50, 50, 255
-            );
+            // Le premier affiché (row 0) est toujours le sélectionné
+            if (row == 0)
+            {
+                SDL_Rect selectionRect{
+                    startX - 20, y - 5,
+                    static_cast<int>(winW * 0.55),
+                    spacing - 5
+                };
+                SDL_SetRenderDrawColor(this->renderer, 50, 50, 50, 255);
+                SDL_RenderFillRect(this->renderer, &selectionRect);
+            }
 
-            SDL_RenderFillRect(
-                this->renderer,
-                &selection
-            );
+            std::string prefix = (row == 0) ? "> " : "  ";
+            this->drawText(prefix + this->games[gameIndex], startX, y);
         }
-
-        // Selection indicator
-        std::string prefix =
-            (static_cast<int>(i) == selected)
-                ? "> "
-                : "  ";
-
-        this->drawText(
-            prefix + this->games[i],
-            x,
-            y
-        );
     }
 
-    this->drawText(
-        "UP / DOWN : Select",
-        100,
-        450
-    );
-
-    this->drawText(
-        "ENTER : Launch",
-        100,
-        480
-    );
-
-    this->drawText(
-        "ESC : Quit",
-        100,
-        510
-    );
+    this->drawText("UP / DOWN : Select", winW * 0.07, winH * 0.90);
+    this->drawText("ENTER : Launch",     winW * 0.07, winH * 0.94);
+    this->drawText("ESC : Quit",         winW * 0.58, winH * 0.90);
 
     SDL_RenderPresent(this->renderer);
 }
+
 void UI::run()
 {
     this->running = true;
