@@ -36,28 +36,40 @@ Chip8::Chip8()
   this->delay_timer = 0;
   this->sound_timer = 0;
   this->sp = 0;
-  this->window = nullptr;
   this->renderer = nullptr;
   this->quit = false;
   this->running = true;
   this->draw_flag = 1;
+  this->returnValue = 0;
 }
 
-Chip8::~Chip8()
+void Chip8::setRenderer(SDL_Renderer* renderer)
 {
-  if (this->renderer != nullptr)
-    {
-      SDL_DestroyRenderer(this->renderer);
-    }
-  if (this->window != nullptr)
-    {
-      SDL_DestroyWindow(this->window);
-    }
-  SDL_Quit();
+  this->renderer = renderer;
 }
 
 void Chip8::loadProgram(const std::string& filename)
 {
+  this->I = 0;
+  this->pc = 0x200; // program counter starts at 0x200
+  this->draw_flag = 0;
+  this->delay_timer = 0;
+  this->sound_timer = 0;
+  this->sp = 0;
+  this->quit = false;
+  this->running = true;
+  this->draw_flag = 1;
+
+  std::fill(std::begin(this->memory), std::end(this->memory), 0);
+  std::fill(std::begin(this->gfx), std::end(this->gfx), 0);
+  std::fill(std::begin(this->V), std::end(this->V), 0);
+  std::fill(std::begin(this->stack), std::end(this->stack), 0);
+
+  for (int i = 0; i < 80; ++i)
+    {
+      this->memory[i] = CHIP8_FONTSET[i];
+    }
+
   std::ifstream file(filename, std::ios::binary | std::ios::ate);
 
   if (!file)
@@ -82,38 +94,6 @@ void Chip8::loadProgram(const std::string& filename)
 
   std::cout << "Loaded ROM: " << size << " bytes\n";
   file.close();
-
-  if (SDL_Init(SDL_INIT_VIDEO) != 0)
-    {
-      this->quit = true;
-      std::cerr << "SDL initialization failed: " << SDL_GetError() << std::endl;
-      return;
-    }
-
-  this->window =
-    SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                     640, 320, SDL_WINDOW_SHOWN);
-  if (this->window == nullptr)
-    {
-      this->quit = true;
-      std::cerr << "SDL window creation failed: " << SDL_GetError()
-                << std::endl;
-      SDL_Quit();
-      return;
-    }
-
-  this->renderer =
-    SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
-  if (this->renderer == nullptr)
-    {
-      this->quit = true;
-      std::cerr << "SDL renderer creation failed: " << SDL_GetError()
-                << std::endl;
-      SDL_DestroyWindow(this->window);
-      this->window = nullptr;
-      SDL_Quit();
-      return;
-    }
 
   SDL_RenderSetLogicalSize(this->renderer, 64, 32);
 }
@@ -151,6 +131,7 @@ void Chip8::handleInput()
         case SDL_QUIT:
           this->quit = true;
           this->running = false;
+          this->returnValue = 1;
           break;
         case SDL_KEYDOWN:
           switch (event.key.keysym.sym)
@@ -484,7 +465,7 @@ void Chip8::updateTimers()
     }
 }
 
-void Chip8::run()
+int Chip8::run()
 {
   using clock = std::chrono::steady_clock;
 
@@ -516,4 +497,5 @@ void Chip8::run()
           this->handleInput();
         }
     }
+  return this->returnValue;
 }
