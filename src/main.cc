@@ -2,20 +2,19 @@
 #include "emulator.hh"
 
 #include <iostream>
-#include <string>
 #include <memory>
+#include <string>
 
 int main()
 {
-    std::unique_ptr<Emulator> emulator =
-        std::make_unique<Chip8>();
-    
-    std::string filename;
-    std::cout << "Enter the name of the game you want to play: ";
-    std::getline(std::cin, filename);
+  std::unique_ptr<Emulator> emulator = std::make_unique<Chip8>();
 
-    emulator->loadProgram(filename);
+  std::string filename;
+  std::cout << "Enter the name of the game you want to play: ";
+  std::getline(std::cin, filename);
 
-    emulator->run();
-    return 0;
+  emulator->loadProgram(filename);
+
+  emulator->run();
+  return 0;
 }

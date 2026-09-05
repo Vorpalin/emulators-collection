@@ -2,346 +2,415 @@
 #include <SDL2/SDL.h>
 
 #include <chrono>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <thread>
 
 uint8_t CHIP8_FONTSET[80] = {
-    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-    0x20, 0x60, 0x20, 0x20, 0x70, // 1
-    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-    0xF0, 0x90, 0xF0, 0x10, 0xF0, // A
-    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+  0x20, 0x60, 0x20, 0x20, 0x70, // 1
+  0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+  0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+  0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+  0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+  0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+  0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+  0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+  0xF0, 0x90, 0xF0, 0x10, 0xF0, // A
+  0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+  0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-Chip8::Chip8() {
-
-    for (int i = 0; i < 80; ++i) {
-        this->memory[i] = CHIP8_FONTSET[i];
+Chip8::Chip8()
+{
+  for (int i = 0; i < 80; ++i)
+    {
+      this->memory[i] = CHIP8_FONTSET[i];
     }
-    this->I = 0;
-    this->pc = 0x200; // program counter starts at 0x200
-    this->draw_flag = 0;
-    this->delay_timer = 0;
-    this->sound_timer = 0;
-    this->sp = 0;
-    
+  this->I = 0;
+  this->pc = 0x200; // program counter starts at 0x200
+  this->draw_flag = 0;
+  this->delay_timer = 0;
+  this->sound_timer = 0;
+  this->sp = 0;
+  this->window = nullptr;
+  this->renderer = nullptr;
+
+  if (SDL_Init(SDL_INIT_VIDEO) != 0)
+    {
+      std::cerr << "SDL initialization failed: " << SDL_GetError() << std::endl;
+      return;
+    }
+
+  this->window =
+    SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                     640, 320, SDL_WINDOW_SHOWN);
+  if (this->window == nullptr)
+    {
+      std::cerr << "SDL window creation failed: " << SDL_GetError()
+                << std::endl;
+      SDL_Quit();
+      return;
+    }
+
+  this->renderer =
+    SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
+  if (this->renderer == nullptr)
+    {
+      std::cerr << "SDL renderer creation failed: " << SDL_GetError()
+                << std::endl;
+      SDL_DestroyWindow(this->window);
+      this->window = nullptr;
+      SDL_Quit();
+      return;
+    }
+
+  SDL_RenderSetLogicalSize(this->renderer, 64, 32);
+  this->running = true;
+  this->draw_flag = 1;
 }
 
-void Chip8::run() {
-    while (true) {
-        this->cycle();
-        this->updateTimers();
-    }
-}
+void Chip8::drawGraphics()
+{
+  SDL_SetRenderDrawColor(this->renderer, 18, 18, 18, 255);
 
-void Chip8::cycle() {   
-    uint16_t opcode = (this->memory[this->pc] << 8) | this->memory[this->pc + 1];
-    this->pc += 2;
-    this->executeOpcode(opcode);
-}
+  SDL_RenderClear(this->renderer);
 
-void Chip8::updateTimers() {
-    if (this->delay_timer > 0) {
-        --this->delay_timer;
-    }
-    if (this->sound_timer > 0) {
-        --this->sound_timer;
-    }
-    this->window = nullptr;
-    this->renderer = nullptr;
-    this->running = false;
+  SDL_SetRenderDrawColor(this->renderer, 230, 230, 230, 255);
 
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        std::cerr << "SDL initialization failed: " << SDL_GetError() << std::endl;
-        return;
-    }
-
-    this->window = SDL_CreateWindow(
-        "CHIP-8",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        640,
-        320,
-        SDL_WINDOW_SHOWN);
-    if (this->window == nullptr) {
-        std::cerr << "SDL window creation failed: " << SDL_GetError() << std::endl;
-        SDL_Quit();
-        return;
-    }
-
-    this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
-    if (this->renderer == nullptr) {
-        std::cerr << "SDL renderer creation failed: " << SDL_GetError() << std::endl;
-        SDL_DestroyWindow(this->window);
-        this->window = nullptr;
-        SDL_Quit();
-        return;
-    }
-
-    SDL_RenderSetLogicalSize(this->renderer, 64, 32);
-    this->running = true;
-    this->draw_flag = 1;
-}
-
-Chip8::~Chip8() {
-    if (this->renderer != nullptr) {
-        SDL_DestroyRenderer(this->renderer);
-    }
-    if (this->window != nullptr) {
-        SDL_DestroyWindow(this->window);
-    }
-    SDL_Quit();
-}
-void Chip8::loadProgram(const std::string& filename) {
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
-    // get the size of the file and read it into memory starting at 0x200
-    file.seekg(0, std::ios::end);
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    for (int i = 0; i < size; ++i) {
-        this->memory[0x200 + i] = file.get();
-    }
-
-    file.close();
-
-    if (this->renderer == nullptr) {
-        return;
-    }
-
-
-    SDL_SetRenderDrawColor(this->renderer, 18, 18, 18, 255);
-    SDL_RenderClear(this->renderer);
-    SDL_SetRenderDrawColor(this->renderer, 230, 230, 230, 255);
-
-    for (int y = 0; y < 32; ++y) {
-        for (int x = 0; x < 64; ++x) {
-            if (this->gfx[y * 64 + x] != 0) {
-                SDL_Rect pixel{x, y, 1, 1};
-                SDL_RenderFillRect(this->renderer, &pixel);
-            }
-        }
-    }
-
-    SDL_RenderPresent(this->renderer);
-}
-
-void Chip8::processEvents() {
-    SDL_Event event;
-    while (SDL_PollEvent(&event) != 0) {
-        if (event.type == SDL_QUIT) {
-            this->running = false;
-        }
-    }
-    using clock = std::chrono::steady_clock;
-    auto lastTimerUpdate = clock::now();
-
-    while (this->running) {
-        this->processEvents();
-
-
-        auto now = clock::now();
-        if (now - lastTimerUpdate >= std::chrono::milliseconds(16)) {
-            this->updateTimers();
-            lastTimerUpdate += std::chrono::milliseconds(16);
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-}
-
-void Chip8::executeOpcode(uint16_t opcode) {
-    uint16_t nnn = opcode & 0x0FFF;
-    uint8_t nn = opcode & 0x00FF;
-    uint8_t n = opcode & 0x000F;
-    uint8_t x = (opcode & 0x0F00) >> 8;
-    uint8_t y = (opcode & 0x00F0) >> 4;
-
-    switch (opcode & 0xF000) {
-        case 0x0000:
-            switch (opcode) {
-                case 0x00E0: // 00E0: Clear the display
-                    for (int i = 0; i < 64 * 32; ++i) {
-                        this->gfx[i] = 0;
-                    }
-                    this->draw_flag = 1;
-                    break;
-                case 0x00EE: // 00EE: Return from subroutine
-                    --this->sp;
-                    this->pc = this->stack[this->sp];
-                    break;
-                default:
-                    std::cerr << "Unknown opcode [0x0000]: " << std::hex << opcode << std::endl;
-            }
-            break;
-        case 0x1000: // 1NNN: Jump to address NNN
-            this->pc = nnn;
-            break;
-        case 0x2000: // 2NNN: Call subroutine at NNN
-            this->stack[this->sp] = this->pc;
-            ++this->sp;
-            this->pc = nnn;
-            break;
-        case 0x3000: // 3XNN: Skip next instruction if VX equals NN
-            if (this->V[x] == nn) {
-                this->pc += 2;
-            }
-            break;
-        case 0x4000: // 4XNN: Skip next instruction if VX doesn't equal NN
-            if (this->V[x] != nn) {
-                this->pc += 2;
-            }
-            break;
-        case 0x5000: // 5XY0: Skip next instruction if VX equals VY
-            if (this->V[x] == this->V[y]) {
-                this->pc += 2;
-            }
-            break;
-        case 0x6000: // 6XNN: Set VX to NN
-            this->V[x] = nn;
-            break;
-        case 0x7000: // 7XNN: Add NN to VX (carry flag is not changed)
-            this->V[x] += nn;
-            break;
-        case 0x8000:
-            if (n == 0x0) { // 8XY0: Set VX to the value of VY
-                this->V[x] = this->V[y];
-            } else if (n == 0x1) { // 8XY1: Set VX to VX OR VY
-                this->V[x] |= this->V[y];
-            } else if (n == 0x2) { // 8XY2: Set VX to VX AND VY
-                this->V[x] &= this->V[y];
-            } else if (n == 0x3) { // 8XY3: Set VX to VX XOR VY
-                this->V[x] ^= this->V[y];
-            } else if (n == 0x4) { // 8XY4: Add VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't
-                uint16_t sum = this->V[x] + this->V[y];
-                this->V[0xF] = sum > 255 ? 1 : 0;
-                this->V[x] = sum & 0xFF;
-            } else if (n == 0x5) { // 8XY5: Subtract VY from VX. VF is set to 0 when there's a borrow, and 1 when there isn't
-                this->V[0xF] = this->V[x] > this->V[y] ? 1 : 0;
-                this->V[x] -= this->V[y];
-            } else if (n == 0x6) { // 8XY6: Store the least significant bit of VX in VF and then shift VX to the right by 1
-                this->V[0xF] = this->V[x] & 0x1;
-                this->V[x] >>= 1;
-            } else if (n == 0x7) { // 8XY7: Set VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't
-                this->V[0xF] = this->V[y] > this->V[x] ? 1 : 0;
-                this->V[x] = this->V[y] - this->V[x];
-            } else if (n == 0xE) { // 8XYE: Store the most significant bit of VX in VF and then shift VX to the left by 1
-                this->V[0xF] = (this->V[x] & 0x80) >> 7;
-                this->V[x] <<= 1;
-            } else {
-                std::cerr << "Unknown opcode [0x8000]: " << std::hex << opcode << std::endl;
-            }
-            break;
-        case 0x9000: // 9XY0: Skip next instruction if VX doesn't equal VY
-            if (this->V[x] != this->V[y]) {
-                this->pc += 2;
-            }
-            break;
-        case 0xA000: // ANNN: Set I to the address NNN
-            this->I = nnn;
-            break;
-        case 0xB000: // BNNN: Jump to the address NNN
-            this->pc = nnn + this->V[0];
-            break;
-        case 0xC000: // CXNN: Set VX to a random number AND NN
-            this->V[x] = (rand() % 256) & nn;
-            break;
-        case 0xD000: // DXYN: Draw a sprite at position (VX, VY) with width 8 and height N
+  for (int y = 0; y < 32; ++y)
+    {
+      for (int x = 0; x < 64; ++x)
         {
-            uint8_t xPos = this->V[x] % 64;
-            uint8_t yPos = this->V[y] % 32;
-            this->V[0xF] = 0;
-
-            for (int row = 0; row < n; ++row) {
-                uint8_t spriteByte = this->memory[this->I + row];
-                for (int col = 0; col < 8; ++col) {
-                    if ((spriteByte & (0x80 >> col)) != 0) {
-                        int pixelIndex = (yPos + row) * 64 + (xPos + col);
-                        if (this->gfx[pixelIndex] == 1) {
-                            this->V[0xF] = 1;
-                        }
-                        this->gfx[pixelIndex] ^= 1;
-                    }
-                }
+          if (this->gfx[y * 64 + x])
+            {
+              SDL_Rect pixel{x, y, 1, 1};
+              SDL_RenderFillRect(this->renderer, &pixel);
             }
-            this->draw_flag = 1;
-            break;
         }
-        case 0xE000:
-            if (nn == 0x9E) { // EX9E: Skip next instruction if the key stored in VX is pressed
-                if (this->key[this->V[x]] != 0) {
-                    this->pc += 2;
-                }
-            } else if (nn == 0xA1) { // EXA1: Skip next instruction if the key stored in VX isn't pressed   
-                if (this->key[this->V[x]] == 0) {
-                    this->pc += 2;
-                }
-            } else {
-                std::cerr << "Unknown opcode [0xE000]: " << std::hex << opcode << std::endl;
+    }
+
+  SDL_RenderPresent(this->renderer);
+}
+
+void Chip8::run()
+{
+  using clock = std::chrono::steady_clock;
+
+  auto lastTimerUpdate = clock::now();
+
+  while (this->running)
+    {
+      this->cycle();
+
+      auto now = clock::now();
+
+      if (now - lastTimerUpdate >= std::chrono::milliseconds(16))
+        {
+          this->updateTimers();
+          lastTimerUpdate = now;
+        }
+
+      if (this->draw_flag)
+        {
+          this->drawGraphics();
+          this->draw_flag = 0;
+        }
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+void Chip8::cycle()
+{
+  uint16_t opcode = (this->memory[this->pc] << 8) | this->memory[this->pc + 1];
+  this->pc += 2;
+  this->executeOpcode(opcode);
+}
+
+void Chip8::updateTimers()
+{
+  if (this->delay_timer > 0)
+    {
+      --this->delay_timer;
+    }
+  if (this->sound_timer > 0)
+    {
+      --this->sound_timer;
+    }
+}
+
+Chip8::~Chip8()
+{
+  if (this->renderer != nullptr)
+    {
+      SDL_DestroyRenderer(this->renderer);
+    }
+  if (this->window != nullptr)
+    {
+      SDL_DestroyWindow(this->window);
+    }
+  SDL_Quit();
+}
+void Chip8::loadProgram(const std::string& filename)
+{
+  std::ifstream file(filename, std::ios::binary | std::ios::ate);
+
+  if (!file)
+    {
+      std::cerr << "Could not open ROM: " << filename << '\n';
+      return;
+    }
+
+  // get the size of the file and read it into memory starting at 0x200
+  std::streamsize size = file.tellg();
+  file.seekg(0, std::ios::beg);
+
+  if (size > sizeof(this->memory) - 0x200)
+    {
+      std::cerr << "ROM too large\n";
+      return;
+    }
+
+  file.read(reinterpret_cast<char*>(&this->memory[0x200]), size);
+
+  std::cout << "Loaded ROM: " << size << " bytes\n";
+  file.close();
+}
+
+void Chip8::executeOpcode(uint16_t opcode)
+{
+  uint16_t nnn = opcode & 0x0FFF;
+  uint8_t nn = opcode & 0x00FF;
+  uint8_t n = opcode & 0x000F;
+  uint8_t x = (opcode & 0x0F00) >> 8;
+  uint8_t y = (opcode & 0x00F0) >> 4;
+
+  switch (opcode & 0xF000)
+    {
+    case 0x0000:
+      switch (opcode)
+        {
+        case 0x00E0: // 00E0: Clear the display
+          for (int i = 0; i < 64 * 32; ++i)
+            {
+              this->gfx[i] = 0;
             }
-            break;
-        case 0xF000:
-            switch (nn) {
-                case 0x07: // FX07: Set VX to the value of the delay timer
-                    this->V[x] = this->delay_timer;
-                    break;
-                case 0x0A: { // FX0A: Wait for a key press 
-                    bool keyPressed = false;
-                    for (int i = 0; i < 16; ++i) {
-                        if (this->key[i] != 0) {
-                            this->V[x] = i;
-                            keyPressed = true;
-                            break;
-                        }
-                    }
-                    if (!keyPressed) {
-                        this->pc -= 2; // repeat this instruction until a key is pressed
-                    }
-                    break;
-                }
-                case 0x15: // FX15: Set the delay timer to VX
-                    this->delay_timer = this->V[x];
-                    break;
-                case 0x18: // FX18: Set the sound timer to VX
-                    this->sound_timer = this->V[x];
-                    break;
-                case 0x1E: // FX1E: Add VX to I
-                    this->I += this->V[x];
-                    break;
-                case 0x29: // FX29: Set I to the location of the sprite for the character in VX
-                    this->I = this->V[x] * 5;
-                    break;
-                case 0x33: // FX33: Store the binary-coded decimal representation of VX
-                    this->memory[this->I] = this->V[x] / 100;
-                    this->memory[this->I + 1] = (this->V[x] / 10) % 10;
-                    this->memory[this->I + 2] = this->V[x] % 10;
-                    break;
-                case 0x55: // FX55: Store V0 to VX in memory starting
-                    for (int i = 0; i <= x; ++i) {
-                        this->memory[this->I + i] = this->V[i];
-                    }
-                    break;
-                case 0x65: // FX65: Read V0 to VX from memory starting
-                    for (int i = 0; i <= x; ++i) {
-                        this->V[i] = this->memory[this->I + i];
-                    }
-                    break;
-                default:
-                    std::cerr << "Unknown opcode [0xF000]: " << std::hex << opcode << std::endl;
-            }
-            break;
+          this->draw_flag = 1;
+          break;
+        case 0x00EE: // 00EE: Return from subroutine
+          --this->sp;
+          this->pc = this->stack[this->sp];
+          break;
         default:
-            std::cerr << "Unknown opcode: " << std::hex << opcode << std::endl;
+          std::cerr << "Unknown opcode [0x0000]: " << std::hex << opcode
+                    << std::endl;
+        }
+      break;
+    case 0x1000: // 1NNN: Jump to address NNN
+      this->pc = nnn;
+      break;
+    case 0x2000: // 2NNN: Call subroutine at NNN
+      this->stack[this->sp] = this->pc;
+      ++this->sp;
+      this->pc = nnn;
+      break;
+    case 0x3000: // 3XNN: Skip next instruction if VX equals NN
+      if (this->V[x] == nn)
+        {
+          this->pc += 2;
+        }
+      break;
+    case 0x4000: // 4XNN: Skip next instruction if VX doesn't equal NN
+      if (this->V[x] != nn)
+        {
+          this->pc += 2;
+        }
+      break;
+    case 0x5000: // 5XY0: Skip next instruction if VX equals VY
+      if (this->V[x] == this->V[y])
+        {
+          this->pc += 2;
+        }
+      break;
+    case 0x6000: // 6XNN: Set VX to NN
+      this->V[x] = nn;
+      break;
+    case 0x7000: // 7XNN: Add NN to VX (carry flag is not changed)
+      this->V[x] += nn;
+      break;
+    case 0x8000:
+      if (n == 0x0)
+        { // 8XY0: Set VX to the value of VY
+          this->V[x] = this->V[y];
+        }
+      else if (n == 0x1)
+        { // 8XY1: Set VX to VX OR VY
+          this->V[x] |= this->V[y];
+        }
+      else if (n == 0x2)
+        { // 8XY2: Set VX to VX AND VY
+          this->V[x] &= this->V[y];
+        }
+      else if (n == 0x3)
+        { // 8XY3: Set VX to VX XOR VY
+          this->V[x] ^= this->V[y];
+        }
+      else if (n == 0x4)
+        { // 8XY4: Add VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't
+          uint16_t sum = this->V[x] + this->V[y];
+          this->V[0xF] = sum > 255 ? 1 : 0;
+          this->V[x] = sum & 0xFF;
+        }
+      else if (n == 0x5)
+        { // 8XY5: Subtract VY from VX. VF is set to 0 when there's a borrow, and 1 when there isn't
+          this->V[0xF] = this->V[x] > this->V[y] ? 1 : 0;
+          this->V[x] -= this->V[y];
+        }
+      else if (n == 0x6)
+        { // 8XY6: Store the least significant bit of VX in VF and then shift VX to the right by 1
+          this->V[0xF] = this->V[x] & 0x1;
+          this->V[x] >>= 1;
+        }
+      else if (n == 0x7)
+        { // 8XY7: Set VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't
+          this->V[0xF] = this->V[y] > this->V[x] ? 1 : 0;
+          this->V[x] = this->V[y] - this->V[x];
+        }
+      else if (n == 0xE)
+        { // 8XYE: Store the most significant bit of VX in VF and then shift VX to the left by 1
+          this->V[0xF] = (this->V[x] & 0x80) >> 7;
+          this->V[x] <<= 1;
+        }
+      else
+        {
+          std::cerr << "Unknown opcode [0x8000]: " << std::hex << opcode
+                    << std::endl;
+        }
+      break;
+    case 0x9000: // 9XY0: Skip next instruction if VX doesn't equal VY
+      if (this->V[x] != this->V[y])
+        {
+          this->pc += 2;
+        }
+      break;
+    case 0xA000: // ANNN: Set I to the address NNN
+      this->I = nnn;
+      break;
+    case 0xB000: // BNNN: Jump to the address NNN
+      this->pc = nnn + this->V[0];
+      break;
+    case 0xC000: // CXNN: Set VX to a random number AND NN
+      this->V[x] = (rand() % 256) & nn;
+      break;
+    case 0xD000: // DXYN: Draw a sprite at position (VX, VY) with width 8 and height N
+      {
+        uint8_t xPos = this->V[x] % 64;
+        uint8_t yPos = this->V[y] % 32;
+        this->V[0xF] = 0;
+
+        for (int row = 0; row < n; ++row)
+          {
+            uint8_t spriteByte = this->memory[this->I + row];
+            for (int col = 0; col < 8; ++col)
+              {
+                if ((spriteByte & (0x80 >> col)) != 0)
+                  {
+                    int pixelIndex = (yPos + row) * 64 + (xPos + col);
+                    if (this->gfx[pixelIndex] == 1)
+                      {
+                        this->V[0xF] = 1;
+                      }
+                    this->gfx[pixelIndex] ^= 1;
+                  }
+              }
+          }
+        this->draw_flag = 1;
+        break;
+      }
+    case 0xE000:
+      if (nn == 0x9E)
+        { // EX9E: Skip next instruction if the key stored in VX is pressed
+          if (this->key[this->V[x]] != 0)
+            {
+              this->pc += 2;
+            }
+        }
+      else if (nn == 0xA1)
+        { // EXA1: Skip next instruction if the key stored in VX isn't pressed
+          if (this->key[this->V[x]] == 0)
+            {
+              this->pc += 2;
+            }
+        }
+      else
+        {
+          std::cerr << "Unknown opcode [0xE000]: " << std::hex << opcode
+                    << std::endl;
+        }
+      break;
+    case 0xF000:
+      switch (nn)
+        {
+        case 0x07: // FX07: Set VX to the value of the delay timer
+          this->V[x] = this->delay_timer;
+          break;
+        case 0x0A:
+          { // FX0A: Wait for a key press
+            bool keyPressed = false;
+            for (int i = 0; i < 16; ++i)
+              {
+                if (this->key[i] != 0)
+                  {
+                    this->V[x] = i;
+                    keyPressed = true;
+                    break;
+                  }
+              }
+            if (!keyPressed)
+              {
+                this->pc -= 2; // repeat this instruction until a key is pressed
+              }
+            break;
+          }
+        case 0x15: // FX15: Set the delay timer to VX
+          this->delay_timer = this->V[x];
+          break;
+        case 0x18: // FX18: Set the sound timer to VX
+          this->sound_timer = this->V[x];
+          break;
+        case 0x1E: // FX1E: Add VX to I
+          this->I += this->V[x];
+          break;
+        case 0x29: // FX29: Set I to the location of the sprite for the character in VX
+          this->I = this->V[x] * 5;
+          break;
+        case 0x33: // FX33: Store the binary-coded decimal representation of VX
+          this->memory[this->I] = this->V[x] / 100;
+          this->memory[this->I + 1] = (this->V[x] / 10) % 10;
+          this->memory[this->I + 2] = this->V[x] % 10;
+          break;
+        case 0x55: // FX55: Store V0 to VX in memory starting
+          for (int i = 0; i <= x; ++i)
+            {
+              this->memory[this->I + i] = this->V[i];
+            }
+          break;
+        case 0x65: // FX65: Read V0 to VX from memory starting
+          for (int i = 0; i <= x; ++i)
+            {
+              this->V[i] = this->memory[this->I + i];
+            }
+          break;
+        default:
+          std::cerr << "Unknown opcode [0xF000]: " << std::hex << opcode
+                    << std::endl;
+        }
+      break;
+    default:
+      std::cerr << "Unknown opcode: " << std::hex << opcode << std::endl;
     }
 }

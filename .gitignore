@@ -66,4 +66,7 @@ vcpkg_installed/
 
 # test output & cache
 Testing/
+game/
 .cache/
+
+.clang-format
