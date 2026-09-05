@@ -30,6 +30,7 @@ public:
   void loadProgram(const std::string& filename) override;
 
 private:
+  void handleInput();
   // the CHIP-8 has 4K memory (4096 bytes)
   //
   // memory map:
@@ -70,4 +71,5 @@ private:
   SDL_Window* window;
   SDL_Renderer* renderer;
   bool running;
+  bool quit;
 };

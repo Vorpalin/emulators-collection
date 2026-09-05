@@ -38,9 +38,11 @@ Chip8::Chip8()
   this->sp = 0;
   this->window = nullptr;
   this->renderer = nullptr;
+  this->quit = false;
 
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
+      this->quit = true;
       std::cerr << "SDL initialization failed: " << SDL_GetError() << std::endl;
       return;
     }
@@ -50,6 +52,7 @@ Chip8::Chip8()
                      640, 320, SDL_WINDOW_SHOWN);
   if (this->window == nullptr)
     {
+      this->quit = true;
       std::cerr << "SDL window creation failed: " << SDL_GetError()
                 << std::endl;
       SDL_Quit();
@@ -60,6 +63,7 @@ Chip8::Chip8()
     SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
   if (this->renderer == nullptr)
     {
+      this->quit = true;
       std::cerr << "SDL renderer creation failed: " << SDL_GetError()
                 << std::endl;
       SDL_DestroyWindow(this->window);
@@ -96,31 +100,118 @@ void Chip8::drawGraphics()
   SDL_RenderPresent(this->renderer);
 }
 
+void Chip8::handleInput()
+{
+  SDL_Event event;
+  while (SDL_PollEvent(&event))
+    {
+      switch (event.type)
+        {
+        case SDL_QUIT:
+          this->quit = true;
+          break;
+        case SDL_KEYDOWN:
+          switch (event.key.keysym.sym)
+            {
+            case SDLK_ESCAPE:
+              this->quit = true;
+              break;
+            case SDLK_SPACE:
+              this->running = !this->running;
+              break;
+            case SDLK_0:
+              this->key[0x0] = 1;
+              break;
+            case SDLK_1:
+              this->key[0x1] = 1;
+              break;
+            case SDLK_2:
+              this->key[0x2] = 1;
+              break;
+            case SDLK_3:
+              this->key[0x3] = 1;
+              break;
+            case SDLK_4:
+              this->key[0xC] = 1;
+              break;
+            case SDLK_q:
+              this->key[0x4] = 1;
+              break;
+            case SDLK_w:
+              this->key[0x5] = 1;
+              break;
+            case SDLK_e:
+              this->key[0x6] = 1;
+              break;
+            case SDLK_r:
+              this->key[0xD] = 1;
+              break;
+            case SDLK_a:
+              this->key[0x7] = 1;
+              break;
+            case SDLK_s:
+              this->key[0x8] = 1;
+              break;
+            case SDLK_d:
+              this->key[0x9] = 1;
+              break;
+            case SDLK_f:
+              this->key[0xE] = 1;
+              break;
+            case SDLK_z:
+              this->key[0xA] = 1;
+              break;
+            case SDLK_x:
+              this->key[0x0] = 1;
+              break;
+            case SDLK_c:
+              this->key[0xB] = 1;
+              break;
+            case SDLK_v:
+              this->key[0xF] = 1;
+              break;
+            default:
+              break; // Ignore other keys
+            }
+          break;
+
+        default:
+          break;
+        }
+    }
+}
+
 void Chip8::run()
 {
   using clock = std::chrono::steady_clock;
 
   auto lastTimerUpdate = clock::now();
 
-  while (this->running)
+  while (!this->quit)
     {
-      this->cycle();
+      this->handleInput();
 
-      auto now = clock::now();
-
-      if (now - lastTimerUpdate >= std::chrono::milliseconds(16))
+      while (this->running)
         {
-          this->updateTimers();
-          lastTimerUpdate = now;
-        }
+          this->cycle();
 
-      if (this->draw_flag)
-        {
-          this->drawGraphics();
-          this->draw_flag = 0;
-        }
+          auto now = clock::now();
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+          if (now - lastTimerUpdate >= std::chrono::milliseconds(16))
+            {
+              this->updateTimers();
+              lastTimerUpdate = now;
+            }
+
+          if (this->draw_flag)
+            {
+              this->drawGraphics();
+              this->draw_flag = 0;
+            }
+
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+          this->handleInput();
+        }
     }
 }
 
