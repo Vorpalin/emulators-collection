@@ -77,4 +77,6 @@ private:
   bool quit;
 
   int returnValue;
+
+  bool highResolutionMode; // Flag to indicate if high-resolution mode is active
 };
