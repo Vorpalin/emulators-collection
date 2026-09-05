@@ -21,7 +21,7 @@ docker run --rm -it \
   -e XDG_RUNTIME_DIR=/tmp/runtime \
   -v /mnt/wslg/runtime-dir:/tmp/runtime \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
-  <image-name> \
+  <image-name>
 ```
 
 ## Project Structure

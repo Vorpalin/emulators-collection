@@ -14,23 +14,27 @@ public:
   Chip8();
   ~Chip8();
 
-  // execute the opcode
-  void executeOpcode(uint16_t opcode);
-
-  // Fetch, decode, and execute one instruction.
-  void cycle();
-
   void run() override;
+
+  void loadProgram(const std::string& filename) override;
+
+private:
+
+  void handleInput();
+
+  void clearKeyStates();
 
   // CHIP-8 timers run at 60 Hz, independently of the CPU cycle rate.
   void updateTimers();
 
   void drawGraphics();
 
-  void loadProgram(const std::string& filename) override;
+    // execute the opcode
+  void executeOpcode(uint16_t opcode);
 
-private:
-  void handleInput();
+  // Fetch, decode, and execute one instruction.
+  void cycle();
+
   // the CHIP-8 has 4K memory (4096 bytes)
   //
   // memory map:
@@ -70,6 +74,7 @@ private:
 
   SDL_Window* window;
   SDL_Renderer* renderer;
+
   bool running;
   bool quit;
 };

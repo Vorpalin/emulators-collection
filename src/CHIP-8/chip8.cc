@@ -39,6 +39,49 @@ Chip8::Chip8()
   this->window = nullptr;
   this->renderer = nullptr;
   this->quit = false;
+  this->running = true;
+  this->draw_flag = 1;
+}
+
+Chip8::~Chip8()
+{
+  if (this->renderer != nullptr)
+    {
+      SDL_DestroyRenderer(this->renderer);
+    }
+  if (this->window != nullptr)
+    {
+      SDL_DestroyWindow(this->window);
+    }
+  SDL_Quit();
+}
+
+void Chip8::loadProgram(const std::string& filename)
+{
+  std::ifstream file(filename, std::ios::binary | std::ios::ate);
+
+  if (!file)
+    {
+      this->quit = true;
+      std::cerr << "Could not open ROM: " << filename << '\n';
+      return;
+    }
+
+  // get the size of the file and read it into memory starting at 0x200
+  std::streamsize size = file.tellg();
+  file.seekg(0, std::ios::beg);
+
+  if (size > sizeof(this->memory) - 0x200)
+    {
+      this->quit = true;
+      std::cerr << "ROM too large\n";
+      return;
+    }
+
+  file.read(reinterpret_cast<char*>(&this->memory[0x200]), size);
+
+  std::cout << "Loaded ROM: " << size << " bytes\n";
+  file.close();
 
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
@@ -73,8 +116,6 @@ Chip8::Chip8()
     }
 
   SDL_RenderSetLogicalSize(this->renderer, 64, 32);
-  this->running = true;
-  this->draw_flag = 1;
 }
 
 void Chip8::drawGraphics()
@@ -109,6 +150,7 @@ void Chip8::handleInput()
         {
         case SDL_QUIT:
           this->quit = true;
+          this->running = false;
           break;
         case SDL_KEYDOWN:
           switch (event.key.keysym.sym)
@@ -179,97 +221,6 @@ void Chip8::handleInput()
           break;
         }
     }
-}
-
-void Chip8::run()
-{
-  using clock = std::chrono::steady_clock;
-
-  auto lastTimerUpdate = clock::now();
-
-  while (!this->quit)
-    {
-      this->handleInput();
-
-      while (this->running)
-        {
-          this->cycle();
-
-          auto now = clock::now();
-
-          if (now - lastTimerUpdate >= std::chrono::milliseconds(16))
-            {
-              this->updateTimers();
-              lastTimerUpdate = now;
-            }
-
-          if (this->draw_flag)
-            {
-              this->drawGraphics();
-              this->draw_flag = 0;
-            }
-
-          std::this_thread::sleep_for(std::chrono::milliseconds(1));
-          this->handleInput();
-        }
-    }
-}
-
-void Chip8::cycle()
-{
-  uint16_t opcode = (this->memory[this->pc] << 8) | this->memory[this->pc + 1];
-  this->pc += 2;
-  this->executeOpcode(opcode);
-}
-
-void Chip8::updateTimers()
-{
-  if (this->delay_timer > 0)
-    {
-      --this->delay_timer;
-    }
-  if (this->sound_timer > 0)
-    {
-      --this->sound_timer;
-    }
-}
-
-Chip8::~Chip8()
-{
-  if (this->renderer != nullptr)
-    {
-      SDL_DestroyRenderer(this->renderer);
-    }
-  if (this->window != nullptr)
-    {
-      SDL_DestroyWindow(this->window);
-    }
-  SDL_Quit();
-}
-void Chip8::loadProgram(const std::string& filename)
-{
-  std::ifstream file(filename, std::ios::binary | std::ios::ate);
-
-  if (!file)
-    {
-      std::cerr << "Could not open ROM: " << filename << '\n';
-      return;
-    }
-
-  // get the size of the file and read it into memory starting at 0x200
-  std::streamsize size = file.tellg();
-  file.seekg(0, std::ios::beg);
-
-  if (size > sizeof(this->memory) - 0x200)
-    {
-      std::cerr << "ROM too large\n";
-      return;
-    }
-
-  file.read(reinterpret_cast<char*>(&this->memory[0x200]), size);
-
-  std::cout << "Loaded ROM: " << size << " bytes\n";
-  file.close();
 }
 
 void Chip8::executeOpcode(uint16_t opcode)
@@ -428,6 +379,7 @@ void Chip8::executeOpcode(uint16_t opcode)
           if (this->key[this->V[x]] != 0)
             {
               this->pc += 2;
+              this->key[this->V[x]] = 0; // Clear the key state after processing
             }
         }
       else if (nn == 0xA1)
@@ -458,6 +410,7 @@ void Chip8::executeOpcode(uint16_t opcode)
                   {
                     this->V[x] = i;
                     keyPressed = true;
+                    this->key[i] = 0; // Clear the key state after processing
                     break;
                   }
               }
@@ -503,5 +456,66 @@ void Chip8::executeOpcode(uint16_t opcode)
       break;
     default:
       std::cerr << "Unknown opcode: " << std::hex << opcode << std::endl;
+    }
+}
+
+void Chip8::clearKeyStates()
+{
+  for (int i = 0; i < 16; ++i)
+    {
+      this->key[i] = 0;
+    }
+}
+
+void Chip8::cycle()
+{
+  uint16_t opcode = (this->memory[this->pc] << 8) | this->memory[this->pc + 1];
+  this->pc += 2;
+  this->executeOpcode(opcode);
+}
+
+void Chip8::updateTimers()
+{
+  if (this->delay_timer > 0)
+    {
+      --this->delay_timer;
+    }
+  if (this->sound_timer > 0)
+    {
+      --this->sound_timer;
+    }
+}
+
+void Chip8::run()
+{
+  using clock = std::chrono::steady_clock;
+
+  auto lastTimerUpdate = clock::now();
+
+  while (!this->quit)
+    {
+      this->handleInput();
+
+      while (this->running)
+        {
+          this->cycle();
+
+          auto now = clock::now();
+
+          if (now - lastTimerUpdate >= std::chrono::milliseconds(16))
+            {
+              this->updateTimers();
+              lastTimerUpdate = now;
+            }
+
+          if (this->draw_flag)
+            {
+              this->drawGraphics();
+              this->draw_flag = 0;
+            }
+
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+          this->handleInput();
+        }
     }
 }
