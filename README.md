@@ -2,6 +2,10 @@
 
 A collection of emulator written in C++
 
+## Available Emulators
+
+- CHIP-8
+
 ## Requirement
 
 - Docker
@@ -11,6 +15,16 @@ A collection of emulator written in C++
 ```bash
 docker image build -t <image-name> .
 ```
+
+## Configuration
+
+1. Create the games directory
+
+```bash
+mkdir games
+```
+
+2. Add all the compatible games your want
 
 ## Running
 
@@ -30,8 +44,12 @@ docker run --rm -it \
 emulators-collection
 ├── src/
 │   ├── main.cc             # Entry point
-│   ├── CHIP-8              # CHIP 8 emulator
-│   └── emulator_schema     # Emulator Schema
+│   ├── emulators           # Available emulators
+│   ├── emulator_schema     # Emulator Schema
+│   ├── game                # Game representation
+│   ├── game_selector       # Game handler
+│   └──  UI                 # UI of the app
+└── games/                  # Your collection of games
 ```
 
 ## Licence
