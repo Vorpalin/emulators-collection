@@ -58,6 +58,7 @@ void Chip8::loadProgram(const std::string& filename)
   this->sp = 0;
   this->quit = false;
   this->running = true;
+  this->highResolutionMode = false;
   this->draw_flag = 1;
 
   std::fill(std::begin(this->memory), std::end(this->memory), 0);
@@ -106,11 +107,12 @@ void Chip8::drawGraphics()
 
   SDL_SetRenderDrawColor(this->renderer, 230, 230, 230, 255);
 
-  for (int y = 0; y < 32; ++y)
+  int scale = this->highResolutionMode ? 2 : 1;
+  for (int y = 0; y < 32 * scale; ++y)
     {
-      for (int x = 0; x < 64; ++x)
+      for (int x = 0; x < 64 * scale; ++x)
         {
-          if (this->gfx[y * 64 + x])
+          if (this->gfx[y * 64 * scale + x])
             {
               SDL_Rect pixel{x, y, 1, 1};
               SDL_RenderFillRect(this->renderer, &pixel);
@@ -210,13 +212,15 @@ void Chip8::executeOpcode(uint16_t opcode)
   uint8_t x = (opcode & 0x0F00) >> 8;
   uint8_t y = (opcode & 0x00F0) >> 4;
 
+  int scale = this->highResolutionMode ? 2 : 1;
+
   switch (opcode & 0xF000)
     {
     case 0x0000:
       switch (opcode)
         {
         case 0x00E0: // 00E0: Clear the display
-          for (int i = 0; i < 64 * 32; ++i)
+          for (int i = 0; i < 64 * 32 * scale * scale; ++i)
             {
               this->gfx[i] = 0;
             }
@@ -225,6 +229,66 @@ void Chip8::executeOpcode(uint16_t opcode)
         case 0x00EE: // 00EE: Return from subroutine
           --this->sp;
           this->pc = this->stack[this->sp];
+          break;
+        case 0x00C0: // 00CN: Scroll display down by N lines
+          {
+            int lines = n;
+            for (int y = 32 * scale - 1; y >= lines; --y)
+              {
+                for (int x = 0; x < 64 * scale; ++x)
+                  {
+                    this->gfx[y * 64 * scale + x] = this->gfx[(y - lines) * 64 * scale + x];
+                  }
+              }
+            for (int y = 0; y < lines; ++y)
+              {
+                for (int x = 0; x < 64 * scale; ++x)
+                  {
+                    this->gfx[y * 64 * scale + x] = 0;
+                  }
+              }
+            this->draw_flag = 1;
+          }
+          break;
+        case 0x00FB: // 00FB: Scroll display right by 4 pixels
+          for (int y = 0; y < 32 * scale; ++y)
+            {
+              for (int x = 64 * scale - 1; x >= 4; --x)
+                {
+                  this->gfx[y * 64 * scale + x] = this->gfx[y * 64 * scale + (x - 4)];
+                }
+              for (int x = 0; x < 4; ++x)
+                {
+                  this->gfx[y * 64 * scale + x] = 0;
+                }
+            }
+          this->draw_flag = 1;
+          break;
+        case 0x00FC: // 00FC: Scroll display left by 4 pixels
+          for (int y = 0; y < 32 * scale; ++y)
+            {
+              for (int x = 0; x < 64 * scale - 4; ++x)
+                {
+                  this->gfx[y * 64 * scale + x] = this->gfx[y * 64 * scale + (x + 4)];
+                }
+              for (int x = 64 * scale - 4; x < 64 * scale; ++x)
+                {
+                  this->gfx[y * 64 * scale + x] = 0;
+                }
+            }
+          this->draw_flag = 1;
+          break;
+        case 0x00FD: // 00FD: Exit the emulator
+          this->quit = true;
+          this->running = false;
+          break;
+        case 0x00FE: // 00FE: Set the display to low resolution (64x32)
+          SDL_RenderSetLogicalSize(this->renderer, 64, 32);
+          this->highResolutionMode = false;
+          break;
+        case 0x00FF: // 00FF: Set the display to high resolution (128x64)
+          SDL_RenderSetLogicalSize(this->renderer, 128, 64);
+          this->highResolutionMode = true;
           break;
         default:
           std::cerr << "Unknown opcode [0x0000]: " << std::hex << opcode
@@ -329,18 +393,23 @@ void Chip8::executeOpcode(uint16_t opcode)
       break;
     case 0xD000: // DXYN: Draw a sprite at position (VX, VY) with width 8 and height N
       {
-        uint8_t xPos = this->V[x] % 64;
-        uint8_t yPos = this->V[y] % 32;
+        uint8_t xPos = this->V[x] % (64 * scale);
+        uint8_t yPos = this->V[y] % (32 * scale);
         this->V[0xF] = 0;
+
+        if (n == 0 && this->highResolutionMode)
+          {
+            n = 16; // In high-resolution mode, N=0 means a 16-pixel tall sprite
+          }
 
         for (int row = 0; row < n; ++row)
           {
             uint8_t spriteByte = this->memory[this->I + row];
-            for (int col = 0; col < 8; ++col)
+            for (int col = 0; col < 8 * scale; ++col)
               {
                 if ((spriteByte & (0x80 >> col)) != 0)
                   {
-                    int pixelIndex = (yPos + row) * 64 + (xPos + col);
+                    int pixelIndex = (yPos + row) * 64 * scale + (xPos + col);
                     if (this->gfx[pixelIndex] == 1)
                       {
                         this->V[0xF] = 1;
@@ -411,6 +480,9 @@ void Chip8::executeOpcode(uint16_t opcode)
         case 0x29: // FX29: Set I to the location of the sprite for the character in VX
           this->I = this->V[x] * 5;
           break;
+        case 0x30: // FX30: Set I to the location of the 10-byte font sprite for the character in VX
+          this->I = this->V[x] * 10;
+          break;
         case 0x33: // FX33: Store the binary-coded decimal representation of VX
           this->memory[this->I] = this->V[x] / 100;
           this->memory[this->I + 1] = (this->V[x] / 10) % 10;
@@ -427,6 +499,24 @@ void Chip8::executeOpcode(uint16_t opcode)
             {
               this->V[i] = this->memory[this->I + i];
             }
+          break;
+        case 0x75: // FX75: Store V0 to VX in RPL user flags
+          if (x < 8) // Only allow storing up to V7 in RPL user flags
+            {
+          for (int i = 0; i <= x; ++i)
+            {
+              this->rpl[i] = this->V[i];
+            }
+          }
+          break;
+        case 0x85: // FX85: Read V0 to VX from RPL user flags
+        if (x < 8) // Only allow storing up to V7 in RPL user flags
+            {
+          for (int i = 0; i <= x; ++i)
+            {
+              this->V[i] = this->rpl[i];
+            }
+          }
           break;
         default:
           std::cerr << "Unknown opcode [0xF000]: " << std::hex << opcode
