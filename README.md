@@ -4,7 +4,7 @@ A collection of emulator written in C++
 
 ## Available Emulators
 
-- CHIP-8
+- CHIP-8/Super Chip-48
 
 ## Requirement
 
