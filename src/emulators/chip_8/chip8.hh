@@ -53,7 +53,7 @@ private:
   uint16_t pc;
 
   // the CHIP-8 has a 64x32 pixel monochrome display
-  uint8_t gfx[64 * 32];
+  uint8_t gfx[128 * 64]; // 128x64 for high-resolution mode
 
   // determines if the screen needs to be redrawn
   uint8_t draw_flag;
@@ -70,6 +70,7 @@ private:
 
   // the CHIP-8 has a hexadecimal keypad with 16 keys (0x0-0xF)
   uint8_t key[16];
+  uint8_t rpl[16];
 
   SDL_Renderer* renderer;
 
