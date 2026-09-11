@@ -10,12 +10,13 @@ class CPU6507 {
         void reset();
         void step();
 
-        uint8_t A;
-        uint8_t X;
-        uint8_t Y;
-        uint16_t SP;
-        uint8_t P;
+        uint8_t A; // accumulator
+        uint8_t X; // index register X
+        uint8_t Y; // index register Y
+        uint8_t SP; // stack pointer
+        uint8_t P; // processor status register
 
+        uint8_t SR; // status register (for flags)
         uint16_t PC; // 13-bit program counter
 
         std::array<uint8_t, 0x2000> memory;
