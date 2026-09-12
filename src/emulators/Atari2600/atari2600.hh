@@ -7,6 +7,8 @@
 
 class Atari2600 : public Emulator {
 public:
+    Atari2600();
+    ~Atari2600();
     void tick();
 
     void loadProgram(const std::string& filename) override;
