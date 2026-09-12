@@ -4,6 +4,7 @@
 #include "riot.hh"
 #include "cartridge_atari2600.hh"
 #include "atari2600_bus.hh"
+#include "CPU6507.hh"
 #include "emulator.hh"
 
 class Atari2600 : public Emulator {
@@ -17,5 +18,5 @@ public:
     void setRenderer(SDL_Renderer* renderer) override;
 
 private:
-    Atari2600Bus bus;
+    CPU6507 cpu;
 };

@@ -6,6 +6,7 @@ bool CartridgeAtari2600::load(const std::string& path) {
     // Load the ROM file into the rom vector
     std::ifstream file(path, std::ios::binary);
     if (!file) {
+        std::cerr << "Failed to open ROM file: " << path << std::endl;
         return false; // Failed to open the file
     }
 
@@ -17,6 +18,8 @@ bool CartridgeAtari2600::load(const std::string& path) {
     this->rom.resize(size);
     file.read(reinterpret_cast<char*>(this->rom.data()), size);
     file.close();
+
+    std::cout << "Loaded ROM: " << size << " bytes\n";
 
     return true; // Successfully loaded the ROM
 }

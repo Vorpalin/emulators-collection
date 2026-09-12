@@ -103,6 +103,7 @@ void TIA::renderFrame()
             const uint8_t g = static_cast<uint8_t>((color >> 8) & 0xFF);
             const uint8_t b = static_cast<uint8_t>(color & 0xFF);
 
+
             SDL_SetRenderDrawColor(renderer, r, g, b, 255);
             SDL_RenderDrawPoint(renderer, x, y);
         }

@@ -1,8 +1,7 @@
 #include "atari2600.hh"
 #include <SDL2/SDL.h>
 
-
-Atari2600::Atari2600() : bus() {
+Atari2600::Atari2600() : cpu() {
     // Initialize the Atari 2600 emulator
 }
 
@@ -12,16 +11,16 @@ Atari2600::~Atari2600() {
 
 void Atari2600::tick() {
     // Perform a single tick of the Atari 2600 emulator
-    bus.tick();
+    cpu.tick();
 }
 
 void Atari2600::loadProgram(const std::string& filename) {
     // Load the Atari 2600 program (ROM) into the emulator
-    bus.loadCartridge(filename);
+    cpu.loadProgram(filename);
 }
 
 void Atari2600::setRenderer(SDL_Renderer* renderer) {
-    bus.setRenderer(renderer); // Set the SDL renderer for TIA rendering
+    cpu.setRenderer(renderer); // Set the SDL renderer for TIA rendering
 }
 
 int Atari2600::run() {
