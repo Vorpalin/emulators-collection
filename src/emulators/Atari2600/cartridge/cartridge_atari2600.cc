@@ -32,3 +32,7 @@ uint8_t CartridgeAtari2600::read(uint16_t address) {
         return 0xFF; // Return 0xFF for out-of-bounds addresses
     }
 }
+
+std::size_t CartridgeAtari2600::size() const {
+    return this->rom.size();
+}

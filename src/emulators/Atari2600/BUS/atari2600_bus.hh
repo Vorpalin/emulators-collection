@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <array>
 #include "SDL2/SDL.h"
 #include "CPU6507.hh"
 #include "riot.hh"
@@ -20,4 +21,11 @@ private:
     TIA* tia;
     RIOT* riot;
     CartridgeAtari2600* cartridge;
+
+    std::array<uint8_t, 64> lastTIAMappedValues;
+    std::array<uint8_t, 128> lastRIOTMappedValues;
+
+    void mapCartridgeToCPUMemory();
+    void syncCPUMemoryToComponents();
+    void syncComponentsToCPUMemory();
 };
