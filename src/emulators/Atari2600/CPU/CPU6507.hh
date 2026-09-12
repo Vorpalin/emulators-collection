@@ -20,4 +20,13 @@ class CPU6507 {
         uint16_t PC; // 13-bit program counter
 
         std::array<uint8_t, 0x2000> memory;
+
+    private:
+        void setFlagZ(uint8_t value);
+        void setFlagN(uint8_t value);
+        void setFlagC(uint8_t value);
+        void setFlagV(uint8_t value);
+        void setFlagD(uint8_t value);
+        void setFlagI(uint8_t value);
+        void setFlagB(uint8_t value);
 };
