@@ -24,7 +24,6 @@ class CPU6507 {
         uint8_t X; // index register X
         uint8_t Y; // index register Y
         uint8_t SP; // stack pointer
-        uint8_t P; // processor status register
 
         uint8_t SR; // status register (for flags)
         uint16_t PC; // 13-bit program counter

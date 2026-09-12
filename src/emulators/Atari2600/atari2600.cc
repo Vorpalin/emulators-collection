@@ -41,7 +41,6 @@ int Atari2600::run() {
         }
 
         this->tick();
-        SDL_Delay(1);
     }
 
     return 0;

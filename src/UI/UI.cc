@@ -180,6 +180,6 @@ void UI::run()
       this->handleInput();
       this->render();
 
-      SDL_Delay(16);
+      //SDL_Delay(16);
     }
 }

@@ -27,6 +27,7 @@ private:
     uint16_t cycle;
 
     SDL_Renderer* renderer;
+    SDL_Texture* texture;
     std::vector<uint32_t> framebuffer;
     bool frameReady;
 };

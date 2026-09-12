@@ -1,6 +1,6 @@
 #include "CPU6507.hh"
 
-CPU6507::CPU6507() : A(0), X(0), Y(0), SP(0), P(0x24), PC(0x1FFC) {
+CPU6507::CPU6507() : A(0), X(0), Y(0), SP(0), SR(0x24), PC(0x1FFC) {
     for (auto& byte : memory) {
         byte = 0;
     }
@@ -28,8 +28,8 @@ void CPU6507::reset() {
     X = 0;
     Y = 0;
     SP = 0; // Stack pointer initialized to the top of the stack
-    P = 0x24;
-    PC = 0x1FFC;
+    SR = 0x24;
+    PC = bus->read(0x1FFC) | (bus->read(0x1FFD) << 8);
 
     for (auto& byte : memory) {
         byte = 0;
@@ -1436,7 +1436,7 @@ void CPU6507::step() {
             this->bus->write(--this->SP, PC & 0xFF); // Push the low byte of PC onto the stack
             this->bus->write(--this->SP, this->SR | 0x10); // Push the status register onto the stack with the
             this->SR |= 0x04; // Set the interrupt disable flag
-            uint16_t interrupt_vector = memory[0xFFFE] | (memory[0xFFFF] << 8); // Fetch the interrupt vector address
+            uint16_t interrupt_vector = this->bus->read(0xFFFE) | (this->bus->read(0xFFFF) << 8); // Fetch the interrupt vector address
             PC = interrupt_vector; // Set PC to the interrupt vector address
             break;
         }
