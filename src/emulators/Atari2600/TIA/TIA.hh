@@ -10,6 +10,8 @@ public:
     static constexpr int ScreenHeight = 192;
 
     TIA();
+    ~TIA();
+
     void write(uint8_t reg, uint8_t value);
     uint8_t read(uint8_t reg);
     void reset();
