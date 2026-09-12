@@ -1,4 +1,5 @@
 #include "atari2600.hh"
+#include <SDL2/SDL.h>
 
 
 Atari2600::Atari2600() : bus() {
@@ -24,11 +25,25 @@ void Atari2600::setRenderer(SDL_Renderer* renderer) {
 }
 
 int Atari2600::run() {
-    // Main loop for running the Atari 2600 emulator
-    // This would typically involve repeatedly calling tick() and handling events
-    while (true) {
+    bool quit = false;
+
+    while (!quit) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                quit = true;
+                break;
+            }
+
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+                quit = true;
+                break;
+            }
+        }
+
         this->tick();
-        // Handle SDL events, rendering, etc.
+        SDL_Delay(1);
     }
-    return 0; // Return an appropriate exit code
+
+    return 0;
 }
