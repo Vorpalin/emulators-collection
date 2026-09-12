@@ -1,6 +1,6 @@
 #include "CPU6507.hh"
 
-CPU6507::CPU6507() : A(0), X(0), Y(0), SP(0x0100), P(0x24), PC(0x1FFC) {
+CPU6507::CPU6507() : A(0), X(0), Y(0), SP(0), P(0x24), PC(0x1FFC) {
     for (auto& byte : memory) {
         byte = 0;
     }
@@ -10,7 +10,7 @@ void CPU6507::reset() {
     A = 0;
     X = 0;
     Y = 0;
-    SP = 0x0100; // Stack pointer initialized to the top of the stack
+    SP = 0; // Stack pointer initialized to the top of the stack
     P = 0x24;
     PC = 0x1FFC;
 

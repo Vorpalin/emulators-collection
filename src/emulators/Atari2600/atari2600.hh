@@ -1,3 +1,4 @@
+#pragma once
 #include "CPU6507.hh"
 #include "TIA.hh"
 #include "riot.hh"
