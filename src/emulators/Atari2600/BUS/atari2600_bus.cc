@@ -59,11 +59,17 @@ void Atari2600Bus::write(uint16_t address, uint8_t value) {
 }
 
 void Atari2600Bus::tick() {
-    this->cpu->step();
+    uint8_t cpuCycles = 0;
 
-    this->tia->tick();
-    this->tia->tick();
-    this->tia->tick();
+    if (!this->tia->isWsyncPending()) {
+        cpuCycles = this->cpu->step();
+    } else {
+        cpuCycles = 1;
+    }
+
+    for (uint8_t i = 0; i < cpuCycles * 3; ++i) {
+        this->tia->tick();
+    }
 
     if (this->tia->isFrameReady()) {
         this->tia->renderFrame();

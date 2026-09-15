@@ -16,7 +16,7 @@ class CPU6507 {
 
         void reset();
         void tick();
-        void step();
+        uint8_t step();
         void setRenderer(SDL_Renderer* renderer);
         void loadProgram(const std::string& filename);
 

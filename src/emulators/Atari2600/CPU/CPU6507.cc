@@ -92,7 +92,35 @@ void CPU6507::setFlagB(uint8_t value) {
     }
 }
 
-void CPU6507::step() {
+namespace
+{
+// Nombre de cycles CPU "de base" pour chaque opcode du 6502 (table
+// standard, y compris les opcodes non-officiels utilisés par la
+// switch ci-dessous). Ne compte pas les cycles supplémentaires liés au
+// franchissement de page pour les modes indexés, ni le cycle
+// supplémentaire des branchements pris (approximation acceptable pour
+// la synchronisation avec le TIA, à affiner plus tard si besoin).
+constexpr uint8_t kCycleTable[256] = {
+    7,6,2,8,3,3,5,5,3,2,2,2,4,4,6,6, // 0x00-0x0F
+    2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7, // 0x10-0x1F
+    6,6,2,8,3,3,5,5,4,2,2,2,4,4,6,6, // 0x20-0x2F
+    2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7, // 0x30-0x3F
+    6,6,2,8,3,3,5,5,3,2,2,2,3,4,6,6, // 0x40-0x4F
+    2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7, // 0x50-0x5F
+    6,6,2,8,3,3,5,5,4,2,2,2,5,4,6,6, // 0x60-0x6F
+    2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7, // 0x70-0x7F
+    2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4, // 0x80-0x8F
+    2,6,2,6,4,4,4,4,2,5,2,5,5,5,5,5, // 0x90-0x9F
+    2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4, // 0xA0-0xAF
+    2,5,2,5,4,4,4,4,2,4,2,4,4,4,4,4, // 0xB0-0xBF
+    2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6, // 0xC0-0xCF
+    2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7, // 0xD0-0xDF
+    2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6, // 0xE0-0xEF
+    2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7, // 0xF0-0xFF
+};
+}
+
+uint8_t CPU6507::step() {
     // Fetch the opcode at the current PC
     uint8_t opcode = memory[PC];
     PC++; // Increment PC to point to the next instruction
@@ -1682,4 +1710,6 @@ void CPU6507::step() {
             // Handle unknown opcode
             break;
     }
+
+    return kCycleTable[opcode];
 }
