@@ -44,6 +44,12 @@ void Atari2600Bus::loadCartridge(const std::string& path) {
     this->cpu->reset();
     this->tia->reset();
     this->riot->reset();
+
+    std::vector<uint8_t> romData = this->cartridge->getROM();
+
+    for (size_t i = 0; i < romData.size(); ++i) {
+        this->write(i, romData[i]);
+    }
 }
 
 void Atari2600Bus::write(uint16_t address, uint8_t value) {

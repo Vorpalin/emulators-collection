@@ -13,6 +13,10 @@ public:
     void reset();
     std::size_t size() const;
 
+    std::vector<uint8_t> getROM() const {
+        return rom;
+    }
+
 private:
     std::vector<uint8_t> rom;
 };
