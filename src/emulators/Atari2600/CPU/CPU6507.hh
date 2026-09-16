@@ -17,9 +17,11 @@ class CPU6507 {
         void reset();
         void tick();
         uint8_t step();
+        void setSwitchA(uint8_t value);
+        void setSwitchB(uint8_t value);
         void setRenderer(SDL_Renderer* renderer);
         void loadProgram(const std::string& filename);
-
+        void setInputPort(uint8_t port, uint8_t value);
         uint8_t A; // accumulator
         uint8_t X; // index register X
         uint8_t Y; // index register Y

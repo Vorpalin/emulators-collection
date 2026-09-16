@@ -11,6 +11,18 @@ CPU6507::~CPU6507() {
     delete bus;
 }
 
+void CPU6507::setSwitchA(uint8_t value) {
+    bus->riot->setSwitchA(value);
+}
+
+void CPU6507::setSwitchB(uint8_t value) {
+    bus->riot->setSwitchB(value);
+}
+
+void CPU6507::setInputPort(uint8_t port, uint8_t value) {
+    bus->tia->setInputPort(port, value);
+}
+
 void CPU6507::setRenderer(SDL_Renderer* renderer) {
     bus->setRenderer(renderer);
 }
@@ -121,10 +133,12 @@ constexpr uint8_t kCycleTable[256] = {
 }
 
 uint8_t CPU6507::step() {
-    // Fetch the opcode at the current PC
-    uint8_t opcode = memory[PC];
+    // Fetch the opcode at the current PC (toujours via le bus : c'est lui
+    // qui route vers la cartouche, la RAM du RIOT, etc. Le tableau
+    // `memory` privé du CPU n'est jamais rempli par le programme chargé).
+    uint8_t opcode = this->bus->read(PC);
     PC++; // Increment PC to point to the next instruction
-
+ 
     // Decode and execute the opcode
     switch (opcode) {
         case 0xA8: { // LDA Immediate
@@ -402,25 +416,25 @@ uint8_t CPU6507::step() {
             break;
         }
         case 0x48: { // PHA
-            memory[SP] = this->A; // Push the value of A onto the stack
+            this->bus->write(0x0100 + this->SP, this->A); // Push the value of A onto the stack
             SP--; // Decrement the stack pointer
             break;
         }
         case 0x08: { // PHP
-            memory[SP] = this->SR; // Push the status register onto the stack
+            this->bus->write(0x0100 + this->SP, this->SR); // Push the status register onto the stack
             SP--; // Decrement the stack pointer
             break;
         }
         case 0x68: { // PLA
             SP++; // Increment the stack pointer
-            this->A = memory[SP]; // Pull the value from the stack into A
+            this->A = this->bus->read(0x0100 + this->SP); // Pull the value from the stack into A
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             break;
         }
         case 0x28: { // PLP
             SP++; // Increment the stack pointer
-            this->SR = memory[SP]; // Pull the value from the stack into the status register
+            this->SR = this->bus->read(0x0100 + this->SP); // Pull the value from the stack into the status register
             setFlagZ(this->SR); // Set the zero flag based on the value of SR
             setFlagN(this->SR); // Set the negative flag based on the value of SR
             setFlagC(this->SR); // Set the carry flag based on the value of SR
@@ -1369,15 +1383,21 @@ uint8_t CPU6507::step() {
         case 0x20: { // JSR Absolute
             uint16_t address = this->bus->read(PC) | (this->bus->read(PC + 1) << 8); // Fetch the absolute address
             PC += 2; // Increment PC to point to the next instruction
-            this->bus->write(--this->SP, (PC >> 8) & 0xFF); // Push the high byte of PC onto the stack
-            this->bus->write(--this->SP, PC & 0xFF); // Push the low byte of PC onto the stack
+            uint16_t returnAddress = PC - 1; // convention 6502 : on empile l'adresse du dernier octet de JSR
+            this->bus->write(0x0100 + this->SP, (returnAddress >> 8) & 0xFF); // Push the high byte
+            SP--;
+            this->bus->write(0x0100 + this->SP, returnAddress & 0xFF); // Push the low byte
+            SP--;
             PC = address; // Set PC to the new address
             break;
         }
         case 0x40: { // RTI
-            this->SR = this->bus->read(++this->SP); // Pull the status register from the stack
-            uint8_t low_byte = this->bus->read(++this->SP); // Pull the low byte of PC from the stack
-            uint8_t high_byte = this->bus->read(++this->SP); // Pull the high byte of PC from the stack
+            SP++;
+            this->SR = this->bus->read(0x0100 + this->SP); // Pull the status register from the stack
+            SP++;
+            uint8_t low_byte = this->bus->read(0x0100 + this->SP); // Pull the low byte of PC from the stack
+            SP++;
+            uint8_t high_byte = this->bus->read(0x0100 + this->SP); // Pull the high byte of PC from the stack
             PC = (high_byte << 8) | low_byte; // Set PC to the new address
             setFlagC(this->SR); // Set the carry flag based on the value of SR
             setFlagZ(this->SR); // Set the zero flag based on the value of SR
@@ -1388,8 +1408,10 @@ uint8_t CPU6507::step() {
             break;
         }
         case 0x60: { // RTS
-            uint8_t low_byte =this->bus->read(++this->SP); // Pull the low byte of PC from the stack
-            uint8_t high_byte = this->bus->read(++this->SP); // Pull the high byte of PC from the stack
+            SP++;
+            uint8_t low_byte = this->bus->read(0x0100 + this->SP); // Pull the low byte of PC from the stack
+            SP++;
+            uint8_t high_byte = this->bus->read(0x0100 + this->SP); // Pull the high byte of PC from the stack
             PC = (high_byte << 8) | low_byte; // Set PC to the new address
             PC++; // Increment PC to point to the next instruction after the JSR
             break;
@@ -1460,9 +1482,12 @@ uint8_t CPU6507::step() {
         }
         case 0x00: { // BRK (Force Interrupt)
             PC++; // Increment PC to point to the next instruction
-            this->bus->write(--this->SP, (PC >> 8) & 0xFF); // Push the high byte of PC onto the stack
-            this->bus->write(--this->SP, PC & 0xFF); // Push the low byte of PC onto the stack
-            this->bus->write(--this->SP, this->SR | 0x10); // Push the status register onto the stack with the
+            this->bus->write(0x0100 + this->SP, (PC >> 8) & 0xFF); // Push the high byte of PC onto the stack
+            SP--;
+            this->bus->write(0x0100 + this->SP, PC & 0xFF); // Push the low byte of PC onto the stack
+            SP--;
+            this->bus->write(0x0100 + this->SP, this->SR | 0x10); // Push the status register onto the stack with the
+            SP--;
             this->SR |= 0x04; // Set the interrupt disable flag
             uint16_t interrupt_vector = this->bus->read(0xFFFE) | (this->bus->read(0xFFFF) << 8); // Fetch the interrupt vector address
             PC = interrupt_vector; // Set PC to the interrupt vector address
@@ -1710,6 +1735,6 @@ uint8_t CPU6507::step() {
             // Handle unknown opcode
             break;
     }
-
+ 
     return kCycleTable[opcode];
 }

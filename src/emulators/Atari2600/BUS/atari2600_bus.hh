@@ -20,9 +20,9 @@ public:
     void tick();
     void setRenderer(SDL_Renderer* renderer); // Set the SDL renderer for TIA rendering
 
+    RIOT* riot;
+    TIA* tia;
 private:
     CPU6507* cpu;
-    TIA* tia;
-    RIOT* riot;
     CartridgeAtari2600* cartridge;
 };

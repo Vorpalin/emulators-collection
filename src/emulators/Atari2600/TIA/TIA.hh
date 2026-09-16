@@ -27,6 +27,12 @@ public:
     bool isFrameReady() const;
     void renderFrame();
 
+    // A appeler depuis la gestion des entrées pour mettre à jour l'état
+    // des boutons de tir (INPT4 = joueur 0, INPT5 = joueur 1). Bit 7 à 1
+    // = relâché, à 0 = pressé (comme sur le vrai matériel). Les paddles
+    // (INPT0-INPT3) ne sont pas simulées et renvoient 0xFF.
+    void setInputPort(uint8_t port, uint8_t value);
+
 private:
     // Position + registre de mouvement fin (HMxx) d'un objet mobile
     // (joueur, missile ou balle).
@@ -59,6 +65,8 @@ private:
     bool vsync;
     bool vblank;
     bool wsync;
+
+    uint8_t inputPorts[6]; // INPT0..INPT5 (0xFF = relâché par défaut)
 
     MovableObject p0, p1, m0, m1, bl;
 

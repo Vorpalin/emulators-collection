@@ -29,6 +29,8 @@ uint8_t Atari2600Bus::read(uint16_t address) {
         return this->tia->read(address & 0x3F);
     } else if (address >= 0x0080 && address < 0x0100) {
         return this->riot->read(address - 0x0080);
+    } else if (address >= 0x0280 && address < 0x02A0) {
+        return this->riot->readIO(static_cast<uint8_t>(address - 0x0280));
     } else {
         return this->cpu->memory[address];
     }
@@ -53,22 +55,27 @@ void Atari2600Bus::write(uint16_t address, uint8_t value) {
         this->tia->write(address & 0x3F, value);
     } else if (address >= 0x0080 && address < 0x0100) {
         this->riot->write(address - 0x0080, value);
+    } else if (address >= 0x0280 && address < 0x02A0) {
+        this->riot->writeIO(static_cast<uint8_t>(address - 0x0280), value);
     } else {
         this->cpu->memory[address] = value;
     }
 }
 
 void Atari2600Bus::tick() {
-    uint8_t cpuCycles = 0;
-
-    if (!this->tia->isWsyncPending()) {
-        cpuCycles = this->cpu->step();
-    } else {
-        cpuCycles = 1;
-    }
-
-    for (uint8_t i = 0; i < cpuCycles * 3; ++i) {
+    if (this->tia->isWsyncPending()) {
         this->tia->tick();
+        this->tia->tick();
+        this->tia->tick();
+    } else {
+        const uint8_t cpuCycles = this->cpu->step();
+
+        for (uint8_t i = 0; i < cpuCycles; ++i) {
+            this->riot->tick();
+            this->tia->tick();
+            this->tia->tick();
+            this->tia->tick();
+        }
     }
 
     if (this->tia->isFrameReady()) {

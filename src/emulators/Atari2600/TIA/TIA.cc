@@ -95,6 +95,7 @@ TIA::TIA()
   , vsync(false)
   , vblank(false)
   , wsync(false)
+  , inputPorts{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
   , grp0New(0)
   , grp0Old(0)
   , grp1New(0)
@@ -131,6 +132,9 @@ void TIA::reset()
     vsync = false;
     vblank = false;
     wsync = false;
+    for (auto& p : inputPorts) {
+        p = 0xFF;
+    }
 
     p0 = MovableObject{};
     p1 = MovableObject{};
@@ -224,8 +228,10 @@ uint8_t TIA::read(uint8_t reg)
         return collisions[reg];
     }
     if (reg >= 0x08 && reg <= 0x0D) {
-        // INPT0..INPT5 : entrées analogiques/boutons non implémentées.
-        return 0x00;
+        // INPT0..INPT5 : INPT0-INPT3 (paddles) ne sont pas simulées et
+        // renvoient l'état neutre par défaut (0xFF) ; INPT4/INPT5
+        // (boutons de tir) reflètent ce qui a été poussé par setInputPort.
+        return inputPorts[reg - 0x08];
     }
     if (reg < sizeof(registers)) {
         return registers[reg];
@@ -437,7 +443,7 @@ void TIA::tick()
     ++cycle;
     if (cycle >= 228) {
         cycle = 0;
-        wsync = false;
+        wsync = false; // le CPU peut reprendre au début de la nouvelle ligne
         ++scanline;
         if (!vblank && displayLine < ScreenHeight) {
             ++displayLine;
@@ -445,9 +451,18 @@ void TIA::tick()
     }
 
     if (scanline >= 262) {
+        // Filet de sécurité si la ROM ne pilote pas VSYNC correctement :
+        // on boucle quand même pour ne jamais rester bloqué.
         scanline = 0;
         displayLine = 0;
         frameReady = true;
+    }
+}
+
+void TIA::setInputPort(uint8_t port, uint8_t value)
+{
+    if (port < 6) {
+        inputPorts[port] = value;
     }
 }
 
