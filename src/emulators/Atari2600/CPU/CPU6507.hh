@@ -17,6 +17,10 @@ class CPU6507 {
         void reset();
         void tick();
         uint8_t step();
+        uint8_t peekCycles(); // Durée (en cycles CPU) de la PROCHAINE instruction, sans l'exécuter.
+                              // Permet au bus de faire avancer le TIA/RIOT du temps de "préparation"
+                              // de l'instruction avant que step() n'applique ses effets de bord
+                              // (écritures registres), pour un séquençage cycle-exact.
         void setSwitchA(uint8_t value);
         void setSwitchB(uint8_t value);
         void setRenderer(SDL_Renderer* renderer);

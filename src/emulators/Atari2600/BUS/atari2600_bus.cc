@@ -64,18 +64,42 @@ void Atari2600Bus::write(uint16_t address, uint8_t value) {
 
 void Atari2600Bus::tick() {
     if (this->tia->isWsyncPending()) {
+        // Le CPU est à l'arrêt (WSYNC), mais l'horloge système continue de
+        // tourner : sur le vrai matériel, le timer du RIOT continue de
+        // décompter pendant ce temps-là, il ne se fige pas.
+        this->riot->tick();
         this->tia->tick();
         this->tia->tick();
         this->tia->tick();
     } else {
-        const uint8_t cpuCycles = this->cpu->step();
+        // Séquencement cycle-exact : on connaît la durée totale de la
+        // PROCHAINE instruction avant de l'exécuter (peekCycles), ce qui
+        // permet de faire avancer le TIA/RIOT du temps correspondant aux
+        // cycles de "préparation" (fetch de l'opcode, de l'opérande, etc.)
+        // AVANT que les effets de bord de l'instruction (écritures dans
+        // les registres TIA/RIOT : couleurs, playfield, GRPx, HMOVE,
+        // WSYNC, RESPx...) ne soient appliqués par step().
+        //
+        // Sur le vrai 6507, une écriture (STA, INC, ...) a lieu au tout
+        // dernier cycle de l'instruction, jamais avant : c'est ce qu'on
+        // reproduit ici en réservant explicitement le dernier cycle pour
+        // après l'appel à step().
+        const uint8_t totalCycles = this->cpu->peekCycles();
+        const uint8_t setupCycles = (totalCycles > 0) ? (totalCycles - 1) : 0;
 
-        for (uint8_t i = 0; i < cpuCycles; ++i) {
+        for (uint8_t i = 0; i < setupCycles; ++i) {
             this->riot->tick();
             this->tia->tick();
             this->tia->tick();
             this->tia->tick();
         }
+
+        this->cpu->step(); // Les écritures bus de l'instruction sont appliquées ici, "au dernier cycle"
+
+        this->riot->tick();
+        this->tia->tick();
+        this->tia->tick();
+        this->tia->tick();
     }
 
     if (this->tia->isFrameReady()) {

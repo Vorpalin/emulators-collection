@@ -132,6 +132,16 @@ constexpr uint8_t kCycleTable[256] = {
 };
 }
 
+uint8_t CPU6507::peekCycles() {
+    // Regarde l'opcode qui sera exécuté par le prochain step(), sans le
+    // consommer (le PC n'est pas modifié). Sans effet de bord car le code
+    // exécutable n'est jamais lu depuis une adresse d'E/S (TIA/RIOT) : ce
+    // n'est donc qu'une simple lecture ROM/RAM, faite deux fois (ici, puis
+    // à nouveau au début de step()) sans conséquence.
+    uint8_t opcode = this->bus->read(this->PC);
+    return kCycleTable[opcode];
+}
+
 uint8_t CPU6507::step() {
     // Fetch the opcode at the current PC (toujours via le bus : c'est lui
     // qui route vers la cartouche, la RAM du RIOT, etc. Le tableau
@@ -452,7 +462,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x65: { // ADC Zero Page
@@ -465,7 +475,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x75: { // ADC Zero Page,X
@@ -479,7 +489,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x6D: { // ADC Absolute
@@ -492,7 +502,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x7D: { // ADC Absolute,X
@@ -506,7 +516,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x79: { // ADC Absolute,Y
@@ -520,7 +530,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x61: { // ADC (Indirect,X)
@@ -534,7 +544,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x71: { // ADC (Indirect),Y
@@ -549,7 +559,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0xE9: { // SBC Immediate
@@ -561,7 +571,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0xE5: { // SBC Zero Page
@@ -574,7 +584,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0xF5: { // SBC Zero Page,X
@@ -588,7 +598,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0xED: { // SBC Absolute
@@ -601,7 +611,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0xFD: { // SBC Absolute,X
@@ -615,7 +625,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0xF9: { // SBC Absolute,Y
@@ -629,7 +639,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0xE1: { // SBC (Indirect,X)
@@ -643,7 +653,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0xF1: { // SBC (Indirect),Y
@@ -658,7 +668,7 @@ uint8_t CPU6507::step() {
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
             setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x29: { // AND Immediate
@@ -898,7 +908,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->A - value; // Subtract the immediate value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(result & 0xFF); // Set the carry flag based on the value of A
             break;
         }
         case 0xC5: { // CMP Zero Page
@@ -908,7 +918,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->A - value; // Subtract the value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A >= value); // Set the carry flag based on the value of A
             break;
         }
         case 0xD5: { // CMP Zero Page,X
@@ -919,7 +929,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->A - value; // Subtract the value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A >= value); // Set the carry flag based on the value of A
             break;
         }
         case 0xCD: { // CMP Absolute
@@ -929,7 +939,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->A - value; // Subtract the value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A >= value); // Set the carry flag based on the value of A
             break;
         }
         case 0xDD: { // CMP Absolute,X
@@ -940,7 +950,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->A - value; // Subtract the value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A >= value); // Set the carry flag based on the value of A
             break;
         }
         case 0xD9: { // CMP Absolute,Y
@@ -951,7 +961,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->A - value; // Subtract the value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A >= value); // Set the carry flag based on the value of A
             break;
         }
         case 0xC1: { // CMP (Indirect,X)
@@ -962,7 +972,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->A - value; // Subtract the value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A >= value); // Set the carry flag based on the value of A
             break;
         }
         case 0xD1: { // CMP (Indirect),Y
@@ -974,7 +984,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->A - value; // Subtract the value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A >= value); // Set the carry flag based on the value of A
             break;
         }
         case 0xE0: { // CPX Immediate
@@ -983,7 +993,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->X - value; // Subtract the immediate value from X
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of
+            setFlagC(this->X >= value); // Set the carry flag based on the value of X
             break;
         }
         case 0xE4: { // CPX Zero Page
@@ -993,7 +1003,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->X - value; // Subtract the value from X
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->X >= value); // Set the carry flag based on the value of X
             break;
         }
         case 0xEC: { // CPX Absolute
@@ -1003,7 +1013,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->X - value; // Subtract the value from X
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of
+            setFlagC(this->X >= value); // Set the carry flag based on the value of X
             break;
         }
         case 0xC0: { // CPY Immediate
@@ -1012,7 +1022,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->Y - value; // Subtract the immediate value from Y
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->Y >= value); // Set the carry flag based on the value of Y
             break;
         }
         case 0xC4: { // CPY Zero Page
@@ -1022,7 +1032,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->Y - value; // Subtract the value from Y
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->Y >= value); // Set the carry flag based on the value of Y
             break;
         }
         case 0xCC: { // CPY Absolute
@@ -1032,7 +1042,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->Y - value; // Subtract the value from Y
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->Y >= value); // Set the carry flag based on the value of Y
             break;
         }
         case 0x24: { // BIT Zero Page
@@ -1163,8 +1173,8 @@ uint8_t CPU6507::step() {
             this->SR = (this->SR & ~0x01) | ((this->A >> 7) & 0x01); // Set the carry flag based on the old bit 7 of A
             this->A <<= 1; // Shift A left by one
             setFlagZ(this->A); // Set the zero flag based on the new value of A
-            setFlagN(this->A); // Set the negative flag based on the new value of
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagN(this->A); // Set the negative flag based on the new value of A
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x06: { // ASL Zero Page
@@ -1174,7 +1184,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, this->bus->read(address) << 1); // Shift the value at the zero page address left by one
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x16: { // ASL Zero Page,X
@@ -1185,7 +1195,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, this->bus->read(address) << 1); // Shift the value at the zero page address left by one
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x0E: { // ASL Absolute
@@ -1195,7 +1205,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, this->bus->read(address) << 1); // Shift the value at the absolute address left by one
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x1E: { // ASL Absolute,X
@@ -1206,7 +1216,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, this->bus->read(address) << 1); // Shift the value at the absolute address left by one
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x4A: { // LSR Accumulator
@@ -1214,7 +1224,7 @@ uint8_t CPU6507::step() {
             this->A >>= 1; // Shift A right by one
             setFlagZ(this->A); // Set the zero flag based on the new value of A
             setFlagN(0x79); // Set the negative flag based on the new value of A
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of SR
             break;
         }
         case 0x46: { // LSR Zero Page
@@ -1224,7 +1234,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, this->bus->read(address) >> 1); // Shift the value at the zero page address right by one
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(0x79); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x56: { // LSR Zero Page,X
@@ -1235,7 +1245,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, this->bus->read(address) >> 1); // Shift the value at the zero page address right by one
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(0x79); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x4E: { // LSR Absolute
@@ -1245,7 +1255,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, this->bus->read(address) >> 1); // Shift the value at the absolute address right by one
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(0x79); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x5E: { // LSR Absolute,X
@@ -1256,7 +1266,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, this->bus->read(address) >> 1); // Shift the value at the absolute address right by one
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(0x79); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x2A: { // ROL Accumulator
@@ -1265,7 +1275,7 @@ uint8_t CPU6507::step() {
             this->A = (this->A << 1) | old_carry; // Shift A left by one and add the old carry
             setFlagZ(this->A); // Set the zero flag based on the new value of A
             setFlagN(this->A); // Set the negative flag based on the new value of A
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of SR
             break;
         }
         case 0x26: { // ROL Zero Page
@@ -1276,7 +1286,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, (this->bus->read(address) << 1) | old_carry); // Shift the value at the zero page address left by one and add the old carry
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x36: { // ROL Zero Page,X
@@ -1288,7 +1298,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, (this->bus->read(address) << 1) | old_carry); // Shift the value at the zero page address left by one and add the old carry
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x2E: { // ROL Absolute
@@ -1299,7 +1309,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, (this->bus->read(address) << 1) | old_carry); // Shift the value at the absolute address left by one and add the old carry
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x3E: { // ROL Absolute,X
@@ -1311,7 +1321,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, (this->bus->read(address) << 1) | old_carry); // Shift the value at the absolute address left by one and add the old carry
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x6A: { // ROR Accumulator
@@ -1320,7 +1330,7 @@ uint8_t CPU6507::step() {
             this->A = (this->A >> 1) | (old_carry << 7); // Shift A right by one and add the old carry to bit 7
             setFlagZ(this->A); // Set the zero flag based on the new value of A
             setFlagN(this->A); // Set the negative flag based on the new value of A
-            setFlagC(this->SR); // Set the carry flag based on the value of
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x66: { // ROR Zero Page
@@ -1331,7 +1341,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, (this->bus->read(address) >> 1) | (old_carry << 7)); // Shift the value at the zero page address right by one and add the old carry to bit 7
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x76: { // ROR Zero Page,X
@@ -1343,7 +1353,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, (this->bus->read(address) >> 1) | (old_carry << 7)); // Shift the value at the zero page address right by one and add the old carry to bit 7
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x6E: { // ROR Absolute
@@ -1354,7 +1364,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, (this->bus->read(address) >> 1) | (old_carry << 7)); // Shift the value at the absolute address right by one and add the old carry to bit 7
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x7E: { // ROR Absolute,X
@@ -1366,7 +1376,7 @@ uint8_t CPU6507::step() {
             this->bus->write(address, (this->bus->read(address) >> 1) | (old_carry << 7)); // Shift the value at the absolute address right by one and add the old carry to bit 7
             setFlagZ(this->bus->read(address)); // Set the zero flag based on the new value
             setFlagN(this->bus->read(address)); // Set the negative flag based on the new value
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->bus->read(address)); // Set the carry flag based on the value of SR
             break;
         }
         case 0x4C: { // JMP Absolute
@@ -1399,12 +1409,12 @@ uint8_t CPU6507::step() {
             SP++;
             uint8_t high_byte = this->bus->read(0x0100 + this->SP); // Pull the high byte of PC from the stack
             PC = (high_byte << 8) | low_byte; // Set PC to the new address
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
-            setFlagZ(this->SR); // Set the zero flag based on the value of SR
-            setFlagN(this->SR); // Set the negative flag based on the value of SR
-            setFlagV(this->SR); // Set the overflow flag based on the value of SR
-            setFlagI(this->SR); // Set the interrupt disable flag based on the value of SR
-            setFlagD(this->SR); // Set the decimal mode flag based on the value of SR
+            //setFlagC(this->SR); // Set the carry flag based on the value of SR
+            //setFlagZ(this->SR); // Set the zero flag based on the value of SR
+            //setFlagN(this->SR); // Set the negative flag based on the value of SR
+            //setFlagV(this->SR); // Set the overflow flag based on the value of SR
+            //setFlagI(this->SR); // Set the interrupt disable flag based on the value of SR
+            //setFlagD(this->SR); // Set the decimal mode flag based on the value of SR
             break;
         }
         case 0x60: { // RTS
@@ -1604,8 +1614,8 @@ uint8_t CPU6507::step() {
             PC++; // Increment PC to point to the next instruction
             this->A &= value; // AND the value with A
             setFlagZ(this->A); // Set the zero flag based on the new value of A
-            setFlagN(this->A); // Set the negative flag based on the new value of
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagN(this->A); // Set the negative flag based on the new value of A
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x2B: { // ANC Immediate
@@ -1614,7 +1624,7 @@ uint8_t CPU6507::step() {
             this->A &= value; // AND the value with A
             setFlagZ(this->A); // Set the zero flag based on the new value of A
             setFlagN(this->A); // Set the negative flag based on the new value of A
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x4B: { // ALR Immediate
@@ -1623,7 +1633,7 @@ uint8_t CPU6507::step() {
             this->A &= value; // AND the value with A
             setFlagZ(this->A); // Set the zero flag based on the new value of A
             setFlagN(this->A); // Set the negative flag based on the new value of A
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0x6B: { // ARR Immediate
@@ -1632,8 +1642,8 @@ uint8_t CPU6507::step() {
             this->A &= value; // AND the value with A
             setFlagZ(this->A); // Set the zero flag based on the new value of A
             setFlagN(this->A); // Set the negative flag based on the new value of A
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
-            setFlagV(this->SR); // Set the overflow flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
+            setFlagV(this->A); // Set the overflow flag based on the value of A
             break;
         }
         case 0xCB: { // AXS Immediate
@@ -1643,7 +1653,7 @@ uint8_t CPU6507::step() {
             this->A -= value; // Subtract the immediate value from A
             setFlagZ(this->A); // Set the zero flag based on the new value of A
             setFlagN(this->A); // Set the negative flag based on the new value of A
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
             break;
         }
         case 0xEB: { // SBC Immediate
@@ -1654,8 +1664,8 @@ uint8_t CPU6507::step() {
             this->A = result & 0xFF; // Store the result in A
             setFlagZ(this->A); // Set the zero flag based on the new value of A
             setFlagN(this->A); // Set the negative flag based on the new value of A
-            setFlagC(this->SR); // Set the carry flag based on the value of SR
-            setFlagV(this->SR); // Set the overflow flag based on the value of SR
+            setFlagC(this->A); // Set the carry flag based on the value of A
+            setFlagV(this->A); // Set the overflow flag based on the value of A
             break;
         }
         case 0xBB: { // LAS Absolute,Y
