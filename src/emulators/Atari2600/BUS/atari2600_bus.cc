@@ -18,7 +18,7 @@ Atari2600Bus::~Atari2600Bus() {
 }
 
 uint8_t Atari2600Bus::read(uint16_t address) {
-    //address &= 0x1FFF;
+    address &= 0x1FFF;
 
     if (address >= 0x1000) {
         if (this->cartridge->size() == 0) {

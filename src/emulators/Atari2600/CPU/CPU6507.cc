@@ -39,7 +39,7 @@ void CPU6507::reset() {
     A = 0;
     X = 0;
     Y = 0;
-    SP = 0; // Stack pointer initialized to the top of the stack
+    SP = 0xFD; // 6502 reset state
     SR = 0x24;
     PC = bus->read(0x1FFC) | (bus->read(0x1FFD) << 8);
 
@@ -52,7 +52,7 @@ void CPU6507::setFlagZ(uint8_t value) {
     if (value == 0) {
         this->SR |= 0x02; // Set the zero flag
     } else {
-        this->SR &= ~0x80; // Clear the negative flag
+        this->SR &= ~0x02; // Clear the zero flag
     }
 }
 
