@@ -130,6 +130,21 @@ constexpr uint8_t kCycleTable[256] = {
     2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6, // 0xE0-0xEF
     2,5,2,8,4,4,6,6,2,4,2,7,4,4,7,7, // 0xF0-0xFF
 };
+
+uint16_t readZeroPageWord(Atari2600Bus* bus, uint8_t address) {
+    const uint8_t low = bus->read(address);
+    const uint8_t high = bus->read(static_cast<uint8_t>(address + 1));
+    return static_cast<uint16_t>(low) | (static_cast<uint16_t>(high) << 8);
+}
+
+uint16_t indexedIndirectAddress(Atari2600Bus* bus, uint8_t zpBase, uint8_t indexX) {
+    const uint8_t pointer = static_cast<uint8_t>(zpBase + indexX);
+    return readZeroPageWord(bus, pointer);
+}
+
+uint16_t indirectIndexedAddress(Atari2600Bus* bus, uint8_t zpBase, uint8_t indexY) {
+    return readZeroPageWord(bus, zpBase) + indexY;
+}
 }
 
 uint8_t CPU6507::peekCycles() {
@@ -149,6 +164,32 @@ uint8_t CPU6507::step() {
     uint8_t opcode = this->bus->read(PC);
     PC++; // Increment PC to point to the next instruction
  
+    auto adc = [&](uint8_t value) {
+        const uint8_t accumulator = this->A;
+        const uint16_t result = static_cast<uint16_t>(accumulator) + value + (this->SR & 0x01);
+        const uint8_t result8 = static_cast<uint8_t>(result);
+
+        setFlagC(result > 0xFF);
+        setFlagV((~(accumulator ^ value) & (accumulator ^ result8) & 0x80) != 0);
+
+        this->A = result8;
+        setFlagZ(this->A);
+        setFlagN(this->A);
+    };
+
+    auto sbc = [&](uint8_t value) {
+        const uint8_t accumulator = this->A;
+        const uint16_t result = static_cast<uint16_t>(accumulator) - value - ((this->SR & 0x01) ? 0 : 1);
+        const uint8_t result8 = static_cast<uint8_t>(result);
+
+        setFlagC(result <= 0xFF);
+        setFlagV(((accumulator ^ result8) & (accumulator ^ value) & 0x80) != 0);
+
+        this->A = result8;
+        setFlagZ(this->A);
+        setFlagN(this->A);
+    };
+
     // Decode and execute the opcode
     switch (opcode) {
         case 0xA8: { // LDA Immediate
@@ -255,7 +296,7 @@ uint8_t CPU6507::step() {
         case 0xA1: { // LDA (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read((zp_address + this->X) & 0xFF); // Calculate effective address
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             this->A = this->bus->read(effective_address); // Load the value from the effective address into A
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
@@ -264,8 +305,7 @@ uint8_t CPU6507::step() {
         case 0xB1: { // LDA (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address); // Fetch the effective address from zero page
-            effective_address += this->Y; // Add the value of Y to the effective address
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             this->A = this->bus->read(effective_address); // Load the value from the effective address into A
             setFlagZ(this->A); // Set the zero flag based on the value of A
             setFlagN(this->A); // Set the negative flag based on the value of A
@@ -375,15 +415,14 @@ uint8_t CPU6507::step() {
         case 0x81: { // STA (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read((zp_address + this->X) & 0xFF); // Calculate effective address
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             this->bus->write(effective_address, this->A); // Store the value of A into the effective address
             break;
         }
         case 0x91: { // STA (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address); // Fetch the effective address from zero page
-            effective_address += this->Y; // Add the value of Y to the effective address
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             this->bus->write(effective_address, this->A); // Store the value of A into the effective address
             break;
         }
@@ -456,26 +495,14 @@ uint8_t CPU6507::step() {
         case 0x69: { // ADC Immediate
             uint8_t value = this->bus->read(PC); // Fetch the immediate value
             PC++; // Increment PC to point to the next instruction
-            uint16_t result = this->A + value + (this->SR & 0x01); // Add A, value, and carry flag
-            this->SR = (result > 0xFF) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            adc(value);
             break;
         }
         case 0x65: { // ADC Zero Page
             uint8_t address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
             uint8_t value = this->bus->read(address); // Fetch the value from the zero page address
-            uint16_t result = this->A + value + (this->SR & 0x01); // Add A, value, and carry flag
-            this->SR = (result > 0xFF) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            adc(value);
             break;
         }
         case 0x75: { // ADC Zero Page,X
@@ -483,26 +510,14 @@ uint8_t CPU6507::step() {
             PC++; // Increment PC to point to the next instruction
             address += this->X; // Add the value of X to the address
             uint8_t value = this->bus->read(address); // Fetch the value from the zero page address
-            uint16_t result = this->A + value + (this->SR & 0x01); // Add A, value, and carry flag
-            this->SR = (result > 0xFF) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            adc(value);
             break;
         }
         case 0x6D: { // ADC Absolute
             uint16_t address = this->bus->read(PC) | (this->bus->read(PC + 1) << 8); // Fetch the absolute address
             PC += 2; // Increment PC to point to the next instruction
             uint8_t value = this->bus->read(address); // Fetch the value from the absolute address
-            uint16_t result = this->A + value + (this->SR & 0x01); // Add A, value, and carry flag
-            this->SR = (result > 0xFF) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            adc(value);
             break;
         }
         case 0x7D: { // ADC Absolute,X
@@ -510,13 +525,7 @@ uint8_t CPU6507::step() {
             PC += 2; // Increment PC to point to the next instruction
             address += this->X; // Add the value of X to the address
             uint8_t value = this->bus->read(address); // Fetch the value from the absolute address
-            uint16_t result = this->A + value + (this->SR & 0x01); // Add A, value, and carry flag
-            this->SR = (result > 0xFF) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            adc(value);
             break;
         }
         case 0x79: { // ADC Absolute,Y
@@ -524,67 +533,36 @@ uint8_t CPU6507::step() {
             PC += 2; // Increment PC to point to the next instruction
             address += this->Y; // Add the value of Y to the address
             uint8_t value = this->bus->read(address); // Fetch the value from the absolute address
-            uint16_t result = this->A + value + (this->SR & 0x01); // Add A, value, and carry flag
-            this->SR = (result > 0xFF) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            adc(value);
             break;
         }
         case 0x61: { // ADC (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read((zp_address + this->X) & 0xFF); // Calculate effective address
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
-            uint16_t result = this->A + value + (this->SR & 0x01); // Add A, value, and carry flag
-            this->SR = (result > 0xFF) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            adc(value);
             break;
         }
         case 0x71: { // ADC (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address); // Fetch the effective address from zero page
-            effective_address += this->Y; // Add the value of Y to the effective address
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
-            uint16_t result = this->A + value + (this->SR & 0x01); // Add A, value, and carry flag
-            this->SR = (result > 0xFF) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            adc(value);
             break;
         }
         case 0xE9: { // SBC Immediate
             uint8_t value = this->bus->read(PC); // Fetch the immediate value
             PC++; // Increment PC to point to the next instruction
-            uint16_t result = this->A - value - (1 - (this->SR & 0x01)); // Subtract value and borrow from A
-            this->SR = (result < 0x100) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            sbc(value);
             break;
         }
         case 0xE5: { // SBC Zero Page
             uint8_t address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
             uint8_t value = this->bus->read(address); // Fetch the value from the zero page address
-            uint16_t result = this->A - value - (1 - (this->SR & 0x01)); // Subtract value and borrow from A
-            this->SR = (result < 0x100) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            sbc(value);
             break;
         }
         case 0xF5: { // SBC Zero Page,X
@@ -592,26 +570,14 @@ uint8_t CPU6507::step() {
             PC++; // Increment PC to point to the next instruction
             address += this->X; // Add the value of X to the address
             uint8_t value = this->bus->read(address); // Fetch the value from the zero page address
-            uint16_t result = this->A - value - (1 - (this->SR & 0x01)); // Subtract value and borrow from A
-            this->SR = (result < 0x100) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            sbc(value);
             break;
         }
         case 0xED: { // SBC Absolute
             uint16_t address = this->bus->read(PC) | (this->bus->read(PC + 1) << 8); // Fetch the absolute address
             PC += 2; // Increment PC to point to the next instruction
             uint8_t value = this->bus->read(address); // Fetch the value from the absolute address
-            uint16_t result = this->A - value - (1 - (this->SR & 0x01)); // Subtract value and borrow from A
-            this->SR = (result < 0x100) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            sbc(value);
             break;
         }
         case 0xFD: { // SBC Absolute,X
@@ -619,13 +585,7 @@ uint8_t CPU6507::step() {
             PC += 2; // Increment PC to point to the next instruction
             address += this->X; // Add the value of X to the address
             uint8_t value = this->bus->read(address); // Fetch the value from the absolute address
-            uint16_t result = this->A - value - (1 - (this->SR & 0x01)); // Subtract value and borrow from A
-            this->SR = (result < 0x100) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            sbc(value);
             break;
         }
         case 0xF9: { // SBC Absolute,Y
@@ -633,42 +593,23 @@ uint8_t CPU6507::step() {
             PC += 2; // Increment PC to point to the next instruction
             address += this->Y; // Add the value of Y to the address
             uint8_t value = this->bus->read(address); // Fetch the value from the absolute address
-            uint16_t result = this->A - value - (1 - (this->SR & 0x01)); // Subtract value and borrow from A
-            this->SR = (result < 0x100) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            sbc(value);
             break;
         }
         case 0xE1: { // SBC (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read((zp_address + this->X) & 0xFF); // Calculate effective address
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
-            uint16_t result = this->A - value - (1 - (this->SR & 0x01)); // Subtract value and borrow from A
-            this->SR = (result < 0x100) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            sbc(value);
             break;
         }
         case 0xF1: { // SBC (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address); // Fetch the effective address from zero page
-            effective_address += this->Y; // Add the value of Y to the effective address
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
-            uint16_t result = this->A - value - (1 - (this->SR & 0x01)); // Subtract value and borrow from A
-            this->SR = (result < 0x100) ? (this->SR | 0x01) : (this->SR & ~0x01); // Set carry flag
-            this->A = static_cast<uint8_t>(result); // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the value of A
-            setFlagN(this->A); // Set the negative flag based on the value of A
-            setFlagV(((this->A ^ result) & (value ^ result) & 0x80) != 0); // Set overflow flag
-            setFlagC(this->A); // Set the carry flag based on the value of A
+            sbc(value);
             break;
         }
         case 0x29: { // AND Immediate
@@ -730,7 +671,7 @@ uint8_t CPU6507::step() {
         case 0x21: { // AND (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read((zp_address + this->X) & 0xFF); // Calculate effective address
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
             this->A &= value; // Perform bitwise AND with A and the value from memory
             setFlagZ(this->A); // Set the zero flag based on the value of A
@@ -740,8 +681,7 @@ uint8_t CPU6507::step() {
         case 0x31: { // AND (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address); // Fetch the effective address from zero page
-            effective_address += this->Y; // Add the value of Y to the effective address
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
             this->A &= value; // Perform bitwise AND with A and the value from memory
             setFlagZ(this->A); // Set the zero flag based on the value of A
@@ -807,7 +747,7 @@ uint8_t CPU6507::step() {
         case 0x41: { // EOR (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read((zp_address + this->X) & 0xFF); // Calculate effective address
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
             this->A ^= value; // Perform bitwise EOR with A and the value from memory
             setFlagZ(this->A); // Set the zero flag based on the value of A
@@ -817,8 +757,7 @@ uint8_t CPU6507::step() {
         case 0x51: { // EOR (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address); // Fetch the effective address from zero page
-            effective_address += this->Y; // Add the value of Y to the effective address
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
             this->A ^= value; // Perform bitwise EOR with A and the value from memory
             setFlagZ(this->A); // Set the zero flag based on the value of A
@@ -884,7 +823,7 @@ uint8_t CPU6507::step() {
         case 0x01: { // ORA (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address + this->X); // Calculate effective address
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
             this->A |= value; // Perform bitwise OR with A and the value from memory
             setFlagZ(this->A); // Set the zero flag based on the value of A
@@ -894,8 +833,7 @@ uint8_t CPU6507::step() {
         case 0x11: { // ORA (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address); // Fetch the effective address from zero page
-            effective_address += this->Y; // Add the value of Y to the effective address
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
             this->A |= value; // Perform bitwise OR with A and the value from memory
             setFlagZ(this->A); // Set the zero flag based on the value of A
@@ -908,7 +846,7 @@ uint8_t CPU6507::step() {
             uint16_t result = this->A - value; // Subtract the immediate value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
             setFlagN(result & 0xFF); // Set the negative flag based on the result
-            setFlagC(result & 0xFF); // Set the carry flag based on the value of A
+            setFlagC(this->A >= value); // Set the carry flag based on the value of A
             break;
         }
         case 0xC5: { // CMP Zero Page
@@ -967,7 +905,7 @@ uint8_t CPU6507::step() {
         case 0xC1: { // CMP (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read((zp_address + this->X) & 0xFF); // Calculate effective address
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
             uint16_t result = this->A - value; // Subtract the value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
@@ -978,8 +916,7 @@ uint8_t CPU6507::step() {
         case 0xD1: { // CMP (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address); // Fetch the effective address from zero page
-            effective_address += this->Y; // Add the value of Y to the effective address
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             uint8_t value = this->bus->read(effective_address); // Fetch the value from the effective address
             uint16_t result = this->A - value; // Subtract the value from A
             setFlagZ(result & 0xFF); // Set the zero flag based on the result
@@ -1557,7 +1494,7 @@ uint8_t CPU6507::step() {
         case 0x83: { // SAX (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read((zp_address + this->X) & 0xFF); // Fetch the effective address from zero page with X offset
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             this->bus->write(effective_address, this->A & this->X); // Store A AND X into the effective address
             break;
         }
@@ -1592,7 +1529,7 @@ uint8_t CPU6507::step() {
         case 0xA3: { // LAX (Indirect,X)
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read((zp_address + this->X) & 0xFF); // Fetch the effective address from zero page with X offset
+            uint16_t effective_address = indexedIndirectAddress(this->bus, zp_address, this->X);
             this->A = this->bus->read(effective_address); // Load the value from the effective address into A
             this->X = this->A; // Load the value into X as well
             setFlagZ(this->A); // Set the zero flag based on the new value of A
@@ -1602,7 +1539,7 @@ uint8_t CPU6507::step() {
         case 0xB3: { // LAX (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address) + this->Y; // Fetch the effective address from zero page with Y offset
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             this->A = this->bus->read(effective_address); // Load the value from the effective address into A
             this->X = this->A; // Load the value into X as well
             setFlagZ(this->A); // Set the zero flag based on the new value of A
@@ -1659,13 +1596,7 @@ uint8_t CPU6507::step() {
         case 0xEB: { // SBC Immediate
             uint8_t value = this->bus->read(PC); // Fetch the immediate value
             PC++; // Increment PC to point to the next instruction
-            uint16_t result = this->A - value - (this->SR & 0x01); // Subtract the value and the carry flag from A
-            this->SR = (this->SR & ~0x01) | ((result >> 8) & 0x01); // Set the carry flag based on the result
-            this->A = result & 0xFF; // Store the result in A
-            setFlagZ(this->A); // Set the zero flag based on the new value of A
-            setFlagN(this->A); // Set the negative flag based on the new value of A
-            setFlagC(this->A); // Set the carry flag based on the value of A
-            setFlagV(this->A); // Set the overflow flag based on the value of A
+            sbc(value);
             break;
         }
         case 0xBB: { // LAS Absolute,Y
@@ -1708,7 +1639,7 @@ uint8_t CPU6507::step() {
         case 0x93: { // LAX (Indirect),Y
             uint8_t zp_address = this->bus->read(PC); // Fetch the zero page address
             PC++; // Increment PC to point to the next instruction
-            uint8_t effective_address = this->bus->read(zp_address) + this->Y; // Fetch the effective address from zero page with Y offset
+            uint16_t effective_address = indirectIndexedAddress(this->bus, zp_address, this->Y);
             this->A = this->bus->read(effective_address); // Load the value from the effective address into A
             this->X = this->A; // Load the value into X as well
             break;
