@@ -38,4 +38,5 @@ private:
     uint8_t readMemory(uint32_t &cycles, uint16_t address);
 
     void ldaSetFlags();
+    void adcSetFlags(uint8_t value,uint16_t result);
 };

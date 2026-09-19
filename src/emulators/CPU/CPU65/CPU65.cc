@@ -68,6 +68,16 @@ void CPU65::ldaSetFlags() {
     N = (A & 0x80) != 0; // Set Negative flag
 }
 
+void CPU65::adcSetFlags(uint8_t value, uint16_t result) {
+    C = (result > 0xFF) ? 1 : 0; // Set Carry flag
+    V = ((A ^ result) & (value ^ result) & 0x80) ? 1 : 0; // Set Overflow flag
+    
+    A = static_cast<uint8_t>(result);
+    
+    Z = (A == 0); // Set Zero flag
+    N = (A & 0x80) != 0; // Set Negative flag
+}
+
 void CPU65::execute(uint32_t cycles) {
     while (cycles > 0) {
         uint8_t instruction = fetch(cycles);
@@ -119,6 +129,60 @@ void CPU65::execute(uint32_t cycles) {
                 this->zeroPageAddY(cycles, addr);
                 A = this->readMemory(cycles, addr);
                 ldaSetFlags();
+                break;
+            case INS_ADC_IMM: // ADC Immediate
+                uint8_t value = fetch(cycles);
+                uint16_t result = A + value + C;
+                adcSetFlags(value, result);
+                break;
+            case INS_ADC_ZP: // ADC Zero Page
+                uint8_t addr = fetch(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                uint16_t result = A + value + C;
+                adcSetFlags(value, result);
+                break;
+            case INS_ADC_ZPX: // ADC Zero Page,X
+                uint8_t addr = fetch(cycles);
+                this->zeroPageAddX(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                uint16_t result = A + value + C;
+                adcSetFlags(value, result);
+                break;
+            case INS_ADC_ABS: // ADC Absolute
+                uint16_t addr = fetch16(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                uint16_t result = A + value + C;
+                adcSetFlags(value, result);
+                break;
+            case INS_ADC_ABSX: // ADC Absolute,X
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddX(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                uint16_t result = A + value + C;
+                adcSetFlags(value, result);
+                break;
+            case INS_ADC_ABSY: // ADC Absolute,Y
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddY(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                uint16_t result = A + value + C;
+                adcSetFlags(value, result);
+                break;
+            case INS_ADC_INDX: // ADC (Indirect,X)
+                uint8_t zpAddr = fetch(cycles);
+                this->zeroPageAddX(cycles, zpAddr);
+                uint16_t addr = this->readMemory(cycles, zpAddr) | (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+                uint8_t value = this->readMemory(cycles, addr);
+                uint16_t result = A + value + C;
+                adcSetFlags(value, result);
+                break;
+            case INS_ADC_INDY: // ADC (Indirect),Y
+                uint8_t zpAddr = fetch(cycles);
+                uint16_t addr = this->readMemory(cycles, zpAddr) | (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+                this->zeroPageAddY(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                uint16_t result = A + value + C;
+                adcSetFlags(value, result);
                 break;
             default:
                 std::cerr << "Unknown instruction: " << std::hex << static_cast<int>(instruction) << std::endl;
