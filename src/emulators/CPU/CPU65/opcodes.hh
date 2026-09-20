@@ -11,6 +11,20 @@ enum Opcodes {
     INS_LDA_INDX = 0xA1,
     INS_LDA_INDY = 0xB1,
 
+    // LDX (Load X Register) opcodes
+    INS_LDX_IMM = 0xA2,
+    INS_LDX_ZP = 0xA6,
+    INS_LDX_ZPY = 0xB6,
+    INS_LDX_ABS = 0xAE,
+    INS_LDX_ABSY = 0xBE,
+
+    // LDY (Load Y Register) opcodes
+    INS_LDY_IMM = 0xA0,
+    INS_LDY_ZP = 0xA4,
+    INS_LDY_ZPX = 0xB4,
+    INS_LDY_ABS = 0xAC,
+    INS_LDY_ABSX = 0xBC,
+
     // ADC (Add with Carry) opcodes
     INS_ADC_IMM = 0x69,
     INS_ADC_ZP = 0x65,
@@ -90,6 +104,77 @@ enum Opcodes {
     INS_CMP_ABSY = 0xD9,
     INS_CMP_INDX = 0xC1,
     INS_CMP_INDY = 0xD1,
+
+    // CPX (Compare X Register) opcodes
+    INS_CPX_IMM = 0xE0,
+    INS_CPX_ZP = 0xE4,
+    INS_CPX_ABS = 0xEC,
+
+    // CPY (Compare Y Register) opcodes
+    INS_CPY_IMM = 0xC0,
+    INS_CPY_ZP = 0xC4,
+    INS_CPY_ABS = 0xCC,
+
+    // DEC (Decrement Memory) opcodes
+    INS_DEC_ZP = 0xC6,
+    INS_DEC_ZPX = 0xD6,
+    INS_DEC_ABS = 0xCE,
+    INS_DEC_ABSX = 0xDE,
+
+    // DEX (Decrement X Register) opcode
+    INS_DEX = 0xCA,
+
+    // DEY (Decrement Y Register) opcode
+    INS_DEY = 0x88,
+
+    // EOR (Exclusive OR) opcodes
+    INS_EOR_IMM = 0x49,
+    INS_EOR_ZP = 0x45,
+    INS_EOR_ZPX = 0x55,
+    INS_EOR_ABS = 0x4D,
+    INS_EOR_ABSX = 0x5D,
+    INS_EOR_ABSY = 0x59,
+    INS_EOR_INDX = 0x41,
+    INS_EOR_INDY = 0x51,
+
+    // INC (Increment Memory) opcodes
+    INS_INC_ZP = 0xE6,
+    INS_INC_ZPX = 0xF6,
+    INS_INC_ABS = 0xEE,
+    INS_INC_ABSX = 0xFE,
+
+    // INX (Increment X Register) opcode
+    INS_INX = 0xE8,
+
+    // INY (Increment Y Register) opcode
+    INS_INY = 0xC8,
+
+    // JMP (Jump) opcodes
+    INS_JMP_ABS = 0x4C,
+    INS_JMP_IND = 0x6C,
+
+    // JSR (Jump to Subroutine) opcode
+    INS_JSR = 0x20,
+
+    // LSR (Logical Shift Right) opcodes
+    INS_LSR_ACC = 0x4A,
+    INS_LSR_ZP = 0x46,
+    INS_LSR_ZPX = 0x56,
+    INS_LSR_ABS = 0x4E,
+    INS_LSR_ABSX = 0x5E,
+
+    // NOP (No Operation) opcode
+    INS_NOP = 0xEA,
+
+    // ORA (Logical Inclusive OR) opcodes
+    INS_ORA_IMM = 0x09,
+    INS_ORA_ZP = 0x05,
+    INS_ORA_ZPX = 0x15,
+    INS_ORA_ABS = 0x0D,
+    INS_ORA_ABSX = 0x1D,
+    INS_ORA_ABSY = 0x19,
+    INS_ORA_INDX = 0x01,
+    INS_ORA_INDY = 0x11,
     
     // Add more opcodes as needed
 };

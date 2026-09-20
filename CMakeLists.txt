@@ -14,6 +14,7 @@ find_package(SDL2_ttf REQUIRED)
 
 add_executable(emulators-collection
     src/emulators/CPU/CPU65/CPU65.cc
+    src/emulators/CPU/CPU65/setFlags.cc
     src/main.cc
     src/emulators/console/chip_8/chip8.cc
     src/game/game.cc

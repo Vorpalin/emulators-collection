@@ -44,4 +44,17 @@ private:
     void aslSetFlags(uint32_t &cycles);
     void bitSetFlags(uint8_t value);
     void cmpSetFlags(uint8_t value);
+    void cpxSetFlags(uint8_t value);
+    void cpySetFlags(uint8_t value);
+    void decSetFlags(uint8_t value);
+    void dexSetFlags();
+    void deySetFlags();
+    void eorSetFlags();
+    void incSetFlags(uint8_t value);
+    void inxSetFlags();
+    void inySetFlags();
+    void ldxSetFlags();
+    void ldySetFlags();
+    void lsrSetFlags(uint32_t &cycles);
+    void oraSetFlags();
 };

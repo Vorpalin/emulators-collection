@@ -68,49 +68,6 @@ void CPU65::zeroPageAddY(uint32_t &cycles, uint16_t &address) {
     cycles--;
 }
 
-void CPU65::ldaSetFlags() {
-    Z = (A == 0); // Set Zero flag
-    N = (A & 0x80) != 0; // Set Negative flag
-}
-
-void CPU65::adcSetFlags(uint8_t value, uint16_t result) {
-    C = (result > 0xFF) ? 1 : 0; // Set Carry flag
-    V = ((A ^ result) & (value ^ result) & 0x80) ? 1 : 0; // Set Overflow flag
-    
-    A = static_cast<uint8_t>(result);
-    
-    Z = (A == 0); // Set Zero flag
-    N = (A & 0x80) != 0; // Set Negative flag
-}
-
-void CPU65::andSetFlags() {
-    Z = (A == 0); // Set Zero flag
-    N = (A & 0x80) != 0; // Set Negative flag
-}
-
-void CPU65::aslSetFlags(uint32_t &cycles) {
-    C = (A & 0x80) ? 1 : 0; // Set Carry flag
-    A <<= 1; // Shift left
-    --cycles; // Decrement cycles for the operation
-    Z = (A == 0); // Set Zero flag
-    N = (A & 0x80) != 0; // Set Negative flag
-}
-
-void CPU65::bitSetFlags(uint8_t value)
-{
-    Z = (A & value) == 0; // Set Zero flag
-    N = (value & 0x80) != 0; // Set Negative flag
-    V = (value & 0x40) != 0; // Set Overflow flag
-}
-
-void CPU65::cmpSetFlags(uint8_t value)
-{
-    uint16_t result = static_cast<uint16_t>(A) - static_cast<uint16_t>(value);
-    C = (A >= value) ? 1 : 0; // Set Carry flag
-    Z = (result == 0); // Set Zero flag
-    N = (result & 0x80) != 0; // Set Negative flag
-}
-
 void CPU65::execute(uint32_t cycles) {
     while (cycles > 0) {
         uint8_t instruction = fetch(cycles);
@@ -544,6 +501,451 @@ void CPU65::execute(uint32_t cycles) {
                 this->zeroPageAddY(cycles, addr);
                 uint8_t value = this->readMemory(cycles, addr);
                 cmpSetFlags(value);
+                break;
+            }
+            case INS_CPX_IMM: // CPX Immediate
+            {
+                uint8_t value = fetch(cycles);
+                cpxSetFlags(value);
+                break;
+            }
+            case INS_CPX_ZP: // CPX Zero Page
+            {
+                uint8_t addr = fetch(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                cpxSetFlags(value);
+                break;
+            }
+            case INS_CPX_ABS: // CPX Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                cpxSetFlags(value);
+                break;
+            }
+            case INS_CPY_IMM: // CPY Immediate
+            {
+                uint8_t value = fetch(cycles);
+                cpySetFlags(value);
+                break;
+            }
+            case INS_CPY_ZP: // CPY Zero Page
+            {
+                uint8_t addr = fetch(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                cpySetFlags(value);
+                break;
+            }
+            case INS_CPY_ABS: // CPY Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                cpySetFlags(value);
+                break;
+            }
+            case INS_DEC_ZP: // DEC Zero Page
+            {
+                uint8_t addr = fetch(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                value--;
+                --cycles; // Decrement cycles for the operation
+                decSetFlags(value);
+                writeMemory(cycles, addr, value);
+                break;
+            }
+            case INS_DEC_ZPX: // DEC Zero Page,X
+            {
+                uint16_t addr = fetch(cycles);
+                this->zeroPageAddX(cycles, addr);
+                addr &= 0xFF; // Wrap around for zero page
+                uint8_t value = this->readMemory(cycles, addr);
+                value--;
+                --cycles; // Decrement cycles for the operation
+                decSetFlags(value);
+                writeMemory(cycles, addr, value);
+                break;
+            }
+            case INS_DEC_ABS: // DEC Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                value--;
+                --cycles; // Decrement cycles for the operation
+                decSetFlags(value);
+                writeMemory(cycles, addr, value);
+                break;
+            }
+            case INS_DEC_ABSX: // DEC Absolute,X
+            {
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddX(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                value--;
+                --cycles; // Decrement cycles for the operation
+                decSetFlags(value);
+                writeMemory(cycles, addr, value);
+                break;
+            }
+            case INS_DEX: // DEX (Decrement X Register)
+            {
+                X--;
+                --cycles; // Decrement cycles for the operation
+                dexSetFlags();
+                break;
+            }
+            case INS_DEY: // DEY (Decrement Y Register)
+            {
+                Y--;
+                --cycles; // Decrement cycles for the operation
+                deySetFlags();
+                break;
+            }
+            case INS_EOR_IMM: // EOR Immediate
+            {
+                uint8_t value = fetch(cycles);
+                A ^= value;
+                eorSetFlags();
+                break;
+            }
+            case INS_EOR_ZP: // EOR Zero Page
+            {
+                uint8_t addr = fetch(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                A ^= value;
+                eorSetFlags();
+                break;
+            }
+            case INS_EOR_ZPX: // EOR Zero Page,X
+            {
+                uint16_t addr = fetch(cycles);
+                this->zeroPageAddX(cycles, addr);
+                addr &= 0xFF; // Wrap around for zero page
+                uint8_t value = this->readMemory(cycles, addr);
+                A ^= value;
+                eorSetFlags();
+                break;
+            }
+            case INS_EOR_ABS: // EOR Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                A ^= value;
+                eorSetFlags();
+                break;
+            }
+            case INS_EOR_ABSX: // EOR Absolute,X
+            {
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddX(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                A ^= value;
+                eorSetFlags();
+                break;
+            }
+            case INS_EOR_ABSY: // EOR Absolute,Y
+            {
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddY(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                A ^= value;
+                eorSetFlags();
+                break;
+            }
+            case INS_EOR_INDX: // EOR (Indirect,X)
+            {
+                uint16_t zpAddr = fetch(cycles);
+                this->zeroPageAddX(cycles, zpAddr);
+                uint16_t addr = this->readMemory(cycles, zpAddr) | (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+                uint8_t value = this->readMemory(cycles, addr);
+                A ^= value;
+                eorSetFlags();
+                break;
+            }
+            case INS_EOR_INDY: // EOR (Indirect),Y
+            {
+                uint8_t zpAddr = fetch(cycles);
+                uint16_t addr = this->readMemory(cycles, zpAddr) | (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+                this->zeroPageAddY(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                A ^= value;
+                eorSetFlags();
+                break;
+            }
+            case INS_INC_ZP: // INC Zero Page
+            {
+                uint8_t addr = fetch(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                value++;
+                --cycles; // Decrement cycles for the operation
+                incSetFlags(value);
+                writeMemory(cycles, addr, value);
+                break;
+            }
+            case INS_INC_ZPX: // INC Zero Page,X
+            {
+                uint16_t addr = fetch(cycles);
+                this->zeroPageAddX(cycles, addr);
+                addr &= 0xFF; // Wrap around for zero page
+                uint8_t value = this->readMemory(cycles, addr);
+                value++;
+                --cycles; // Decrement cycles for the operation
+                incSetFlags(value);
+                writeMemory(cycles, addr, value);
+                break;
+            }
+            case INS_INC_ABS: // INC Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                value++;
+                --cycles; // Decrement cycles for the operation
+                incSetFlags(value);
+                writeMemory(cycles, addr, value);
+                break;
+            }
+            case INS_INC_ABSX: // INC Absolute,X
+            {
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddX(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                value++;
+                --cycles; // Decrement cycles for the operation
+                incSetFlags(value);
+                writeMemory(cycles, addr, value);
+                break;
+            }
+            case INS_INX: // INX (Increment X Register)
+            {
+                X++;
+                --cycles; // Decrement cycles for the operation
+                inxSetFlags();
+                break;
+            }
+            case INS_INY: // INY (Increment Y Register)
+            {
+                Y++;
+                --cycles; // Decrement cycles for the operation
+                inySetFlags();
+                break;
+            }
+            case INS_JMP_ABS: // JMP Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                PC = addr;
+                break;
+            }
+            case INS_JMP_IND: // JMP Indirect
+            {
+                uint16_t addr = fetch16(cycles);
+                uint16_t targetAddr = this->readMemory(cycles, addr) | (this->readMemory(cycles, (addr + 1) & 0xFFFF) << 8);
+                PC = targetAddr;
+                break;
+            }
+            case INS_JSR: // JSR (Jump to Subroutine)
+            {
+                uint16_t addr = fetch16(cycles);
+                uint16_t returnAddr = PC - 1; // Address of the next instruction after JSR
+                --cycles; // Decrement cycles for the operation
+                writeMemory(cycles, SP--, (returnAddr >> 8) & 0xFF); // Push high byte
+                writeMemory(cycles, SP--, returnAddr & 0xFF);        // Push low byte
+                PC = addr;
+                break;
+            }
+            case INS_LDX_IMM: // LDX Immediate
+            {
+                uint8_t value = fetch(cycles);
+                X = value;
+                ldxSetFlags();
+                break;
+            }
+            case INS_LDX_ZP: // LDX Zero Page
+            {
+                uint8_t addr = fetch(cycles);
+                X = this->readMemory(cycles, addr);
+                ldxSetFlags();
+                break;
+            }
+            case INS_LDX_ZPY: // LDX Zero Page,Y
+            {
+                uint16_t addr = fetch(cycles);
+                this->zeroPageAddY(cycles, addr);
+                addr &= 0xFF; // Wrap around for zero page
+                X = this->readMemory(cycles, addr);
+                ldxSetFlags();
+                break;
+            }
+            case INS_LDX_ABS: // LDX Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                X = this->readMemory(cycles, addr);
+                ldxSetFlags();
+                break;
+            }
+            case INS_LDX_ABSY: // LDX Absolute,Y
+            {
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddY(cycles, addr);
+                X = this->readMemory(cycles, addr);
+                ldxSetFlags();
+                break;
+            }
+            case INS_LDY_IMM: // LDY Immediate
+            {
+                uint8_t value = fetch(cycles);
+                Y = value;
+                ldySetFlags();
+                break;
+            }
+            case INS_LDY_ZP: // LDY Zero Page
+            {
+                uint8_t addr = fetch(cycles);
+                Y = this->readMemory(cycles, addr);
+                ldySetFlags();
+                break;
+            }
+            case INS_LDY_ZPX: // LDY Zero Page,X
+            {
+                uint16_t addr = fetch(cycles);
+                this->zeroPageAddX(cycles, addr);
+                addr &= 0xFF; // Wrap around for zero page
+                Y = this->readMemory(cycles, addr);
+                ldySetFlags();
+                break;
+            }
+            case INS_LDY_ABS: // LDY Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                Y = this->readMemory(cycles, addr);
+                ldySetFlags();
+                break;
+            }
+            case INS_LDY_ABSX: // LDY Absolute,X
+            {
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddX(cycles, addr);
+                Y = this->readMemory(cycles, addr);
+                ldySetFlags();
+                break;
+            }
+            case INS_LSR_ACC: // LSR Accumulator
+            {
+                lsrSetFlags(cycles);
+                break;
+            }
+            case INS_LSR_ZP: // LSR Zero Page
+            {
+                uint8_t addr = fetch(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                A = value;
+                lsrSetFlags(cycles);
+                writeMemory(cycles, addr, A); // Write back to memory
+                break;
+            }
+            case INS_LSR_ZPX: // LSR Zero Page,X
+            {
+                uint16_t addr = fetch(cycles);
+                this->zeroPageAddX(cycles, addr);
+                addr &= 0xFF; // Wrap around for zero page
+                uint8_t value = this->readMemory(cycles, addr);
+                A = value;
+                lsrSetFlags(cycles);
+                writeMemory(cycles, addr, A); // Write back to memory
+                break;
+            }
+            case INS_LSR_ABS: // LSR Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                A = value;
+                lsrSetFlags(cycles);
+                writeMemory(cycles, addr, A); // Write back to memory
+                break;
+            }
+            case INS_LSR_ABSX: // LSR Absolute,X
+            {
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddX(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                A = value;
+                lsrSetFlags(cycles);
+                writeMemory(cycles, addr, A); // Write back to memory
+                break;
+            }
+            case INS_NOP: // NOP (No Operation)
+            {
+                // Do nothing, just decrement cycles
+                --cycles;
+                break;
+            }
+            case INS_ORA_IMM: // ORA Immediate
+            {
+                uint8_t value = fetch(cycles);
+                A |= value;
+                oraSetFlags();
+                break;
+            }
+            case INS_ORA_ZP: // ORA Zero Page
+            {
+                uint8_t addr = fetch(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                A |= value;
+                oraSetFlags();
+                break;
+            }
+            case INS_ORA_ZPX: // ORA Zero Page,X
+            {
+                uint16_t addr = fetch(cycles);
+                this->zeroPageAddX(cycles, addr);
+                addr &= 0xFF; // Wrap around for zero page
+                uint8_t value = this->readMemory(cycles, addr);
+                A |= value;
+                oraSetFlags();
+                break;
+            }
+            case INS_ORA_ABS: // ORA Absolute
+            {
+                uint16_t addr = fetch16(cycles);
+                uint8_t value = this->readMemory(cycles, addr);
+                A |= value;
+                oraSetFlags();
+                break;
+            }
+            case INS_ORA_ABSX: // ORA Absolute,X
+            {
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddX(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                A |= value;
+                oraSetFlags();
+                break;
+            }
+            case INS_ORA_ABSY: // ORA Absolute,Y
+            {
+                uint16_t addr = fetch16(cycles);
+                this->zeroPageAddY(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                A |= value;
+                oraSetFlags();
+                break;
+            }
+            case INS_ORA_INDX: // ORA (Indirect,X)
+            {
+                uint16_t zpAddr = fetch(cycles);
+                this->zeroPageAddX(cycles, zpAddr);
+                uint16_t addr = this->readMemory(cycles, zpAddr) | (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+                uint8_t value = this->readMemory(cycles, addr);
+                A |= value;
+                oraSetFlags();
+                break;
+            }
+            case INS_ORA_INDY: // ORA (Indirect),Y
+            {
+                uint8_t zpAddr = fetch(cycles);
+                uint16_t addr = this->readMemory(cycles, zpAddr) | (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+                this->zeroPageAddY(cycles, addr);
+                uint8_t value = this->readMemory(cycles, addr);
+                A |= value;
+                oraSetFlags();
                 break;
             }
             default:
