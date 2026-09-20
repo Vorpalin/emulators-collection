@@ -6,15 +6,19 @@
 #include "Cartbridge.hh"
 #include "MOS6532.hh"
 #include "TIA1A.hh"
+#include "Bus.hh"
 
-class Atari2600Bus {
+class Atari2600Bus : public Bus {
 public:
     Atari2600Bus();
 
-    void loadROM(std::string &filename);
-    void reset();
+    void loadROM(std::string &filename) override;
+    void reset() override;
 
-    void tick(); // Advance the bus by one clock cycle
+    uint8_t readMemory(uint16_t address) override;
+    void writeMemory(uint16_t address, uint8_t value) override;
+
+    void tick() override; // Advance the bus by one clock cycle
 private:
     CPU65 cpu; // Instance of the CPU65 class for the Atari 2600
     Cartbridge cartbridge; // Instance of the Cartbridge class for ROM handling

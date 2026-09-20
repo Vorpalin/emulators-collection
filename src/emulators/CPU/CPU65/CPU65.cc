@@ -3,11 +3,11 @@
 
 #include <iostream>
 
-CPU65::CPU65(bool isCPU6502) {
-    reset(isCPU6502);
+CPU65::CPU65(Bus* bus) : bus(bus) {
+    reset();
 }
 
-void CPU65::reset(bool isCPU6502) {
+void CPU65::reset() {
     A = 0;
     X = 0;
     Y = 0;
@@ -20,22 +20,10 @@ void CPU65::reset(bool isCPU6502) {
     B = 0;
     V = 0;
     N = 0;
-
-    if (isCPU6502) {
-        // Initialize memory for 6502 CPU
-        memory.resize(65536, 0); // 64KB of memory
-    } else {
-        // Initialize memory for 6507 CPU
-        memory.resize(8192, 0); // 8KB of memory
-    }
-
-    for (auto& byte : memory) {
-        byte = 0; // Clear memory
-    }
 }
 
 uint8_t CPU65::fetch(uint32_t &cycles) {
-    uint8_t instruction = memory[PC];
+    uint8_t instruction = bus->readMemory(PC);
     PC++;
     cycles++;
     return instruction;
@@ -48,13 +36,13 @@ uint16_t CPU65::fetch16(uint32_t &cycles) {
 }
 
 uint8_t CPU65::readMemory(uint32_t &cycles, uint16_t address) {
-    uint8_t data = memory[address];
+    uint8_t data = bus->readMemory(address);
     cycles++;
     return data;
 }
 
 void CPU65::writeMemory(uint32_t &cycles, uint16_t address, uint8_t value) {
-    memory[address] = value;
+    bus->writeMemory(address, value);
     cycles++;
 }
 

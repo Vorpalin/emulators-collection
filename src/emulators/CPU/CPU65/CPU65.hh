@@ -4,15 +4,25 @@
 #include <string>
 #include <vector>
 
-class CPU65 {
+#include "CPU.hh"
+#include "Bus.hh"
+
+class CPU65 : public CPU {
 public:
-    CPU65(bool isCPU6502);
+    CPU65(Bus* bus);
 
-    void reset(bool isCPU6502);
+    void reset() override;
 
-    uint32_t execute();
+    uint32_t execute() override;
 
+    uint8_t readMemory(uint32_t &cycles, uint16_t address) override;
+    void writeMemory(uint32_t &cycles, uint16_t address, uint8_t value) override;
+
+    void writeMemory(uint16_t address, uint8_t value);
 private:
+
+    Bus* bus; // Pointer to the bus for memory access
+
     uint8_t A; // Accumulator
     uint8_t X; // Index Register X
     uint8_t Y; // Index Register Y
@@ -28,15 +38,10 @@ private:
     uint8_t V : 1; // Overflow Flag
     uint8_t N : 1; // Negative Flag
 
-    std::vector<uint8_t> memory; // Memory space for the CPU
-
-    void reset();
     void zeroPageAddX(uint32_t &cycles, uint16_t &address);
     void zeroPageAddY(uint32_t &cycles, uint16_t &address);
     uint8_t fetch(uint32_t &cycles);
     uint16_t fetch16(uint32_t &cycles);
-    uint8_t readMemory(uint32_t &cycles, uint16_t address);
-    void writeMemory(uint32_t &cycles, uint16_t address, uint8_t value);
 
     void ldaSetFlags();
     void adcSetFlags(uint8_t value,uint16_t result);

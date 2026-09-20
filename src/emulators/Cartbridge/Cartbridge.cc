@@ -11,6 +11,14 @@ void Cartbridge::reset() {
     romData.clear(); // Clear the ROM data vector
 }
 
+uint8_t Cartbridge::read(uint16_t address)
+{
+    if (romData.empty())
+        return 0xFF;
+
+    return romData[address % romData.size()];
+}
+
 void Cartbridge::loadROM(std::string &filename) {
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
 

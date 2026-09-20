@@ -30,7 +30,9 @@ add_executable(emulators-collection
 
 target_include_directories(emulators-collection
     PRIVATE
+        src/emulators/CPU/
         src/emulators/CPU/CPU65
+        src/emulators/BUS
         src/emulators/BUS/Atari2600Bus
         src/emulators/chip/TIA1A
         src/emulators/Cartbridge
