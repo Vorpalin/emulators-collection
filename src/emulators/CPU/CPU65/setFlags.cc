@@ -23,7 +23,7 @@ void CPU65::andSetFlags() {
 void CPU65::aslSetFlags(uint32_t &cycles) {
     C = (A & 0x80) ? 1 : 0; // Set Carry flag
     A <<= 1; // Shift left
-    --cycles; // Decrement cycles for the operation
+    ++cycles; // Increment cycles for the operation
     Z = (A == 0); // Set Zero flag
     N = (A & 0x80) != 0; // Set Negative flag
 }
@@ -117,7 +117,7 @@ void CPU65::lsrSetFlags(uint32_t &cycles)
 {
     C = (A & 0x01) ? 1 : 0; // Set Carry flag
     A >>= 1; // Shift right
-    --cycles; // Decrement cycles for the operation
+    ++cycles; // Increment cycles for the operation
     Z = (A == 0); // Set Zero flag
     N = 0; // LSR always clears the Negative flag
 }
@@ -150,7 +150,7 @@ void CPU65::rolSetFlags(uint32_t &cycles)
     uint8_t oldCarry = C;
     C = (A & 0x80) ? 1 : 0; // Set Carry flag
     A = (A << 1) | oldCarry; // Rotate left
-    --cycles; // Decrement cycles for the operation
+    ++cycles; // Increment cycles for the operation
     Z = (A == 0); // Set Zero flag
     N = (A & 0x80) != 0; // Set Negative flag
 }
@@ -160,7 +160,7 @@ void CPU65::rorSetFlags(uint32_t &cycles)
     uint8_t oldCarry = C;
     C = (A & 0x01) ? 1 : 0; // Set Carry flag
     A = (A >> 1) | (oldCarry << 7); // Rotate right
-    --cycles; // Decrement cycles for the operation
+    ++cycles; // Increment cycles for the operation
     Z = (A == 0); // Set Zero flag
     N = (A & 0x80) != 0; // Set Negative flag
 }
@@ -176,7 +176,7 @@ void CPU65::rtiSetFlags(uint32_t &cycles)
     I = (status >> 2) & 1;
     Z = (status >> 1) & 1;
     C = status & 1;
-    --cycles; // Decrement cycles for the operation
+    ++cycles; // Increment cycles for the operation
 }
 
 void CPU65::sbcSetFlags(uint8_t value, uint16_t result)

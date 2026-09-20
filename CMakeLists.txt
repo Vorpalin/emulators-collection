@@ -13,12 +13,14 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 
 add_executable(emulators-collection
+    src/emulators/chip/TIA1A/TIA1A.cc
     src/emulators/BUS/Atari2600Bus/Atari2600Bus.cc
     src/emulators/CPU/CPU65/CPU65.cc
     src/emulators/CPU/CPU65/setFlags.cc
     src/emulators/Cartbridge/Cartbridge.cc
     src/emulators/Processor/MOS6532/MOS6532.cc
     src/main.cc
+    src/emulators/console/Atari2600/Atari2600.cc
     src/emulators/console/chip_8/chip8.cc
     src/game/game.cc
     src/game_selector/game_selector.cc
@@ -30,8 +32,10 @@ target_include_directories(emulators-collection
     PRIVATE
         src/emulators/CPU/CPU65
         src/emulators/BUS/Atari2600Bus
+        src/emulators/chip/TIA1A
         src/emulators/Cartbridge
         src/emulators/Processor/MOS6532
+        src/emulators/console/Atari2600
         src/emulators/console/chip_8
         src/emulator_schema
         src/game

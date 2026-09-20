@@ -10,7 +10,7 @@ public:
 
     void reset(bool isCPU6502);
 
-    void execute(uint32_t cycles);
+    uint32_t execute();
 
 private:
     uint8_t A; // Accumulator
