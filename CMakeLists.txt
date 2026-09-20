@@ -17,6 +17,7 @@ add_executable(emulators-collection
     src/emulators/CPU/CPU65/CPU65.cc
     src/emulators/CPU/CPU65/setFlags.cc
     src/emulators/Cartbridge/Cartbridge.cc
+    src/emulators/Processor/MOS6532/MOS6532.cc
     src/main.cc
     src/emulators/console/chip_8/chip8.cc
     src/game/game.cc
@@ -30,6 +31,7 @@ target_include_directories(emulators-collection
         src/emulators/CPU/CPU65
         src/emulators/BUS/Atari2600Bus
         src/emulators/Cartbridge
+        src/emulators/Processor/MOS6532
         src/emulators/console/chip_8
         src/emulator_schema
         src/game
