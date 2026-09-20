@@ -36,8 +36,12 @@ private:
     uint8_t fetch(uint32_t &cycles);
     uint16_t fetch16(uint32_t &cycles);
     uint8_t readMemory(uint32_t &cycles, uint16_t address);
+    void writeMemory(uint32_t &cycles, uint16_t address, uint8_t value);
 
     void ldaSetFlags();
     void adcSetFlags(uint8_t value,uint16_t result);
     void andSetFlags();
+    void aslSetFlags(uint32_t &cycles);
+    void bitSetFlags(uint8_t value);
+    void cmpSetFlags(uint8_t value);
 };
