@@ -127,3 +127,95 @@ void CPU65::oraSetFlags()
     Z = (A == 0); // Set Zero flag
     N = (A & 0x80) != 0; // Set Negative flag
 }
+
+void CPU65::plaSetFlags()
+{
+    Z = (A == 0); // Set Zero flag
+    N = (A & 0x80) != 0; // Set Negative flag
+}
+
+void CPU65::plpSetFlags(uint8_t value)
+{
+    N = (value >> 7) & 1;
+    V = (value >> 6) & 1;
+    B = (value >> 4) & 1;
+    D = (value >> 3) & 1;
+    I = (value >> 2) & 1;
+    Z = (value >> 1) & 1;
+    C = value & 1;
+}
+
+void CPU65::rolSetFlags(uint32_t &cycles)
+{
+    uint8_t oldCarry = C;
+    C = (A & 0x80) ? 1 : 0; // Set Carry flag
+    A = (A << 1) | oldCarry; // Rotate left
+    --cycles; // Decrement cycles for the operation
+    Z = (A == 0); // Set Zero flag
+    N = (A & 0x80) != 0; // Set Negative flag
+}
+
+void CPU65::rorSetFlags(uint32_t &cycles)
+{
+    uint8_t oldCarry = C;
+    C = (A & 0x01) ? 1 : 0; // Set Carry flag
+    A = (A >> 1) | (oldCarry << 7); // Rotate right
+    --cycles; // Decrement cycles for the operation
+    Z = (A == 0); // Set Zero flag
+    N = (A & 0x80) != 0; // Set Negative flag
+}
+
+void CPU65::rtiSetFlags(uint32_t &cycles)
+{
+    uint8_t status = readMemory(cycles, ++SP);
+    --SP; // Adjust stack pointer after reading status
+    N = (status >> 7) & 1;
+    V = (status >> 6) & 1;
+    B = (status >> 4) & 1;
+    D = (status >> 3) & 1;
+    I = (status >> 2) & 1;
+    Z = (status >> 1) & 1;
+    C = status & 1;
+    --cycles; // Decrement cycles for the operation
+}
+
+void CPU65::sbcSetFlags(uint8_t value, uint16_t result)
+{
+    C = (result < 0x100) ? 1 : 0; // Set Carry flag
+    V = ((A ^ result) & (value ^ result) & 0x80) ? 1 : 0; // Set Overflow flag
+    
+    A = static_cast<uint8_t>(result);
+    
+    Z = (A == 0); // Set Zero flag
+    N = (A & 0x80) != 0; // Set Negative flag
+}
+
+void CPU65::taxSetFlags()
+{
+    Z = (X == 0); // Set Zero flag
+    N = (X & 0x80) != 0; // Set Negative flag
+}
+
+void CPU65::taySetFlags()
+{
+    Z = (Y == 0); // Set Zero flag
+    N = (Y & 0x80) != 0; // Set Negative flag
+}
+
+void CPU65::tsxSetFlags()
+{
+    Z = (X == 0); // Set Zero flag
+    N = (X & 0x80) != 0; // Set Negative flag
+}
+
+void CPU65::txaSetFlags()
+{
+    Z = (A == 0); // Set Zero flag
+    N = (A & 0x80) != 0; // Set Negative flag
+}
+
+void CPU65::tyaSetFlags()
+{
+    Z = (A == 0); // Set Zero flag
+    N = (A & 0x80) != 0; // Set Negative flag
+}

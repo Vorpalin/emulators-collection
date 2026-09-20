@@ -175,6 +175,94 @@ enum Opcodes {
     INS_ORA_ABSY = 0x19,
     INS_ORA_INDX = 0x01,
     INS_ORA_INDY = 0x11,
+
+    // PHA (Push Accumulator) opcode
+    INS_PHA = 0x48,
+
+    // PHP (Push Processor Status) opcode
+    INS_PHP = 0x08,
+
+    // PLA (Pull Accumulator) opcode
+    INS_PLA = 0x68,
+
+    // PLP (Pull Processor Status) opcode
+    INS_PLP = 0x28,
+
+    // ROL (Rotate Left) opcodes
+    INS_ROL_ACC = 0x2A,
+    INS_ROL_ZP = 0x26,
+    INS_ROL_ZPX = 0x36,
+    INS_ROL_ABS = 0x2E,
+    INS_ROL_ABSX = 0x3E,
+
+    // ROR (Rotate Right) opcodes
+    INS_ROR_ACC = 0x6A,
+    INS_ROR_ZP = 0x66,
+    INS_ROR_ZPX = 0x76,
+    INS_ROR_ABS = 0x6E,
+    INS_ROR_ABSX = 0x7E,
+
+    // RTI (Return from Interrupt) opcode
+    INS_RTI = 0x40,
+
+    // RTS (Return from Subroutine) opcode
+    INS_RTS = 0x60,
+
+    // SBC (Subtract with Carry) opcodes
+    INS_SBC_IMM = 0xE9,
+    INS_SBC_ZP = 0xE5,
+    INS_SBC_ZPX = 0xF5,
+    INS_SBC_ABS = 0xED,
+    INS_SBC_ABSX = 0xFD,
+    INS_SBC_ABSY = 0xF9,
+    INS_SBC_INDX = 0xE1,
+    INS_SBC_INDY = 0xF1,
+
+    // SEC (Set Carry Flag) opcode
+    INS_SEC = 0x38,
+
+    // SED (Set Decimal Flag) opcode
+    INS_SED = 0xF8,
+
+    // SEI (Set Interrupt Disable) opcode
+    INS_SEI = 0x78,
+
+    // STA (Store Accumulator) opcodes
+    INS_STA_ZP = 0x85,
+    INS_STA_ZPX = 0x95,
+    INS_STA_ABS = 0x8D,
+    INS_STA_ABSX = 0x9D,
+    INS_STA_ABSY = 0x99,
+    INS_STA_INDX = 0x81,
+    INS_STA_INDY = 0x91,
+
+    // STX (Store X Register) opcodes
+    INS_STX_ZP = 0x86,
+    INS_STX_ZPY = 0x96,
+    INS_STX_ABS = 0x8E,
+
+    // STY (Store Y Register) opcodes
+    INS_STY_ZP = 0x84,
+    INS_STY_ZPX = 0x94,
+    INS_STY_ABS = 0x8C,
+
+    // TAX (Transfer Accumulator to X) opcode
+    INS_TAX = 0xAA,
+
+    // TAY (Transfer Accumulator to Y) opcode
+    INS_TAY = 0xA8,
+
+    // TSX (Transfer Stack Pointer to X) opcode
+    INS_TSX = 0xBA,
+
+    // TXA (Transfer X to Accumulator) opcode
+    INS_TXA = 0x8A,
+
+    // TXS (Transfer X to Stack Pointer) opcode
+    INS_TXS = 0x9A,
+
+    // TYA (Transfer Y to Accumulator) opcode
+    INS_TYA = 0x98,
     
-    // Add more opcodes as needed
+    // Illegal opcodes (undocumented)
 };

@@ -57,4 +57,15 @@ private:
     void ldySetFlags();
     void lsrSetFlags(uint32_t &cycles);
     void oraSetFlags();
+    void plaSetFlags();
+    void plpSetFlags(uint8_t value);
+    void rolSetFlags(uint32_t &cycles);
+    void rorSetFlags(uint32_t &cycles);
+    void rtiSetFlags(uint32_t &cycles);
+    void sbcSetFlags(uint8_t value, uint16_t result);
+    void taxSetFlags();
+    void taySetFlags();
+    void tsxSetFlags();
+    void txaSetFlags();
+    void tyaSetFlags();
 };
