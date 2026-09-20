@@ -13,6 +13,7 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 
 add_executable(emulators-collection
+    src/emulators/CPU/CPU65/CPU65.cc
     src/main.cc
     src/emulators/console/chip_8/chip8.cc
     src/game/game.cc
@@ -23,6 +24,7 @@ add_executable(emulators-collection
 
 target_include_directories(emulators-collection
     PRIVATE
+        src/emulators/CPU
         src/emulators/console/chip_8
         src/emulator_schema
         src/game

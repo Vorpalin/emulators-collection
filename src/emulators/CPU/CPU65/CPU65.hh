@@ -39,4 +39,5 @@ private:
 
     void ldaSetFlags();
     void adcSetFlags(uint8_t value,uint16_t result);
+    void andSetFlags();
 };
