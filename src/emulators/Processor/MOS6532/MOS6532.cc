@@ -97,3 +97,13 @@ void MOS6532::update(int cpu_cycles) {
         }
     }
 }
+
+void MOS6532::setSwcha(uint8_t v) 
+{ 
+    io_ports[0] = v;
+}
+
+void MOS6532::setSwchb(uint8_t v) 
+{
+     io_ports[1] = v; 
+}

@@ -11,14 +11,14 @@ void CPU65::reset() {
     A = 0;
     X = 0;
     Y = 0;
-    SP = 0x0100; // Stack Pointer starts at 0x0100
+    SP = 0xFD; // Stack Pointer starts at 0xFD after reset
     const uint8_t lowByte = bus->readMemory(0xFFFC);
     const uint8_t highByte = bus->readMemory(0xFFFD);
     PC = static_cast<uint16_t>(lowByte) |
          (static_cast<uint16_t>(highByte) << 8);
     C = 0;
     Z = 0;
-    I = 0;
+    I = 1; // Interrupts are disabled after reset
     D = 0;
     B = 0;
     V = 0;
@@ -47,6 +47,15 @@ uint8_t CPU65::readMemory(uint32_t &cycles, uint16_t address) {
 void CPU65::writeMemory(uint32_t &cycles, uint16_t address, uint8_t value) {
     bus->writeMemory(address, value);
     cycles++;
+}
+void CPU65::push(uint32_t &cycles, uint8_t v) { 
+    writeMemory(cycles, 0x0100 | SP, v); 
+    --SP; 
+}
+
+uint8_t CPU65::pull(uint32_t &cycles) {
+     ++SP; 
+     return readMemory(cycles, 0x0100 | SP); 
 }
 
 void CPU65::zeroPageAddX(uint32_t &cycles, uint16_t &address) {
@@ -181,7 +190,7 @@ uint32_t CPU65::execute() {
         }
         case INS_ADC_INDX: // ADC (Indirect,X)
         {
-            uint16_t zpAddr = fetch16(cycles);
+            uint16_t zpAddr = fetch(cycles);
             this->zeroPageAddX(cycles, zpAddr);
             uint16_t addr = this->readMemory(cycles, zpAddr) | (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
             uint8_t value = this->readMemory(cycles, addr);
@@ -737,8 +746,8 @@ uint32_t CPU65::execute() {
             uint16_t addr = fetch16(cycles);
             uint16_t returnAddr = PC - 1; // Address of the next instruction after JSR
             ++cycles; // Increment cycles for the operation
-            writeMemory(cycles, SP--, (returnAddr >> 8) & 0xFF); // Push high byte
-            writeMemory(cycles, SP--, returnAddr & 0xFF);        // Push low byte
+            push(cycles, (returnAddr >> 8) & 0xFF); // Push high byte
+            push(cycles, returnAddr & 0xFF);        // Push low byte
             PC = addr;
             break;
         }
@@ -941,20 +950,20 @@ uint32_t CPU65::execute() {
         }
         case INS_PHA: // PHA (Push Accumulator)
         {
-            writeMemory(cycles, SP--, A);
+            push(cycles, A);
             ++cycles; // Increment cycles for the operation
             break;
         }
         case INS_PHP: // PHP (Push Processor Status)
         {
             uint8_t status = (N << 7) | (V << 6) | (1 << 5) | (B << 4) | (D << 3) | (I << 2) | (Z << 1) | C;
-            writeMemory(cycles, SP--, status);
+            push(cycles, status);
             ++cycles; // Increment cycles for the operation
             break;
         }
         case INS_PLA: // PLA (Pull Accumulator)
         {
-            A = readMemory(cycles, ++SP);
+            A = pull(cycles);
             ++cycles; // Increment cycles for the operation
             ldaSetFlags();
             ++cycles; // Increment cycles for the operation
@@ -962,7 +971,7 @@ uint32_t CPU65::execute() {
         }
         case INS_PLP: // PLP (Pull Processor Status)
         {
-            uint8_t status = readMemory(cycles, ++SP);
+            uint8_t status = pull(cycles);
             ++cycles; // Increment cycles for the operation
             plpSetFlags(status);
             ++cycles; // Increment cycles for the operation
@@ -1059,16 +1068,16 @@ uint32_t CPU65::execute() {
         case INS_RTI: // RTI (Return from Interrupt)
         {
             rtiSetFlags(cycles);
-            uint8_t lowByte = readMemory(cycles, ++SP);
-            uint8_t highByte = readMemory(cycles, ++SP);
+            uint8_t lowByte = pull(cycles);
+            uint8_t highByte = pull(cycles);
             PC = (highByte << 8) | lowByte;
             ++cycles; // Increment cycles for the operation
             break;
         }
         case INS_RTS: // RTS (Return from Subroutine)
         {
-            uint8_t lowByte = readMemory(cycles, ++SP);
-            uint8_t highByte = readMemory(cycles, ++SP);
+            uint8_t lowByte = pull(cycles);
+            uint8_t highByte = pull(cycles);
             PC = ((highByte << 8) | lowByte) + 1; // Return to the instruction after JSR
             ++cycles; // Increment cycles for the operation
             ++cycles; // Increment cycles for the operation

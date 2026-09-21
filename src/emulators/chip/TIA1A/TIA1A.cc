@@ -66,7 +66,7 @@ void TIA1A::tick()
 
 bool TIA1A::playfieldBit(int x) const
 {
-  int i = x / 4; // 0..39
+  int i = x / 4;
   if (i >= 20)
     i = (ctrlpf_ & 1) ? 39 - i : i - 20;
   if (i < 4)
@@ -375,4 +375,28 @@ uint8_t TIA1A::read(uint16_t addr) const
     default:
       return 0x00;
     }
+}
+
+void TIA1A::setFire(int player, bool pressed) { 
+  fire_[player & 1] = pressed; 
+}
+
+bool TIA1A::cpuHalted() const 
+{ 
+  return wsync_; 
+}
+
+bool TIA1A::frameReady() const 
+{
+    return frameReady_; 
+}
+
+void TIA1A::clearFrameReady() 
+{ 
+  frameReady_ = false; 
+}
+
+const uint8_t* TIA1A::frame() const 
+{ 
+  return frame_.data(); 
 }

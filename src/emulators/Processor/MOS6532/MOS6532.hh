@@ -15,8 +15,8 @@ class MOS6532 {
 
         void update(int cpu_cycles);
 
-        void setSwcha(uint8_t v) { io_ports[0] = v; }
-        void setSwchb(uint8_t v) { io_ports[1] = v; }
+        void setSwcha(uint8_t v);
+        void setSwchb(uint8_t v);
     private:
         std::array<uint8_t, 128> ram; // 128 bytes of RAM
         std::array<uint8_t, 2> io_ports;  // Ports d'E/S (Port A et Port B)

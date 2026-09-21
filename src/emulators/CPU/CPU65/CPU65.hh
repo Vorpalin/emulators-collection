@@ -73,4 +73,7 @@ private:
     void tsxSetFlags();
     void txaSetFlags();
     void tyaSetFlags();
+
+    void push(uint32_t &cycles, uint8_t v);
+    uint8_t pull(uint32_t &cycles);
 };

@@ -18,14 +18,14 @@ public:
   void write(uint16_t addr, uint8_t value);
   uint8_t read(uint16_t addr) const;
 
-  bool cpuHalted() const { return wsync_; }
+  bool cpuHalted() const;
 
-  bool frameReady() const { return frameReady_; }
-  void clearFrameReady() { frameReady_ = false; }
+  bool frameReady() const;
+  void clearFrameReady();
 
-  const uint8_t* frame() const { return frame_.data(); }
+  const uint8_t* frame() const;
 
-  void setFire(int player, bool pressed) { fire_[player & 1] = pressed; }
+  void setFire(int player, bool pressed);
 
 private:
   struct Player

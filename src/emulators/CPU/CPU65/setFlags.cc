@@ -167,8 +167,8 @@ void CPU65::rorSetFlags(uint32_t &cycles)
 
 void CPU65::rtiSetFlags(uint32_t &cycles)
 {
-    uint8_t status = readMemory(cycles, ++SP);
-    --SP; // Adjust stack pointer after reading status
+    uint8_t status = pull(cycles);
+    
     N = (status >> 7) & 1;
     V = (status >> 6) & 1;
     B = (status >> 4) & 1;
