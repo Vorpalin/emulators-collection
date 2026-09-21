@@ -51,4 +51,6 @@ void Cartbridge::loadROM(std::string &filename) {
         romData.clear(); // Clear the ROM data vector on error
         return;
     }
+
+    std::cout << "Loaded ROM: " << size << " bytes\n";
 }

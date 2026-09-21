@@ -5,6 +5,48 @@
 #include <cstdint>
 #include <vector>
 
+#include <array>
+#include <cmath>
+
+namespace {
+
+// Approximate NTSC palette, generated via YIQ -> RGB.
+std::array<uint32_t, 128> buildPalette()
+{
+    std::array<uint32_t, 128> pal{};
+    const double kPi = 3.14159265358979323846;
+
+    for (int c = 0; c < 128; ++c) {
+        const int hue = c >> 3;         // color byte bits 7-4 (index is byte >> 1)
+        const int lum = c & 7;          // color byte bits 3-1
+
+        const double y = 0.08 + 0.92 * (lum / 7.0);
+        double i = 0.0, q = 0.0;
+
+        if (hue != 0) {
+            const double angle = (-40.0 + (hue - 1) * 24.0) * kPi / 180.0;
+            const double sat = 0.28;
+            i = sat * std::cos(angle);
+            q = sat * std::sin(angle);
+        }
+
+        auto clamp = [](double v) {
+            return static_cast<uint32_t>(std::fmin(std::fmax(v, 0.0), 1.0) * 255.0 + 0.5);
+        };
+
+        const uint32_t r = clamp(y + 0.956 * i + 0.621 * q);
+        const uint32_t g = clamp(y - 0.272 * i - 0.647 * q);
+        const uint32_t b = clamp(y - 1.106 * i + 1.703 * q);
+
+        pal[c] = 0xFF000000u | (r << 16) | (g << 8) | b;
+    }
+    return pal;
+}
+
+const std::array<uint32_t, 128> kPalette = buildPalette();
+
+}
+
 Atari2600::Atari2600()
     : bus(), renderer(nullptr), frameTexture(nullptr), isRunning(true) {
     // Initialize the Atari 2600 emulator
@@ -42,10 +84,7 @@ void Atari2600::renderFrame() {
     std::vector<uint32_t> pixels(TIA1A::kWidth * TIA1A::kHeight);
     const uint8_t* frame = bus.frame();
     for (size_t i = 0; i < pixels.size(); ++i) {
-        const uint8_t intensity = static_cast<uint8_t>(
-            (static_cast<unsigned int>(frame[i] & 0x7F) * 255) / 0x7F);
-        pixels[i] = 0xFF000000u | (static_cast<uint32_t>(intensity) << 16) |
-                    (static_cast<uint32_t>(intensity) << 8) | intensity;
+        pixels[i] = kPalette[(frame[i] >> 1) & 0x7F];
     }
 
     SDL_UpdateTexture(frameTexture, nullptr, pixels.data(),
@@ -62,6 +101,7 @@ void Atari2600::reset() {
 }
 
 int Atari2600::run() {
+    isRunning = true; // Ensure the running state is true at the start of the run loop
     while (isRunning) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -70,6 +110,22 @@ int Atari2600::run() {
                  event.key.keysym.sym == SDLK_ESCAPE)) {
                 isRunning = false;
             }
+
+            const Uint8* keys = SDL_GetKeyboardState(nullptr);
+
+            uint8_t swcha = 0xFF;                       // 1 = not pressed
+            if (keys[SDL_SCANCODE_RIGHT]) swcha &= ~0x80;
+            if (keys[SDL_SCANCODE_LEFT])  swcha &= ~0x40;
+            if (keys[SDL_SCANCODE_DOWN])  swcha &= ~0x20;
+            if (keys[SDL_SCANCODE_UP])    swcha &= ~0x10;
+
+            uint8_t swchb = 0xFF;
+            if (keys[SDL_SCANCODE_RETURN]) swchb &= ~0x01; // Reset
+            if (keys[SDL_SCANCODE_TAB])    swchb &= ~0x02; // Select
+
+            const bool fire0 = keys[SDL_SCANCODE_SPACE] || keys[SDL_SCANCODE_Z];
+
+            bus.setInput(swcha, swchb, fire0, false);
         }
 
         for (int cycle = 0; cycle < 10000 && isRunning && !bus.frameReady();

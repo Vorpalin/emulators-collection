@@ -24,6 +24,7 @@ public:
     bool frameReady() const { return tia1a.frameReady(); }
     void clearFrameReady() { tia1a.clearFrameReady(); }
 
+    void setInput(uint8_t swcha, uint8_t swchb, bool fire0, bool fire1);
 private:
     CPU65 cpu; // Instance of the CPU65 class for the Atari 2600
     Cartbridge cartbridge; // Instance of the Cartbridge class for ROM handling
