@@ -11,6 +11,7 @@ class Atari2600 : public Emulator {
 
     public:
         Atari2600();
+        ~Atari2600();
         int run() override;
 
         void loadProgram(const std::string& filename) override;
@@ -20,6 +21,9 @@ class Atari2600 : public Emulator {
     private:
         Atari2600Bus bus;
         SDL_Renderer* renderer;
+        SDL_Texture* frameTexture;
 
         bool isRunning;
+
+        void renderFrame();
 };

@@ -34,16 +34,25 @@ void Atari2600Bus::writeMemory(uint16_t address, uint8_t value)
         tia1a.write(address, value);
     else if (address < 0x0100)
         mos6532.write(address - 0x0080, value);
+    else if (address >= 0x1000)
+        cartbridge.write(address - 0x1000, value);
 }
 
 void Atari2600Bus::reset() {
-    cpu.reset(); // Reset the CPU
     cartbridge.reset(); // Reset the Cartbridge
+    cpu.reset(); // Reset the CPU
     mos6532.reset(); // Reset the MOS6532
     tia1a.reset(); // Reset the TIA1A
 }
 
 void Atari2600Bus::tick() {
+    if (tia1a.cpuHalted()) {
+        do {
+            tia1a.tick();
+        } while (tia1a.cpuHalted());
+        return;
+    }
+
     // Advance the bus by one clock cycle
     uint32_t cpuCycles = cpu.execute();
 

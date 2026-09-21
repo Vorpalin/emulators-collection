@@ -19,6 +19,11 @@ public:
     void writeMemory(uint16_t address, uint8_t value) override;
 
     void tick() override; // Advance the bus by one clock cycle
+
+    const uint8_t* frame() const { return tia1a.frame(); }
+    bool frameReady() const { return tia1a.frameReady(); }
+    void clearFrameReady() { tia1a.clearFrameReady(); }
+
 private:
     CPU65 cpu; // Instance of the CPU65 class for the Atari 2600
     Cartbridge cartbridge; // Instance of the Cartbridge class for ROM handling

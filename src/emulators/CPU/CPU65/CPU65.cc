@@ -12,7 +12,10 @@ void CPU65::reset() {
     X = 0;
     Y = 0;
     SP = 0x0100; // Stack Pointer starts at 0x0100
-    PC = 0xFFFC; // Reset vector address
+    const uint8_t lowByte = bus->readMemory(0xFFFC);
+    const uint8_t highByte = bus->readMemory(0xFFFD);
+    PC = static_cast<uint16_t>(lowByte) |
+         (static_cast<uint16_t>(highByte) << 8);
     C = 0;
     Z = 0;
     I = 0;
