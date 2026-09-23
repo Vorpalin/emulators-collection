@@ -14,8 +14,8 @@ WORKDIR /app
 
 COPY . .
 
-RUN mkdir build && cd build \
-    && cmake -G "Ninja" .. \
-    && cmake --build .
+RUN cmake -S . -B build -G Ninja
+
+RUN cmake --build build
 
 CMD ["./build/emulators-collection"]
