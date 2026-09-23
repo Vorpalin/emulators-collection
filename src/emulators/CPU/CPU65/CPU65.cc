@@ -12,6 +12,7 @@ void CPU65::reset() {
     X = 0;
     Y = 0;
     SP = 0xFD; // Stack Pointer starts at 0xFD after reset
+    halted = false;
     const uint8_t lowByte = bus->readMemory(0xFFFC);
     const uint8_t highByte = bus->readMemory(0xFFFD);
     PC = static_cast<uint16_t>(lowByte) |
@@ -177,8 +178,215 @@ uint8_t CPU65::getStatus(bool breakFlag) const
         static_cast<uint8_t>(C);
 }
 
+void CPU65::isb(uint16_t addr, uint32_t& cycles)
+{
+    // INC memory
+    uint8_t value = readMemory(cycles, addr);
+    ++value;
+    writeMemory(cycles, addr, value);
+
+    // SBC memory
+    sbc(value);
+}
+
+void CPU65::slo(uint16_t addr, uint32_t& cycles)
+{
+    uint8_t value = readMemory(cycles, addr);
+
+    // ASL memory
+    value = asl(value);
+
+    writeMemory(cycles, addr, value);
+
+    // ORA
+    A |= value;
+
+    Z = (A == 0);
+    N = (A & 0x80) != 0;
+}
+
+void CPU65::rla(uint16_t addr, uint32_t& cycles)
+{
+    uint8_t value = readMemory(cycles, addr);
+
+    value = rol(value);
+
+    writeMemory(cycles, addr, value);
+
+    // AND
+    A &= value;
+
+    Z = (A == 0);
+    N = (A & 0x80) != 0;
+}
+
+void CPU65::sre(uint16_t addr, uint32_t& cycles)
+{
+    uint8_t value = readMemory(cycles, addr);
+
+    // LSR M
+    value = lsr(value);
+
+    writeMemory(cycles, addr, value);
+
+    // EOR M
+    A ^= value;
+
+    Z = (A == 0);
+    N = (A & 0x80) != 0;
+
+    // V is unchanged
+}
+
+void CPU65::rra(uint16_t addr, uint32_t& cycles)
+{
+    uint8_t value = readMemory(cycles, addr);
+
+    // ROR M
+    value = ror(value);
+
+    writeMemory(cycles, addr, value);
+
+    // ADC M
+    adc(value);
+}
+
+void CPU65::ahx(uint16_t addr, uint8_t high)
+{
+    uint8_t value =
+        A & X & static_cast<uint8_t>(high + 1);
+
+    bus->writeMemory(addr, value);
+}
+
+void CPU65::shy(uint16_t addr)
+{
+    uint8_t high = static_cast<uint8_t>(addr >> 8);
+
+    uint8_t value =
+        Y & static_cast<uint8_t>(high + 1);
+
+    bus->writeMemory(addr, value);
+}
+
+void CPU65::shx(uint16_t addr)
+{
+    uint8_t high = static_cast<uint8_t>(addr >> 8);
+
+    uint8_t value =
+        X & static_cast<uint8_t>(high + 1);
+
+    bus->writeMemory(addr, value);
+}
+
+void CPU65::tas(uint16_t addr)
+{
+    SP = A & X;
+
+    uint8_t high = static_cast<uint8_t>(addr >> 8);
+
+    uint8_t value =
+        SP & static_cast<uint8_t>(high + 1);
+
+    bus->writeMemory(addr, value);
+}
+
+void CPU65::xaa(uint8_t value)
+{
+    constexpr uint8_t MAGIC = 0xEE;
+
+    A = X & value & MAGIC;
+
+    Z = (A == 0);
+    N = (A & 0x80) != 0;
+}
+
+void CPU65::dcp(uint16_t addr, uint32_t& cycles)
+{
+    uint8_t value = readMemory(cycles, addr);
+
+    --value;
+
+    writeMemory(cycles, addr, value);
+
+    cmpSetFlags(value);
+}
+
+void CPU65::alr(uint8_t value)
+{
+    A &= value;
+
+    C = (A & 0x01) != 0;
+
+    A >>= 1;
+
+    Z = (A == 0);
+    N = false;
+}
+
+void CPU65::arr(uint8_t value)
+{
+    A &= value;
+
+    bool oldCarry = C;
+
+    C = (A & 0x01) != 0;
+
+    A >>= 1;
+
+    if (oldCarry)
+        A |= 0x80;
+
+    Z = (A == 0);
+    N = (A & 0x80) != 0;
+
+    C = (A & 0x40) != 0;
+    V = ((A & 0x40) != 0) ^ ((A & 0x20) != 0);
+}
+
+void CPU65::axs(uint8_t value)
+{
+    uint8_t ax = A & X;
+
+    uint16_t result =
+        static_cast<uint16_t>(ax) -
+        static_cast<uint16_t>(value);
+
+    X = static_cast<uint8_t>(result);
+
+    C = ax >= value;
+    Z = (X == 0);
+    N = (X & 0x80) != 0;
+}
+
+void CPU65::las(uint16_t addr, uint32_t& cycles)
+{
+    uint8_t value = readMemory(cycles, addr);
+
+    value &= SP;
+
+    A = value;
+    X = value;
+    SP = value;
+
+    Z = (value == 0);
+    N = (value & 0x80) != 0;
+}
+
+void CPU65::anc(uint8_t value)
+{
+    A &= value;
+
+    Z = (A == 0);
+    N = (A & 0x80) != 0;
+
+    C = N;
+}
+
 uint32_t CPU65::execute() {
     uint32_t cycles = 0;
+    if (halted)
+        return cycles;
     uint8_t instruction = fetch(cycles);
     
     switch (instruction) {
@@ -1451,6 +1659,761 @@ uint32_t CPU65::execute() {
             tyaSetFlags();
             break;
         }
+        case INS_LAX_ZP:
+        {
+            uint8_t addr = fetch(cycles);
+            uint8_t value = readMemory(cycles, addr);
+
+            A = value;
+            X = value;
+
+            Z = (value == 0);
+            N = (value & 0x80) != 0;
+
+            break;
+        }
+        case INS_LAX_ZPY:
+        {
+            uint8_t addr = fetch(cycles);
+            addr += Y;
+
+            uint8_t value = readMemory(cycles, addr);
+
+            A = value;
+            X = value;
+
+            Z = (value == 0);
+            N = (value & 0x80) != 0;
+
+            break;
+        }
+        case INS_LAX_ABS:
+        {
+            uint16_t addr = fetch16(cycles);
+            uint8_t value = readMemory(cycles, addr);
+
+            A = value;
+            X = value;
+
+            Z = (value == 0);
+            N = (value & 0x80) != 0;
+
+            break;
+        }
+        case INS_LAX_ABSY:
+        {
+            uint16_t addr = absIndexed(cycles, Y, false);
+            uint8_t value = readMemory(cycles, addr);
+
+            A = value;
+            X = value;
+
+            Z = (value == 0);
+            N = (value & 0x80) != 0;
+
+            break;
+        }
+        case INS_LAX_INDX:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
+
+            uint16_t addr =
+                readMemory(cycles, ptr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(ptr + 1))
+                ) << 8);
+
+            uint8_t value = readMemory(cycles, addr);
+
+            A = value;
+            X = value;
+
+            Z = (value == 0);
+            N = (value & 0x80) != 0;
+
+            break;
+        }
+        case INS_LAX_INDY:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint16_t base =
+                readMemory(cycles, zpAddr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(zpAddr + 1))
+                ) << 8);
+
+            uint16_t addr = base + Y;
+
+            if ((base & 0xFF00) != (addr & 0xFF00))
+                ++cycles;
+
+            uint8_t value = readMemory(cycles, addr);
+
+            A = value;
+            X = value;
+
+            Z = (value == 0);
+            N = (value & 0x80) != 0;
+
+            break;
+        }
+        case INS_SAX_ZP:
+        {
+            uint8_t addr = fetch(cycles);
+            writeMemory(cycles, addr, A & X);
+            break;
+        }
+        case INS_SAX_ZPY:
+        {
+            uint8_t addr = fetch(cycles);
+            addr = static_cast<uint8_t>(addr + Y);
+            ++cycles; // Increment cycles for the operation
+
+            writeMemory(cycles, addr, A & X);
+            break;
+        }
+        case INS_SAX_ABS:
+        {
+            uint16_t addr = fetch16(cycles);
+            writeMemory(cycles, addr, A & X);
+            break;
+        }
+        case INS_ISB_ZP:
+        {
+            uint8_t addr = fetch(cycles);
+            isb(addr, cycles);
+            cycles = 6; // Increment cycles for the operation
+            break;
+        }
+        case INS_ISB_ZPX:
+        {
+            uint8_t addr = fetch(cycles);
+            addr = static_cast<uint8_t>(addr + X);
+            cycles = 6;
+            isb(addr, cycles);
+            break;
+        }
+        case INS_ISB_ABS:
+        {
+            uint16_t addr = fetch16(cycles);
+            isb(addr, cycles);
+            cycles = 6;
+            break;
+        }
+        case INS_ISB_ABSX:
+        {   
+            uint16_t addr = absIndexed(cycles, X, true);
+            isb(addr, cycles);
+            cycles = 7;
+            break;
+        }
+        case INS_ISB_ABSY:
+        {
+            uint16_t addr = absIndexed(cycles, Y, true);
+            isb(addr, cycles);
+            cycles = 7;
+            break;
+        }
+        case INS_ISB_INDX:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
+
+            uint16_t addr =
+                readMemory(cycles, ptr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(ptr + 1))
+                ) << 8);
+
+            isb(addr, cycles);
+            cycles = 8;
+            break;
+        }
+        case INS_ISB_INDY:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint16_t base =
+                readMemory(cycles, zpAddr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(zpAddr + 1))
+                ) << 8);
+
+            uint16_t addr = base + Y;
+
+            // Indexed indirect read-modify-write:
+            // extra cycle regardless of page crossing.
+            ++cycles;
+
+            isb(addr, cycles);
+            cycles = 8;
+            break;
+        }
+        case INS_SLO_ZP:
+        {
+            uint8_t addr = fetch(cycles);
+            slo(addr, cycles);
+            cycles = 5; // Increment cycles for the operation
+            break;
+        }
+        case INS_SLO_ZPX:
+        {
+            uint8_t addr = fetch(cycles);
+            addr = static_cast<uint8_t>(addr + X);
+
+            slo(addr, cycles);
+            cycles = 6; // Increment cycles for the operation
+            break;
+        }
+        case INS_SLO_ABS:
+        {
+            uint16_t addr = fetch16(cycles);
+            slo(addr, cycles);
+            cycles = 6; // Increment cycles for the operation
+            break;
+        }
+        case INS_SLO_ABSX:
+        {
+            uint16_t addr = absIndexed(cycles, X, true);
+            slo(addr, cycles);
+            cycles = 7; // Increment cycles for the operation
+            break;
+        }
+        case INS_SLO_ABSY:
+        {
+            uint16_t addr = absIndexed(cycles, Y, true);
+            slo(addr, cycles);
+            cycles = 7; // Increment cycles for the operation
+            break;
+        }
+        case INS_SLO_INDX:
+        {
+            uint8_t zpAddr = fetch(cycles);
+            uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
+
+            uint16_t addr =
+                readMemory(cycles, ptr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(ptr + 1))
+                ) << 8);
+
+            slo(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_SLO_INDY:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint16_t base =
+                readMemory(cycles, zpAddr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(zpAddr + 1))
+                ) << 8);
+
+            uint16_t addr = base + Y;
+
+            ++cycles;
+
+            slo(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_RLA_ZP:
+        {
+            uint8_t addr = fetch(cycles);
+            rla(addr, cycles);
+            cycles = 5; // Increment cycles for the operation
+            break;
+        }
+        case INS_RLA_ZPX:
+        {
+            uint8_t addr = fetch(cycles);
+            addr = static_cast<uint8_t>(addr + X);
+
+            rla(addr, cycles);
+            cycles = 6; // Increment cycles for the operation
+            break;
+        }
+        case INS_RLA_ABS:
+        {
+            uint16_t addr = fetch16(cycles);
+            rla(addr, cycles);
+            cycles = 6; // Increment cycles for the operation
+            break;
+        }
+        case INS_RLA_ABSX:
+        {
+            uint16_t addr = absIndexed(cycles, X, true);
+            rla(addr, cycles);
+            cycles = 7; // Increment cycles for the operation
+            break;
+        }
+        case INS_RLA_ABSY:
+        {
+            uint16_t addr = absIndexed(cycles, Y, true);
+            rla(addr, cycles);
+            cycles = 7; // Increment cycles for the operation
+            break;
+        }
+        case INS_RLA_INDX:
+        {
+            uint8_t zpAddr = fetch(cycles);
+            uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
+
+            uint16_t addr =
+                readMemory(cycles, ptr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(ptr + 1))
+                ) << 8);
+
+            rla(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_RLA_INDY:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint16_t base =
+                readMemory(cycles, zpAddr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(zpAddr + 1))
+                ) << 8);
+
+            uint16_t addr = base + Y;
+
+            ++cycles;
+
+            rla(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_SRE_ZP:
+        {
+            uint8_t addr = fetch(cycles);
+            sre(addr, cycles);
+            cycles = 5; // Increment cycles for the operation
+            break;
+        }
+        case INS_SRE_ZPX:
+        {
+            uint8_t addr = fetch(cycles);
+            addr = static_cast<uint8_t>(addr + X);
+
+            sre(addr, cycles);
+            cycles = 6; // Increment cycles for the operation
+            break;
+        }
+        case INS_SRE_ABS:
+        {
+            uint16_t addr = fetch16(cycles);
+            sre(addr, cycles);
+            cycles = 6; // Increment cycles for the operation
+            break;
+        }
+        case INS_SRE_ABSX:
+        {
+            uint16_t addr = absIndexed(cycles, X, true);
+            sre(addr, cycles);
+            cycles = 7; // Increment cycles for the operation
+            break;
+        }
+        case INS_SRE_ABSY:
+        {
+            uint16_t addr = absIndexed(cycles, Y, true);
+            sre(addr, cycles);
+            cycles = 7; // Increment cycles for the operation
+            break;
+        }
+        case INS_SRE_INDX:
+        {
+            uint8_t zpAddr = fetch(cycles);
+            uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
+
+            uint16_t addr =
+                readMemory(cycles, ptr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(ptr + 1))
+                ) << 8);
+
+            sre(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_SRE_INDY:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint16_t base =
+                readMemory(cycles, zpAddr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(zpAddr + 1))
+                ) << 8);
+
+            uint16_t addr = base + Y;
+
+            // Read-modify-write: extra cycle
+            ++cycles;
+
+            sre(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_RRA_ZP:
+        {
+            uint8_t addr = fetch(cycles);
+            rra(addr, cycles);
+            cycles = 5; // Increment cycles for the operation
+            break;
+        }
+        case INS_RRA_ZPX:
+        {
+            uint8_t addr = fetch(cycles);
+            addr = static_cast<uint8_t>(addr + X);
+
+            rra(addr, cycles);
+            cycles = 6; // Increment cycles for the operation
+            break;
+        }
+        case INS_RRA_ABS:
+        {
+            uint16_t addr = fetch16(cycles);
+            rra(addr, cycles);
+            cycles = 6; // Increment cycles for the operation
+            break;
+        }
+        case INS_RRA_ABSX:
+        {
+            uint16_t addr = absIndexed(cycles, X, true);
+            rra(addr, cycles);
+            cycles = 7; // Increment cycles for the operation
+            break;
+        }
+        case INS_RRA_ABSY:
+        {
+            uint16_t addr = absIndexed(cycles, Y, true);
+            rra(addr, cycles);
+            cycles = 7; // Increment cycles for the operation
+            break;
+        }
+        case INS_RRA_INDX:
+        {
+            uint8_t zpAddr = fetch(cycles);
+            uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
+
+            uint16_t addr =
+                readMemory(cycles, ptr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(ptr + 1))
+                ) << 8);
+
+            rra(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_RRA_INDY:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint16_t base =
+                readMemory(cycles, zpAddr) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(zpAddr + 1))
+                ) << 8);
+
+            uint16_t addr = base + Y;
+
+            // Read-modify-write: extra cycle
+            ++cycles;
+
+            rra(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_AHX_ABSY:
+        {
+            uint16_t base = fetch16(cycles);
+            uint16_t addr = base + Y;
+
+            uint8_t high = static_cast<uint8_t>(addr >> 8);
+
+            ++cycles; // indexed store
+
+            ahx(addr, high);
+            break;
+        }
+        case INS_AHX_INDY:
+        {
+            uint8_t zp = fetch(cycles);
+
+            uint16_t base =
+                readMemory(cycles, zp) |
+                (static_cast<uint16_t>(
+                    readMemory(cycles, static_cast<uint8_t>(zp + 1))
+                ) << 8);
+
+            uint16_t addr = base + Y;
+
+            uint8_t high = static_cast<uint8_t>(addr >> 8);
+
+            ++cycles; // (zp),Y store
+
+            ahx(addr, high);
+            break;
+        }
+        case INS_SHY_ABSX:
+        {
+            uint16_t base = fetch16(cycles);
+            uint16_t addr = base + X;
+
+            ++cycles; // indexed store
+
+            shy(addr);
+            cycles = 5; // Increment cycles for the operation
+            break;
+        }
+        case INS_SHX_ABSY:
+        {
+            uint16_t base = fetch16(cycles);
+            uint16_t addr = base + Y;
+
+            ++cycles; // indexed store
+
+            shx(addr);
+            cycles = 5; // Increment cycles for the operation
+            break;
+        }
+        case INS_TAS_ABSY:
+        {
+            uint16_t base = fetch16(cycles);
+            uint16_t addr = base + Y;
+
+            ++cycles; // indexed store
+
+            tas(addr);
+            cycles = 5; // Increment cycles for the operation
+            break;
+        }
+        case INS_XAA_IMM:
+        {
+            uint8_t value = fetch(cycles);
+            xaa(value);
+            break;
+        }
+        case INS_DCP_ZP:
+        {
+            uint8_t addr = fetch(cycles);
+
+            dcp(addr, cycles);
+
+            break;
+        }
+        case INS_DCP_ZPX:
+        {
+            uint8_t addr = fetch(cycles);
+
+            addr = static_cast<uint8_t>(addr + X);
+
+            dcp(addr, cycles);
+
+            break;
+        }
+        case INS_DCP_ABS:
+        {
+            uint16_t addr = fetch16(cycles);
+
+            dcp(addr, cycles);
+
+            break;
+        }
+        case INS_DCP_ABSX:
+        {
+            uint16_t addr = absIndexed(cycles, X, true);
+
+            dcp(addr, cycles);
+
+            break;
+        }
+        case INS_DCP_ABSY:
+        {
+            uint16_t addr = absIndexed(cycles, Y, true);
+
+            dcp(addr, cycles);
+
+            break;
+        }
+        case INS_DCP_INDX:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint8_t ptr =
+                static_cast<uint8_t>(zpAddr + X);
+
+            uint16_t addr =
+                readMemory(cycles, ptr) |
+                (static_cast<uint16_t>(
+                    readMemory(
+                        cycles,
+                        static_cast<uint8_t>(ptr + 1)
+                    )
+                ) << 8);
+
+            dcp(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_DCP_INDY:
+        {
+            uint8_t zpAddr = fetch(cycles);
+
+            uint16_t base =
+                readMemory(cycles, zpAddr) |
+                (static_cast<uint16_t>(
+                    readMemory(
+                        cycles,
+                        static_cast<uint8_t>(zpAddr + 1)
+                    )
+                ) << 8);
+
+            uint16_t addr = base + Y;
+
+            ++cycles;
+
+            dcp(addr, cycles);
+            cycles = 8; // Increment cycles for the operation
+            break;
+        }
+        case INS_ALR_IMM:
+        {
+            uint8_t value = fetch(cycles);
+            alr(value);
+            break;
+        }
+        case INS_ARR_IMM:
+        {
+            uint8_t value = fetch(cycles);
+            arr(value);
+            break;
+        }
+        case INS_AXS_IMM:
+        {
+            uint8_t value = fetch(cycles);
+            axs(value);
+            break;
+        }
+        case INS_LAS_ABSY:
+        {
+            uint16_t addr = absIndexed(cycles, Y, false);
+
+            las(addr, cycles);
+
+            break;
+        }
+        case INS_KIL_02:
+        case INS_KIL_12:
+        case INS_KIL_22:
+        case INS_KIL_32:
+        case INS_KIL_42:
+        case INS_KIL_52:
+        case INS_KIL_62:
+        case INS_KIL_72:
+        case INS_KIL_92:
+        case INS_KIL_B2:
+        case INS_KIL_D2:
+        case INS_KIL_F2:
+        {
+            halted = true;
+            break;
+        }
+        case INS_SBC_IMM_ILLEGAL:
+        {
+            uint8_t value = fetch(cycles);
+
+            sbc(value);
+            cycles = 2; // Increment cycles for the operation
+            break;
+        }
+        case INS_ANC_IMM_0B:
+        {
+            uint8_t value = fetch(cycles);
+            anc(value);
+            break;
+        }
+
+        case INS_ANC_IMM_2B:
+        {
+            uint8_t value = fetch(cycles);
+            anc(value);
+            break;
+        }
+        case INS_NOP_1A:
+        case INS_NOP_3A:
+        case INS_NOP_5A:
+        case INS_NOP_7A:
+        case INS_NOP_DA:
+        case INS_NOP_FA:
+        {
+            ++cycles;
+            break;
+        }
+        case INS_NOP_IMM_80:
+        case INS_NOP_IMM_82:
+        case INS_NOP_IMM_89:
+        case INS_NOP_IMM_C2:
+        case INS_NOP_IMM_E2:
+        {
+            fetch(cycles);
+            break;
+        }
+        case INS_NOP_ZP_04:
+        case INS_NOP_ZP_44:
+        case INS_NOP_ZP_64:
+        {
+            uint8_t addr = fetch(cycles);
+            readMemory(cycles, addr);
+            break;
+        }
+        case INS_NOP_ZPX_14:
+        case INS_NOP_ZPX_34:
+        case INS_NOP_ZPX_54:
+        case INS_NOP_ZPX_74:
+        case INS_NOP_ZPX_D4:
+        case INS_NOP_ZPX_F4:
+        {
+            uint8_t addr = fetch(cycles);
+            addr = static_cast<uint8_t>(addr + X);
+
+            readMemory(cycles, addr);
+
+            break;
+        }
+        case INS_NOP_ABS_0C:
+        {
+            uint16_t addr = fetch16(cycles);
+
+            readMemory(cycles, addr);
+
+            break;
+        }
+        case INS_NOP_ABSX_1C:
+        case INS_NOP_ABSX_3C:
+        case INS_NOP_ABSX_5C:
+        case INS_NOP_ABSX_7C:
+        case INS_NOP_ABSX_DC:
+        case INS_NOP_ABSX_FC:
+        {
+            uint16_t addr = absIndexed(cycles, X, false);
+
+            readMemory(cycles, addr);
+
+            break;
+        }
+        
         default:
         {
             std::cerr << "Unknown instruction: " << std::hex << static_cast<int>(instruction) << std::endl;

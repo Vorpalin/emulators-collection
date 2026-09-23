@@ -37,6 +37,7 @@ private:
     uint8_t B : 1; // Break Command Flag
     uint8_t V : 1; // Overflow Flag
     uint8_t N : 1; // Negative Flag
+    bool halted;
 
     void zeroPageAddX(uint32_t &cycles, uint16_t &address);
     void zeroPageAddY(uint32_t &cycles, uint16_t &address);
@@ -88,4 +89,21 @@ private:
     uint16_t absIndexed(uint32_t &cycles, uint8_t idx, bool write);
     void branch(uint32_t &cycles, bool cond);
     uint8_t getStatus(bool breakFlag) const;
+
+    void isb(uint16_t addr, uint32_t& cycles);
+    void slo(uint16_t addr, uint32_t& cycles);
+    void rla(uint16_t addr, uint32_t& cycles);
+    void sre(uint16_t addr, uint32_t& cycles);
+    void rra(uint16_t addr, uint32_t& cycles);
+    void ahx(uint16_t addr, uint8_t high);
+    void shy(uint16_t addr);
+    void shx(uint16_t addr);
+    void tas(uint16_t addr);
+    void xaa(uint8_t value);
+    void dcp(uint16_t addr, uint32_t& cycles);
+    void alr(uint8_t value);
+    void arr(uint8_t value);
+    void axs(uint8_t value);
+    void las(uint16_t addr, uint32_t& cycles);
+    void anc(uint8_t value);
 };

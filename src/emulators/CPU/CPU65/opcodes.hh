@@ -265,4 +265,159 @@ enum Opcodes {
     INS_TYA = 0x98,
     
     // Illegal opcodes (undocumented)
+
+    // LAX (Load Accumulator and X Register) opcodes
+    INS_LAX_ZP = 0xA7,
+    INS_LAX_ZPY = 0xB7,
+    INS_LAX_ABS = 0xAF,
+    INS_LAX_ABSY = 0xBF,
+    INS_LAX_INDX = 0xA3,
+    INS_LAX_INDY = 0xB3,
+
+    // SAX (Store Accumulator and X Register) opcodes
+    INS_SAX_ZP = 0x87,
+    INS_SAX_ZPY = 0x97,
+    INS_SAX_ABS = 0x8F,
+
+    // DCP (Decrement Memory and Compare) opcodes
+    INS_DCP_ZP = 0xC7,
+    INS_DCP_ZPX = 0xD7,
+    INS_DCP_ABS = 0xCF,
+    INS_DCP_ABSX = 0xDF,
+    INS_DCP_ABSY = 0xDB,
+    INS_DCP_INDX = 0xC3,
+    INS_DCP_INDY = 0xD3,
+
+    // ISB (Increment Memory and Subtract with Carry) opcodes
+    INS_ISB_ZP = 0xE7,
+    INS_ISB_ZPX = 0xF7,
+    INS_ISB_ABS = 0xEF,
+    INS_ISB_ABSX = 0xFF,
+    INS_ISB_ABSY = 0xFB,
+    INS_ISB_INDX = 0xE3,
+    INS_ISB_INDY = 0xF3,
+
+    // SLO (Shift Left and OR with Accumulator) opcodes
+    INS_SLO_ZP = 0x07,
+    INS_SLO_ZPX = 0x17,
+    INS_SLO_ABS = 0x0F,
+    INS_SLO_ABSX = 0x1F,
+    INS_SLO_ABSY = 0x1B,
+    INS_SLO_INDX = 0x03,
+    INS_SLO_INDY = 0x13,
+
+    // RLA (Rotate Left and AND with Accumulator) opcodes
+    INS_RLA_ZP = 0x27,
+    INS_RLA_ZPX = 0x37,
+    INS_RLA_ABS = 0x2F,
+    INS_RLA_ABSX = 0x3F,
+    INS_RLA_ABSY = 0x3B,
+    INS_RLA_INDX = 0x23,
+    INS_RLA_INDY = 0x33,
+
+    // SRE (Shift Right and EOR with Accumulator) opcodes
+    INS_SRE_ZP = 0x47,
+    INS_SRE_ZPX = 0x57,
+    INS_SRE_ABS = 0x4F,
+    INS_SRE_ABSX = 0x5F,
+    INS_SRE_ABSY = 0x5B,
+    INS_SRE_INDX = 0x43,
+    INS_SRE_INDY = 0x53,
+
+    // RRA (Rotate Right and ADC with Accumulator) opcodes
+    INS_RRA_ZP = 0x67,
+    INS_RRA_ZPX = 0x77,
+    INS_RRA_ABS = 0x6F,
+    INS_RRA_ABSX = 0x7F,
+    INS_RRA_ABSY = 0x7B,
+    INS_RRA_INDX = 0x63,
+    INS_RRA_INDY = 0x73,
+
+    // AHX (AND High X) opcodes
+    INS_AHX_ABSY = 0x9F,
+    INS_AHX_INDY = 0x93,
+
+    // SHY (Store High Y) opcode
+    INS_SHY_ABSX = 0x9C,
+
+    // SHX (Store High X) opcode
+    INS_SHX_ABSY = 0x9E,
+
+    // TAS (Transfer Accumulator and Stack Pointer) opcode
+    INS_TAS_ABSY = 0x9B,
+
+    // XAA (Transfer Accumulator and X Register) opcode
+    INS_XAA_IMM = 0x8B,
+
+    // ANC (AND with Carry) opcode
+    INS_ANC_IMM_0B = 0x0B,
+    INS_ANC_IMM_2B = 0x2B,
+
+    // ALR/ASR (AND with LSR) opcode
+    INS_ALR_IMM = 0x4B,
+
+    // ARR (AND with ROR) opcode
+    INS_ARR_IMM = 0x6B,
+
+    // AXS/SBX (AND with X and Subtract with Borrow) opcode
+    INS_AXS_IMM = 0xCB,
+
+    // LAS (Load Accumulator and Stack Pointer) opcode
+    INS_LAS_ABSY = 0xBB,
+
+    // KIL/JAM (Illegal Opcode) opcodes
+    INS_KIL_02 = 0x02,
+    INS_KIL_12 = 0x12,
+    INS_KIL_22 = 0x22,
+    INS_KIL_32 = 0x32,
+    INS_KIL_42 = 0x42,
+    INS_KIL_52 = 0x52,
+    INS_KIL_62 = 0x62,
+    INS_KIL_72 = 0x72,
+    INS_KIL_92 = 0x92,
+    INS_KIL_B2 = 0xB2,
+    INS_KIL_D2 = 0xD2,
+    INS_KIL_F2 = 0xF2,
+
+    // SBC (Subtract with Carry) illegal opcode
+    INS_SBC_IMM_ILLEGAL = 0xEB,
+
+    // NOP (No Operation) illegal opcodes
+    INS_NOP_1A = 0x1A,
+    INS_NOP_3A = 0x3A,
+    INS_NOP_5A = 0x5A,
+    INS_NOP_7A = 0x7A,
+    INS_NOP_DA = 0xDA,
+    INS_NOP_FA = 0xFA,    
+
+    // NOP Immediate illegal opcodes
+    INS_NOP_IMM_80 = 0x80,
+    INS_NOP_IMM_82 = 0x82,
+    INS_NOP_IMM_89 = 0x89,
+    INS_NOP_IMM_C2 = 0xC2,
+    INS_NOP_IMM_E2 = 0xE2,
+
+    // NOP Zero Page illegal opcodes
+    INS_NOP_ZP_04 = 0x04,
+    INS_NOP_ZP_44 = 0x44,
+    INS_NOP_ZP_64 = 0x64,
+
+    // NOP Zero Page,X illegal opcodes
+    INS_NOP_ZPX_14 = 0x14,
+    INS_NOP_ZPX_34 = 0x34,
+    INS_NOP_ZPX_54 = 0x54,
+    INS_NOP_ZPX_74 = 0x74,
+    INS_NOP_ZPX_D4 = 0xD4,
+    INS_NOP_ZPX_F4 = 0xF4,
+
+    // NOP Absolute illegal opcodes
+    INS_NOP_ABS_0C = 0x0C,
+
+    // NOP Absolute,X illegal opcodes
+    INS_NOP_ABSX_1C = 0x1C,
+    INS_NOP_ABSX_3C = 0x3C,
+    INS_NOP_ABSX_5C = 0x5C,
+    INS_NOP_ABSX_7C = 0x7C,
+    INS_NOP_ABSX_DC = 0xDC,
+    INS_NOP_ABSX_FC = 0xFC,
 };
