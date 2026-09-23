@@ -1,11 +1,10 @@
-#include "UI.hh"
-
 #include <iostream>
 #include <memory>
 #include <string>
 
-int main()
-{
+#include "UI.hh"
+
+int main() {
   UI ui = UI();
   ui.run();
   return 0;

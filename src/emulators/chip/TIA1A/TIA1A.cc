@@ -1,38 +1,29 @@
 #include "TIA1A.hh"
+
 #include <cstring>
 
-namespace
-{
+namespace {
 
-  struct CopyInfo
-  {
-    int count;
-    int offset[3];
-    int scale;
-  };
+struct CopyInfo {
+  int count;
+  int offset[3];
+  int scale;
+};
 
+constexpr CopyInfo kCopies[8] = {
+    {1, {0, 0, 0}, 1},   {2, {0, 16, 0}, 1}, {2, {0, 32, 0}, 1},
+    {3, {0, 16, 32}, 1}, {2, {0, 64, 0}, 1}, {1, {0, 0, 0}, 2},
+    {3, {0, 32, 64}, 1}, {1, {0, 0, 0}, 4},
+};
 
-  constexpr CopyInfo kCopies[8] = {
-    {1, {0, 0, 0}, 1},
-    {2, {0, 16, 0}, 1},
-    {2, {0, 32, 0}, 1},
-    {3, {0, 16, 32}, 1},
-    {2, {0, 64, 0}, 1},
-    {1, {0, 0, 0}, 2},
-    {3, {0, 32, 64}, 1},
-    {1, {0, 0, 0}, 4},
-  };
-
-  inline int mod160(int v)
-  {
-    v %= 160;
-    return v < 0 ? v + 160 : v;
-  }
-
+inline int mod160(int v) {
+  v %= 160;
+  return v < 0 ? v + 160 : v;
 }
 
-void TIA1A::reset()
-{
+}  // namespace
+
+void TIA1A::reset() {
   p_[0] = p_[1] = Player{};
   m_[0] = m_[1] = Missile{};
   bl_ = Ball{};
@@ -44,82 +35,63 @@ void TIA1A::reset()
   frame_.fill(0);
 }
 
-void TIA1A::tick()
-{
+void TIA1A::tick() {
   const int x = hpos_ - kHBlank;
-  if (x >= 0 && vpos_ < kHeight)
-    {
-      uint8_t c = renderPixel(x);
-      if (hmoveBlank_ && x < 8)
-        c = 0;
-      frame_[vpos_ * kWidth + x] = c;
-    }
-  if (++hpos_ == kLineClocks)
-    {
-      hpos_ = 0;
-      wsync_ = false;
-      hmoveBlank_ = false;
-      if (++vpos_ >= kHeight)
-        vpos_ = 0;
-    }
+  if (x >= 0 && vpos_ < kHeight) {
+    uint8_t c = renderPixel(x);
+    if (hmoveBlank_ && x < 8) c = 0;
+    frame_[vpos_ * kWidth + x] = c;
+  }
+  if (++hpos_ == kLineClocks) {
+    hpos_ = 0;
+    wsync_ = false;
+    hmoveBlank_ = false;
+    if (++vpos_ >= kHeight) vpos_ = 0;
+  }
 }
 
-bool TIA1A::playfieldBit(int x) const
-{
+bool TIA1A::playfieldBit(int x) const {
   int i = x / 4;
-  if (i >= 20)
-    i = (ctrlpf_ & 1) ? 39 - i : i - 20;
-  if (i < 4)
-    return (pf0_ >> (4 + i)) & 1;
-  if (i < 12)
-    return (pf1_ >> (7 - (i - 4))) & 1;
+  if (i >= 20) i = (ctrlpf_ & 1) ? 39 - i : i - 20;
+  if (i < 4) return (pf0_ >> (4 + i)) & 1;
+  if (i < 12) return (pf1_ >> (7 - (i - 4))) & 1;
   return (pf2_ >> (i - 12)) & 1;
 }
 
-bool TIA1A::playerPixel(const Player& p, int x) const
-{
+bool TIA1A::playerPixel(const Player& p, int x) const {
   const CopyInfo& ci = kCopies[p.nusiz & 7];
   const int d = mod160(x - p.pos);
   const uint8_t g = p.vdel ? p.grpOld : p.grp;
-  for (int i = 0; i < ci.count; ++i)
-    {
-      int o = d - ci.offset[i];
-      if (o >= 0 && o < 8 * ci.scale)
-        {
-          int bit = o / ci.scale;
-          return (g >> (p.reflect ? bit : 7 - bit)) & 1;
-        }
+  for (int i = 0; i < ci.count; ++i) {
+    int o = d - ci.offset[i];
+    if (o >= 0 && o < 8 * ci.scale) {
+      int bit = o / ci.scale;
+      return (g >> (p.reflect ? bit : 7 - bit)) & 1;
     }
+  }
   return false;
 }
 
-bool TIA1A::missilePixel(const Missile& m, const Player& p, int x) const
-{
-  if (!m.enabled || m.resetToPlayer)
-    return false;
+bool TIA1A::missilePixel(const Missile& m, const Player& p, int x) const {
+  if (!m.enabled || m.resetToPlayer) return false;
   const CopyInfo& ci = kCopies[p.nusiz & 7];
   const int width = 1 << ((p.nusiz >> 4) & 3);
   const int d = mod160(x - m.pos);
-  for (int i = 0; i < ci.count; ++i)
-    {
-      int o = d - ci.offset[i];
-      if (o >= 0 && o < width)
-        return true;
-    }
+  for (int i = 0; i < ci.count; ++i) {
+    int o = d - ci.offset[i];
+    if (o >= 0 && o < width) return true;
+  }
   return false;
 }
 
-bool TIA1A::ballPixel(int x) const
-{
+bool TIA1A::ballPixel(int x) const {
   const bool en = bl_.vdel ? bl_.enabledOld : bl_.enabled;
-  if (!en)
-    return false;
+  if (!en) return false;
   const int width = 1 << ((ctrlpf_ >> 4) & 3);
   return mod160(x - bl_.pos) < width;
 }
 
-uint8_t TIA1A::renderPixel(int x)
-{
+uint8_t TIA1A::renderPixel(int x) {
   const bool p0 = playerPixel(p_[0], x);
   const bool p1 = playerPixel(p_[1], x);
   const bool m0 = missilePixel(m_[0], p_[0], x);
@@ -128,8 +100,7 @@ uint8_t TIA1A::renderPixel(int x)
   const bool pf = playfieldBit(x);
 
   auto set = [&](bool c, int bit) {
-    if (c)
-      cx_ |= 1u << bit;
+    if (c) cx_ |= 1u << bit;
   };
   set(m0 && p1, M0P1);
   set(m0 && p0, M0P0);
@@ -147,48 +118,33 @@ uint8_t TIA1A::renderPixel(int x)
   set(p0 && p1, P0P1);
   set(m0 && m1, M0M1);
 
-  if (vblank_)
-    return 0;
+  if (vblank_) return 0;
 
   const bool priority = ctrlpf_ & 0x04;
   const bool score = (ctrlpf_ & 0x02) && !priority;
   const uint8_t pfColor = score ? colup_[x >= 80 ? 1 : 0] : colupf_;
 
-  if (priority)
-    {
-      if (pf || bl)
-        return pfColor;
-      if (p0 || m0)
-        return colup_[0];
-      if (p1 || m1)
-        return colup_[1];
-    }
-  else
-    {
-      if (p0 || m0)
-        return colup_[0];
-      if (p1 || m1)
-        return colup_[1];
-      if (pf || bl)
-        return pfColor;
-    }
+  if (priority) {
+    if (pf || bl) return pfColor;
+    if (p0 || m0) return colup_[0];
+    if (p1 || m1) return colup_[1];
+  } else {
+    if (p0 || m0) return colup_[0];
+    if (p1 || m1) return colup_[1];
+    if (pf || bl) return pfColor;
+  }
   return colubk_;
 }
 
-void TIA1A::applyHmove()
-{
-  for (auto& p : p_)
-    p.pos = mod160(p.pos - p.hm);
-  for (auto& m : m_)
-    m.pos = mod160(m.pos - m.hm);
+void TIA1A::applyHmove() {
+  for (auto& p : p_) p.pos = mod160(p.pos - p.hm);
+  for (auto& m : m_) m.pos = mod160(m.pos - m.hm);
   bl_.pos = mod160(bl_.pos - bl_.hm);
 
-  if (hpos_ < kHBlank)
-    hmoveBlank_ = true;
+  if (hpos_ < kHBlank) hmoveBlank_ = true;
 }
 
-void TIA1A::write(uint16_t addr, uint8_t v)
-{
+void TIA1A::write(uint16_t addr, uint8_t v) {
   addr &= 0x3F;
   const int x = hpos_ - kHBlank;
 
@@ -198,19 +154,16 @@ void TIA1A::write(uint16_t addr, uint8_t v)
     return (int8_t)((((val >> 4) & 0x0F) ^ 8) - 8);
   };
 
-  switch (addr)
-    {
-    case 0x00:
-      {
-        bool on = v & 0x02;
-        if (vsync_ && !on)
-          {
-            vpos_ = 0;
-            frameReady_ = true;
-          }
-        vsync_ = on;
-        break;
+  switch (addr) {
+    case 0x00: {
+      bool on = v & 0x02;
+      if (vsync_ && !on) {
+        vpos_ = 0;
+        frameReady_ = true;
       }
+      vsync_ = on;
+      break;
+    }
     case 0x01:
       vblank_ = v & 0x02;
       break;
@@ -277,7 +230,7 @@ void TIA1A::write(uint16_t addr, uint8_t v)
     case 0x18:
     case 0x19:
     case 0x1A:
-      break; // TODO : audio
+      break;  // TODO : audio
     case 0x1B:
       p_[0].grp = v;
       p_[1].grpOld = p_[1].grp;
@@ -321,18 +274,16 @@ void TIA1A::write(uint16_t addr, uint8_t v)
       bl_.vdel = v & 1;
       break;
     case 0x28:
-    case 0x29:
-      {
-        int i = addr - 0x28;
-        bool on = v & 0x02;
-        if (m_[i].resetToPlayer && !on)
-          {
-            int n = p_[i].nusiz & 7;
-            m_[i].pos = mod160(p_[i].pos + (n == 5 ? 6 : n == 7 ? 10 : 3));
-          }
-        m_[i].resetToPlayer = on;
-        break;
+    case 0x29: {
+      int i = addr - 0x28;
+      bool on = v & 0x02;
+      if (m_[i].resetToPlayer && !on) {
+        int n = p_[i].nusiz & 7;
+        m_[i].pos = mod160(p_[i].pos + (n == 5 ? 6 : n == 7 ? 10 : 3));
       }
+      m_[i].resetToPlayer = on;
+      break;
+    }
     case 0x2A:
       applyHmove();
       break;
@@ -344,14 +295,12 @@ void TIA1A::write(uint16_t addr, uint8_t v)
       break;
     default:
       break;
-    }
+  }
 }
 
-uint8_t TIA1A::read(uint16_t addr) const
-{
+uint8_t TIA1A::read(uint16_t addr) const {
   auto b = [&](int bit) -> uint8_t { return (cx_ >> bit) & 1; };
-  switch (addr & 0x0F)
-    {
+  switch (addr & 0x0F) {
     case 0x00:
       return b(M0P1) << 7 | b(M0P0) << 6;
     case 0x01:
@@ -374,29 +323,15 @@ uint8_t TIA1A::read(uint16_t addr) const
       return fire_[1] ? 0x00 : 0x80;
     default:
       return 0x00;
-    }
+  }
 }
 
-void TIA1A::setFire(int player, bool pressed) { 
-  fire_[player & 1] = pressed; 
-}
+void TIA1A::setFire(int player, bool pressed) { fire_[player & 1] = pressed; }
 
-bool TIA1A::cpuHalted() const 
-{ 
-  return wsync_; 
-}
+bool TIA1A::cpuHalted() const { return wsync_; }
 
-bool TIA1A::frameReady() const 
-{
-    return frameReady_; 
-}
+bool TIA1A::frameReady() const { return frameReady_; }
 
-void TIA1A::clearFrameReady() 
-{ 
-  frameReady_ = false; 
-}
+void TIA1A::clearFrameReady() { frameReady_ = false; }
 
-const uint8_t* TIA1A::frame() const 
-{ 
-  return frame_.data(); 
-}
+const uint8_t* TIA1A::frame() const { return frame_.data(); }

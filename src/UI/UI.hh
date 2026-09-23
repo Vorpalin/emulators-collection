@@ -5,29 +5,28 @@
 
 #include "game_selector.hh"
 
-class UI
-{
-    public:
-        UI();
+class UI {
+ public:
+  UI();
 
-        void run();
-        
-    private:
-        void handleInput();
-        void render();
-        void drawText(const std::string& text, int x, int y);
-        void updateFont(int winH);
+  void run();
 
-        GameSelector gameSelector;
+ private:
+  void handleInput();
+  void render();
+  void drawText(const std::string& text, int x, int y);
+  void updateFont(int winH);
 
-        std::vector<std::string> games;
+  GameSelector gameSelector;
 
-        SDL_Window* window;
-        SDL_Renderer* renderer;
+  std::vector<std::string> games;
 
-        bool running;
-        std::string fontPath = "assets/fonts/PressStart2P-Regular.ttf";
-        int currentFontSize = 6;
+  SDL_Window* window;
+  SDL_Renderer* renderer;
 
-        TTF_Font* font;
+  bool running;
+  std::string fontPath = "assets/fonts/PressStart2P-Regular.ttf";
+  int currentFontSize = 6;
+
+  TTF_Font* font;
 };

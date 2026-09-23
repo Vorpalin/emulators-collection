@@ -7,9 +7,8 @@
 #include "SDL2/SDL.h"
 #include "game.hh"
 
-class GameSelector
-{
-public:
+class GameSelector {
+ public:
   GameSelector(std::string gamesDirectory);
   void nextGame();
   void previousGame();
@@ -19,7 +18,7 @@ public:
 
   int getSelectedGameIndex();
 
-private:
+ private:
   std::vector<std::unique_ptr<Game>> games;
   int selectedGameIndex;
 };

@@ -2,9 +2,8 @@
 #include <array>
 #include <cstdint>
 
-class TIA1A
-{
-public:
+class TIA1A {
+ public:
   static constexpr int kWidth = 160;
   static constexpr int kHeight = 312;
   static constexpr int kLineClocks = 228;
@@ -27,29 +26,25 @@ public:
 
   void setFire(int player, bool pressed);
 
-private:
-  struct Player
-  {
+ private:
+  struct Player {
     uint8_t grp = 0, grpOld = 0, nusiz = 0;
     bool reflect = false, vdel = false;
     int pos = 0;
     int8_t hm = 0;
   };
-  struct Missile
-  {
+  struct Missile {
     bool enabled = false, resetToPlayer = false;
     int pos = 0;
     int8_t hm = 0;
   };
-  struct Ball
-  {
+  struct Ball {
     bool enabled = false, enabledOld = false, vdel = false;
     int pos = 0;
     int8_t hm = 0;
   };
 
-  enum Cx
-  {
+  enum Cx {
     M0P1,
     M0P0,
     M1P0,

@@ -32,6 +32,31 @@ More emulators will be added over time.
 
 > **Note:** ROMs are not included in this repository. Only use ROMs that you legally own or have permission to use.
 
+## 🔄 Continuous Integration
+
+The project uses **GitHub Actions** to automatically verify changes.
+
+The CI pipeline runs on every push to the `main` branch and on pull requests targeting `main`.
+
+It performs the following checks:
+
+* **Pre-commit**
+
+  * C/C++ formatting with `clang-format`
+  * Static analysis with `cppcheck`
+  * General repository checks
+* **Build**
+
+  * Verifies that the project can be successfully built using the project's `Dockerfile`
+
+The workflow is defined in:
+
+```text
+.github/workflows/ci.yml
+```
+
+A successful CI run ensures that the code passes the configured checks and that the Docker image can be built successfully.
+
 ## 🐳 Building
 
 Build the Docker image from the project root:
@@ -86,20 +111,27 @@ The `games` directory is mounted into the container so that ROMs added on the ho
 
 ```text
 emulators-collection/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                 # GitHub Actions CI
+├── .clang-format                  # C/C++ formatting rules
+├── .pre-commit-config.yaml        # Pre-commit configuration
 ├── src/
-│   ├── main.cc                 # Application entry point
-│   ├── emulators/              # Emulator implementations
+│   ├── main.cc                    # Application entry point
+│   ├── emulators/                 # Emulator implementations
 │   │   ├── Chip8/
+│   │   ├── Atari2600/
 │   │   └── ...
-│   ├── emulator_schema/        # Common emulator interface
-│   ├── game/                   # Game/ROM representation
-│   ├── game_selector/          # Game selection and management
-│   └── UI/                     # Graphical user interface
+│   ├── emulator_schema/           # Common emulator interface
+│   ├── game/                      # Game/ROM representation
+│   ├── game_selector/             # Game selection and management
+│   └── UI/                        # Graphical user interface
 │
-├── games/                      # Local ROM collection
-├── Dockerfile                  # Docker build configuration
-├── CMakeLists.txt              # Build configuration
-└── LICENSE                     # MIT license
+├── games/                         # Local ROM collection
+├── Dockerfile                     # Docker build configuration
+├── CMakeLists.txt                 # Build configuration
+├── LICENSE                        # MIT license
+└── README.md
 ```
 
 ## 🧩 Architecture
@@ -131,6 +163,43 @@ The project separates the emulator implementations from the rest of the applicat
 This makes it possible to add new emulators without having to redesign the entire application.
 
 ## 🛠️ Development
+
+### Pre-commit
+
+The project uses **pre-commit** to automatically check and format the code before commits.
+
+#### Installation
+
+Install `pre-commit` using `pip`:
+
+```bash
+pip install pre-commit
+```
+
+Then, from the project root, install the Git hooks:
+
+```bash
+pre-commit install
+```
+
+To manually run all checks on the entire repository:
+
+```bash
+pre-commit run --all-files
+```
+
+The pre-commit configuration is located in:
+
+```text
+.pre-commit-config.yaml
+```
+
+The formatting rules for C/C++ are defined in:
+
+```text
+.clang-format
+```
+
 
 The project is primarily developed in **C++** and uses Docker to provide a reproducible build environment.
 

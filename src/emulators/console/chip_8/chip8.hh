@@ -8,9 +8,8 @@
 struct SDL_Renderer;
 struct SDL_Window;
 
-class Chip8 : public Emulator
-{
-public:
+class Chip8 : public Emulator {
+ public:
   Chip8();
 
   int run() override;
@@ -18,7 +17,7 @@ public:
   void loadProgram(const std::string& filename) override;
   void setRenderer(SDL_Renderer* renderer) override;
 
-private:
+ private:
   void handleInput();
 
   void clearKeyStates();
@@ -53,7 +52,7 @@ private:
   uint16_t pc;
 
   // the CHIP-8 has a 64x32 pixel monochrome display
-  uint8_t gfx[128 * 64]; // 128x64 for high-resolution mode
+  uint8_t gfx[128 * 64];  // 128x64 for high-resolution mode
 
   // determines if the screen needs to be redrawn
   uint8_t draw_flag;
@@ -62,7 +61,8 @@ private:
   uint8_t delay_timer;
   uint8_t sound_timer;
 
-  // the CHIP-8 has a stack which is used to store return addresses when subroutines are called
+  // the CHIP-8 has a stack which is used to store return addresses when
+  // subroutines are called
   uint16_t stack[16];
 
   // the stack pointer which points to the top of the stack
@@ -79,5 +79,6 @@ private:
 
   int returnValue;
 
-  bool highResolutionMode; // Flag to indicate if high-resolution mode is active
+  bool
+      highResolutionMode;  // Flag to indicate if high-resolution mode is active
 };
