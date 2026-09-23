@@ -135,6 +135,15 @@ void Chip8::handleInput()
           this->running = false;
           this->returnValue = 1;
           break;
+          case SDL_WINDOWEVENT:
+            if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
+                event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                // Force SDL à recalculer le viewport avec la taille physique actuelle
+                int w = this->highResolutionMode ? 128 : 64;
+                int h = this->highResolutionMode ? 64  : 32;
+                SDL_RenderSetLogicalSize(this->renderer, w, h);
+            }
+            break;
         case SDL_KEYDOWN:
           switch (event.key.keysym.sym)
             {
@@ -217,22 +226,9 @@ void Chip8::executeOpcode(uint16_t opcode)
   switch (opcode & 0xF000)
     {
     case 0x0000:
-      switch (opcode)
+      if (opcode && 0xFFF0 == 0x00C0)
         {
-        case 0x00E0: // 00E0: Clear the display
-          for (int i = 0; i < 64 * 32 * scale * scale; ++i)
-            {
-              this->gfx[i] = 0;
-            }
-          this->draw_flag = 1;
-          break;
-        case 0x00EE: // 00EE: Return from subroutine
-          --this->sp;
-          this->pc = this->stack[this->sp];
-          break;
-        case 0x00C0: // 00CN: Scroll display down by N lines
-          {
-            int lines = n;
+          int lines = n;
             for (int y = 32 * scale - 1; y >= lines; --y)
               {
                 for (int x = 0; x < 64 * scale; ++x)
@@ -248,7 +244,20 @@ void Chip8::executeOpcode(uint16_t opcode)
                   }
               }
             this->draw_flag = 1;
-          }
+            break;
+        }
+      switch (opcode)
+        {
+        case 0x00E0: // 00E0: Clear the display
+          for (int i = 0; i < 64 * 32 * scale * scale; ++i)
+            {
+              this->gfx[i] = 0;
+            }
+          this->draw_flag = 1;
+          break;
+        case 0x00EE: // 00EE: Return from subroutine
+          --this->sp;
+          this->pc = this->stack[this->sp];
           break;
         case 0x00FB: // 00FB: Scroll display right by 4 pixels
           for (int y = 0; y < 32 * scale; ++y)
@@ -284,10 +293,12 @@ void Chip8::executeOpcode(uint16_t opcode)
           break;
         case 0x00FE: // 00FE: Set the display to low resolution (64x32)
           SDL_RenderSetLogicalSize(this->renderer, 64, 32);
+          std::fill(std::begin(this->gfx), std::end(this->gfx), 0);
           this->highResolutionMode = false;
           break;
         case 0x00FF: // 00FF: Set the display to high resolution (128x64)
           SDL_RenderSetLogicalSize(this->renderer, 128, 64);
+          std::fill(std::begin(this->gfx), std::end(this->gfx), 0);
           this->highResolutionMode = true;
           break;
         default:

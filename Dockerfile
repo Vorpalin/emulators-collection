@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     libsdl2-ttf-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORkDIR /app
+WORKDIR /app
 
 COPY . .
 
