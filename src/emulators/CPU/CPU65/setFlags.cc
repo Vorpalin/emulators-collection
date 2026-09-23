@@ -138,7 +138,7 @@ void CPU65::plpSetFlags(uint8_t value)
 {
     N = (value >> 7) & 1;
     V = (value >> 6) & 1;
-    B = (value >> 4) & 1;
+    //B = (value >> 4) & 1;
     D = (value >> 3) & 1;
     I = (value >> 2) & 1;
     Z = (value >> 1) & 1;
@@ -171,7 +171,7 @@ void CPU65::rtiSetFlags(uint32_t &cycles)
     
     N = (status >> 7) & 1;
     V = (status >> 6) & 1;
-    B = (status >> 4) & 1;
+    // B = (status >> 4) & 1;
     D = (status >> 3) & 1;
     I = (status >> 2) & 1;
     Z = (status >> 1) & 1;
@@ -179,15 +179,15 @@ void CPU65::rtiSetFlags(uint32_t &cycles)
     ++cycles; // Increment cycles for the operation
 }
 
-void CPU65::sbcSetFlags(uint8_t value, uint16_t result)
+void CPU65::sbcSetFlags(uint8_t oldA,uint8_t value, uint16_t result)
 {
-    C = (result < 0x100) ? 1 : 0; // Set Carry flag
-    V = ((A ^ result) & (value ^ result) & 0x80) ? 1 : 0; // Set Overflow flag
-    
-    A = static_cast<uint8_t>(result);
-    
-    Z = (A == 0); // Set Zero flag
-    N = (A & 0x80) != 0; // Set Negative flag
+    uint8_t result8 = static_cast<uint8_t>(result);
+
+    C = result < 0x100;
+    Z = result8 == 0;
+    N = (result8 & 0x80) != 0;
+
+    V = ((oldA ^ value) & (oldA ^ result8) & 0x80) != 0;
 }
 
 void CPU65::taxSetFlags()

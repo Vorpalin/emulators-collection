@@ -67,7 +67,7 @@ private:
     void rolSetFlags(uint32_t &cycles);
     void rorSetFlags(uint32_t &cycles);
     void rtiSetFlags(uint32_t &cycles);
-    void sbcSetFlags(uint8_t value, uint16_t result);
+    void sbcSetFlags(uint8_t oldA, uint8_t value, uint16_t result);
     void taxSetFlags();
     void taySetFlags();
     void tsxSetFlags();
@@ -76,4 +76,16 @@ private:
 
     void push(uint32_t &cycles, uint8_t v);
     uint8_t pull(uint32_t &cycles);
+
+    uint8_t asl(uint8_t v);
+    uint8_t lsr(uint8_t v);
+    uint8_t rol(uint8_t v);
+    uint8_t ror(uint8_t v);
+
+    void adc(uint8_t v);
+    void sbc(uint8_t v);
+
+    uint16_t absIndexed(uint32_t &cycles, uint8_t idx, bool write);
+    void branch(uint32_t &cycles, bool cond);
+    uint8_t getStatus(bool breakFlag) const;
 };
