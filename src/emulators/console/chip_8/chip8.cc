@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h>
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -50,6 +51,82 @@ Chip8::Chip8() {
 
 void Chip8::setRenderer(SDL_Renderer* renderer) { this->renderer = renderer; }
 
+void Chip8::audioCallback(void* userdata, Uint8* stream, int len) {
+  auto* self = static_cast<Chip8*>(userdata);
+  auto* samples = reinterpret_cast<int16_t*>(stream);
+  const int count = len / sizeof(int16_t);
+
+  const double sampleRate = self->sampleRate;
+  const double tone = 440.0;
+  const float volume = 3000.0f;
+  const float target = self->beepOn.load() ? 1.0f : 0.0f;
+  const float step =
+      static_cast<float>(1.0 / (0.003 * sampleRate));  // rampe d'environ 3 ms
+
+  for (int i = 0; i < count; ++i) {
+    if (self->gain < target)
+      self->gain = std::min<float>(self->gain + step, target);
+    else if (self->gain > target)
+      self->gain = std::max<float>(self->gain - step, target);
+
+    float wave = self->phase < 0.5 ? 1.0f : -1.0f;
+    samples[i] = static_cast<int16_t>(wave * volume * self->gain);
+
+    self->phase += tone / sampleRate;
+    if (self->phase >= 1.0) self->phase -= 1.0;
+  }
+}
+
+void Chip8::initAudio() {
+  if (this->audioDevice != 0) return;
+  if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+    std::cerr << "Audio init failed: " << SDL_GetError() << '\n';
+    return;
+  }
+
+  SDL_AudioSpec want{}, have{};
+  want.freq = 44100;
+  want.format = AUDIO_S16SYS;
+  want.channels = 1;
+  want.samples = 256;  // petit buffer = moins de latence
+  want.callback = Chip8::audioCallback;
+  want.userdata = this;
+
+  this->audioDevice = SDL_OpenAudioDevice(nullptr, 0, &want, &have,
+                                          SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+
+  this->sampleRate = have.freq;
+  if (this->audioDevice == 0) {
+    std::cerr << "Audio: driver=" << SDL_GetCurrentAudioDriver() << ", "
+              << have.freq << " Hz, buffer " << have.samples << " samples (~"
+              << (1000.0 * have.samples / have.freq) << " ms)\n";
+    return;
+  }
+  SDL_PauseAudioDevice(this->audioDevice, 0);  // tourne en permanence
+}
+
+void Chip8::setBeep(bool on) { this->beepOn.store(on); }
+
+void Chip8::shutdownAudio() {
+  if (this->audioDevice != 0) {
+    SDL_CloseAudioDevice(this->audioDevice);
+    this->audioDevice = 0;
+  }
+}
+
+Chip8::~Chip8() { this->shutdownAudio(); }
+
+void Chip8::updateTimers() {
+  if (this->delay_timer > 0) {
+    --this->delay_timer;
+  }
+  if (this->sound_timer > 0) {
+    --this->sound_timer;
+  }
+  bool minHold = std::chrono::steady_clock::now() < this->beepUntil;
+  this->setBeep(this->sound_timer > 0 || minHold);
+}
+
 void Chip8::loadProgram(const std::string& filename) {
   this->I = 0;
   this->pc = 0x200;  // program counter starts at 0x200
@@ -83,7 +160,7 @@ void Chip8::loadProgram(const std::string& filename) {
   std::streamsize size = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  if (size > sizeof(this->memory) - 0x200) {
+  if (static_cast<std::size_t>(size) > sizeof(this->memory) - 0x200) {
     this->quit = true;
     std::cerr << "ROM too large\n";
     return;
@@ -143,6 +220,7 @@ void Chip8::handleInput() {
             break;
           case SDLK_SPACE:
             this->running = !this->running;
+            if (!this->running) this->setBeep(false);
             break;
           case SDLK_0:
             this->key[0x0] = 1;
@@ -214,7 +292,7 @@ void Chip8::executeOpcode(uint16_t opcode) {
 
   switch (opcode & 0xF000) {
     case 0x0000:
-      if (opcode && 0xFFF0 == 0x00C0) {
+      if ((opcode & 0xFFF0) == 0x00C0) {
         int lines = n;
         for (int y = 32 * scale - 1; y >= lines; --y) {
           for (int x = 0; x < 64 * scale; ++x) {
@@ -430,6 +508,12 @@ void Chip8::executeOpcode(uint16_t opcode) {
           break;
         case 0x18:  // FX18: Set the sound timer to VX
           this->sound_timer = this->V[x];
+          if (this->sound_timer > 0) {
+            this->beepUntil =
+                std::chrono::steady_clock::now() +
+                std::chrono::milliseconds(100);  // minimum beep length
+            this->setBeep(true);
+          }
           break;
         case 0x1E:  // FX1E: Add VX to I
           this->I += this->V[x];
@@ -495,41 +579,38 @@ void Chip8::cycle() {
   this->executeOpcode(opcode);
 }
 
-void Chip8::updateTimers() {
-  if (this->delay_timer > 0) {
-    --this->delay_timer;
-  }
-  if (this->sound_timer > 0) {
-    --this->sound_timer;
-  }
-}
-
 int Chip8::run() {
   using clock = std::chrono::steady_clock;
+  constexpr auto timerPeriod = std::chrono::microseconds(16667);  // ~60 Hz
+
+  this->initAudio();
 
   auto lastTimerUpdate = clock::now();
 
   while (!this->quit) {
     this->handleInput();
 
-    while (this->running) {
-      this->cycle();
-
-      auto now = clock::now();
-
-      if (now - lastTimerUpdate >= std::chrono::milliseconds(16)) {
-        this->updateTimers();
-        lastTimerUpdate = now;
-      }
-
-      if (this->draw_flag) {
-        this->drawGraphics();
-        this->draw_flag = 0;
-      }
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      this->handleInput();
+    if (!this->running) {
+      // En pause : on ne consomme pas de CPU et on fige la référence des timers
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      lastTimerUpdate = clock::now();
+      continue;
     }
+
+    this->cycle();
+
+    auto now = clock::now();
+    if (now - lastTimerUpdate >= timerPeriod) {
+      this->updateTimers();
+      lastTimerUpdate += timerPeriod;
+    }
+
+    if (this->draw_flag) {
+      this->drawGraphics();
+      this->draw_flag = 0;
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
   return this->returnValue;
 }
