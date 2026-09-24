@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@<SHA>
         with:
           fail-on-severity: high
 
@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@<SHA>
 
       - name: Install dependencies
         run: |
@@ -60,7 +60,7 @@ jobs:
             libsdl2-ttf-dev
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@<SHA>
         with:
           languages: ${{ matrix.language }}
 
@@ -74,7 +74,7 @@ jobs:
           cmake --build build --parallel
 
       - name: Analyze
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@<SHA>
 
   sanitizers:
     name: ASan / UBSan
@@ -82,7 +82,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@<SHA>
 
       - name: Install dependencies
         run: |
@@ -124,7 +124,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@<SHA>
 
       - name: Build Docker image
         run: |
@@ -133,7 +133,7 @@ jobs:
             .
 
       - name: Scan Docker image
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@<SHA>
         with:
           image-ref: emulator-collection:security
           format: sarif
@@ -142,7 +142,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@<SHA>
         with:
           sarif_file: trivy-results.sarif
 
@@ -156,9 +156,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@<SHA>
 
       - name: zizmor
-        uses: zizmorcore/zizmor-action@v0.1.1
+        uses: zizmorcore/zizmor-action@<SHA>
         with:
           advanced-security: true
