@@ -129,8 +129,8 @@ int Atari2600::run() {
       if (keys[SDL_SCANCODE_UP]) swcha &= ~0x10;
 
       uint8_t swchb = 0xFF;
-      if (keys[SDL_SCANCODE_RETURN]) swchb &= ~0x01;  // Reset
-      if (keys[SDL_SCANCODE_TAB]) swchb &= ~0x02;     // Select
+      if (keys[SDL_SCANCODE_F1]) swchb &= ~0x01;   // Reset
+      if (keys[SDL_SCANCODE_TAB]) swchb &= ~0x02;  // Select
 
       const bool fire0 = keys[SDL_SCANCODE_SPACE] || keys[SDL_SCANCODE_Z];
 
@@ -156,5 +156,7 @@ int Atari2600::run() {
       }
     }
   }
+
+  audio.close();  // close while SDL is still initialised
   return 0;
 }

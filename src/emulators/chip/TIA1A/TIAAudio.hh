@@ -35,6 +35,7 @@ class TIAAudio {
       std::cerr << "Audio init failed: " << SDL_GetError() << '\n';
       return false;
     }
+    audioInit_ = true;
 
     SDL_AudioSpec want{}, have{};
     want.freq = freq;
@@ -48,6 +49,7 @@ class TIAAudio {
                                SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
     if (dev_ == 0) {
       std::cerr << "Could not open audio device: " << SDL_GetError() << '\n';
+      close();  // undo SDL_InitSubSystem
       return false;
     }
 
@@ -62,10 +64,19 @@ class TIAAudio {
     return true;
   }
 
+  // Safe to call several times, and safe after SDL_Quit(). Call it while SDL
+  // is still alive (e.g. at the end of run()) rather than relying on the
+  // destructor, which may run after the program has already shut SDL down.
   void close() {
     if (dev_ != 0) {
-      SDL_CloseAudioDevice(dev_);
+      SDL_PauseAudioDevice(dev_, 1);  // make sure the callback is idle
+      SDL_CloseAudioDevice(dev_);     // waits for the audio thread to exit
       dev_ = 0;
+    }
+    paused_ = true;
+    if (audioInit_) {
+      if (SDL_WasInit(SDL_INIT_AUDIO)) SDL_QuitSubSystem(SDL_INIT_AUDIO);
+      audioInit_ = false;
     }
   }
 
@@ -231,6 +242,7 @@ class TIAAudio {
   }
 
   SDL_AudioDeviceID dev_ = 0;
+  bool audioInit_ = false;  // we called SDL_InitSubSystem(SDL_INIT_AUDIO)
   bool paused_ = true;
   int idleFrames_ = 0;
   double sampleRate_ = 44100.0;
