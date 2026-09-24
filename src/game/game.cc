@@ -30,7 +30,8 @@ int Game::loadGame(SDL_Renderer* renderer) {
   if (emulator) {
     emulator->setRenderer(renderer);
     emulator->loadProgram(this->path);
-    return emulator->run();
+    int result = emulator->run();
+    return result;
   }
   return 0;
 }

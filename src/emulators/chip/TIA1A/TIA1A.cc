@@ -151,7 +151,7 @@ void TIA1A::write(uint16_t addr, uint8_t v) {
   auto resPlayer = [&] { return x < 0 ? 3 : mod160(x + 5); };
   auto resMissile = [&] { return x < 0 ? 2 : mod160(x + 4); };
   auto hmValue = [&](uint8_t val) {
-    return (int8_t)((((val >> 4) & 0x0F) ^ 8) - 8);
+    return static_cast<int8_t>((((val >> 4) & 0x0F) ^ 8) - 8);
   };
 
   switch (addr) {

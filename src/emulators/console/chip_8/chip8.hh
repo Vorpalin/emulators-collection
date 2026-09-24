@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <string>
 
@@ -17,6 +19,8 @@ class Chip8 : public Emulator {
   void loadProgram(const std::string& filename) override;
   void setRenderer(SDL_Renderer* renderer) override;
 
+  ~Chip8();
+
  private:
   void handleInput();
 
@@ -32,6 +36,19 @@ class Chip8 : public Emulator {
 
   // Fetch, decode, and execute one instruction.
   void cycle();
+
+  SDL_AudioDeviceID audioDevice = 0;
+  double gain = 0.0;
+  double phase = 0.0;
+  std::atomic<bool> beepOn{false};
+
+  double sampleRate = 44100.0;
+
+  void initAudio();
+  void shutdownAudio();
+  void setBeep(bool on);
+  static void audioCallback(void* userdata, Uint8* stream, int len);
+  std::chrono::steady_clock::time_point beepUntil{};
 
   // the CHIP-8 has 4K memory (4096 bytes)
   //

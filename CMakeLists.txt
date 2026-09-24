@@ -45,6 +45,16 @@ target_include_directories(emulators-collection
         src/UI
 )
 
+target_compile_options(emulators-collection
+    PRIVATE
+        -Wall
+        -Wextra
+        -Werror
+        -pedantic
+        -Wold-style-cast
+        -std=c++20
+)
+
 target_link_libraries(emulators-collection
     PRIVATE
         SDL2::SDL2

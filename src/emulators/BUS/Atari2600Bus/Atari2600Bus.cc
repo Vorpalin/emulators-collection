@@ -1,5 +1,6 @@
 #include "Atari2600Bus.hh"
 
+#include <iostream>
 #include <string>
 
 Atari2600Bus::Atari2600Bus() : cpu(this), cartbridge(), mos6532(), tia1a() {
@@ -29,9 +30,11 @@ void Atari2600Bus::writeMemory(uint16_t address, uint8_t value) {
 
   if (address & 0x1000)
     cartbridge.write(address & 0x0FFF, value);
-  else if (!(address & 0x0080))
-    tia1a.write(address & 0x3F, value);
-  else if (!(address & 0x0200))
+  else if (!(address & 0x0080)) {
+    const uint16_t reg = address & 0x3F;
+    tia1a.write(reg, value);
+    if (onAudioWrite && reg >= 0x15 && reg <= 0x1A) onAudioWrite(reg, value);
+  } else if (!(address & 0x0200))
     mos6532.write(address & 0x7F, value);
   else
     mos6532.write(0x80 | (address & 0x1F), value);
