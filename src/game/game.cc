@@ -8,8 +8,7 @@
 #include "chip8.hh"
 
 Game::Game(const std::string& file, const std::string& dir)
-    : path(dir + "/" + file) {}
-{
+    : path(dir + "/" + file) {
   size_t lastindex = file.find_last_of(".");
   name = file.substr(0, lastindex);
 

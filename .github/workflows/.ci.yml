@@ -40,5 +40,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Build docker image
-        run: docker build -t emulator-collection .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: emulator-collection:latest
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
