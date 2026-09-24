@@ -48,7 +48,9 @@ const std::array<uint32_t, 128> kPalette = buildPalette();
 
 Atari2600::Atari2600()
     : bus(), renderer(nullptr), frameTexture(nullptr), isRunning(true) {
-  // Initialize the Atari 2600 emulator
+  // Route TIA audio register writes to the sound generator
+  bus.setAudioWriteHook(
+      [this](uint16_t reg, uint8_t value) { audio.write(reg, value); });
 }
 
 Atari2600::~Atari2600() {
@@ -93,12 +95,23 @@ void Atari2600::renderFrame() {
 
 void Atari2600::reset() {
   bus.reset();
+  audio.write(0x19, 0);  // silence both channels
+  audio.write(0x1A, 0);
   isRunning = true;  // Set the running state to true after reset
 }
 
 int Atari2600::run() {
   isRunning =
       true;  // Ensure the running state is true at the start of the run loop
+
+  audio.open();
+
+  // Pace emulation to the NTSC frame rate (~59.92 Hz). The sound is generated
+  // in real time, so running faster than that would speed up the audio too.
+  const Uint64 perfFreq = SDL_GetPerformanceFrequency();
+  const Uint64 framePeriod = static_cast<Uint64>(perfFreq / 59.92);
+  Uint64 nextFrame = SDL_GetPerformanceCounter();
+
   while (isRunning) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -132,6 +145,15 @@ int Atari2600::run() {
     if (bus.frameReady()) {
       renderFrame();
       bus.clearFrameReady();
+      audio.update();
+
+      nextFrame += framePeriod;
+      const Uint64 now = SDL_GetPerformanceCounter();
+      if (nextFrame > now) {
+        SDL_Delay(static_cast<Uint32>((nextFrame - now) * 1000 / perfFreq));
+      } else {
+        nextFrame = now;  // fell behind: don't try to catch up in a burst
+      }
     }
   }
   return 0;

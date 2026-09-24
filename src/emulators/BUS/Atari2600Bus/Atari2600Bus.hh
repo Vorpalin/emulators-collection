@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <string>
 
 #include "Bus.hh"
@@ -27,9 +28,15 @@ class Atari2600Bus : public Bus {
 
   void setInput(uint8_t swcha, uint8_t swchb, bool fire0, bool fire1);
 
+  // Called after every write to the TIA audio registers (0x15..0x1A).
+  void setAudioWriteHook(std::function<void(uint16_t, uint8_t)> hook) {
+    onAudioWrite = std::move(hook);
+  }
+
  private:
   CPU65 cpu;              // Instance of the CPU65 class for the Atari 2600
   Cartbridge cartbridge;  // Instance of the Cartbridge class for ROM handling
   MOS6532 mos6532;  // Instance of the MOS6532 class for RAM and I/O handling
   TIA1A tia1a;      // Instance of the TIA1A class for video output
+  std::function<void(uint16_t, uint8_t)> onAudioWrite;
 };

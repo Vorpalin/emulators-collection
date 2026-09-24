@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Atari2600Bus.hh"
+#include "TIAAudio.hh"
 #include "emulator.hh"
 
 struct SDL_Renderer;
@@ -21,6 +22,7 @@ class Atari2600 : public Emulator {
   Atari2600Bus bus;
   SDL_Renderer* renderer;
   SDL_Texture* frameTexture;
+  TIAAudio audio;
 
   bool isRunning;
 
