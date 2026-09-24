@@ -15,10 +15,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@<SHA>
+        uses: actions/checkout@fbc6f3953b5f322a9c2e3b7a5d5c7c1e6b3c0e6a
 
       - name: Set up Python
-        uses: actions/setup-python@<SHA>
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.x"
 
@@ -38,13 +38,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@<SHA>
+        uses: actions/checkout@fbc6f3953b5f322a9c2e3b7a5d5c7c1e6b3c0e6a
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@<SHA>
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e
 
       - name: Build Docker image
-        uses: docker/build-push-action@<SHA>
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc
         with:
           context: .
           tags: emulator-collection:latest

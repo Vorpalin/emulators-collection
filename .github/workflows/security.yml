@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Dependency Review
-        uses: actions/dependency-review-action@<SHA>
+        uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
 
@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@<SHA>
+        uses: actions/checkout@fbc6f3953b5f322a9c2e3b7a5d5c7c1e6b3c0e6a
 
       - name: Install dependencies
         run: |
@@ -60,7 +60,7 @@ jobs:
             libsdl2-ttf-dev
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@<SHA>
+        uses: github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd
         with:
           languages: ${{ matrix.language }}
 
@@ -74,7 +74,7 @@ jobs:
           cmake --build build --parallel
 
       - name: Analyze
-        uses: github/codeql-action/analyze@<SHA>
+        uses: github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd
 
   sanitizers:
     name: ASan / UBSan
@@ -82,7 +82,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@<SHA>
+        uses: actions/checkout@fbc6f3953b5f322a9c2e3b7a5d5c7c1e6b3c0e6a
 
       - name: Install dependencies
         run: |
@@ -124,7 +124,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@<SHA>
+        uses: actions/checkout@fbc6f3953b5f322a9c2e3b7a5d5c7c1e6b3c0e6a
 
       - name: Build Docker image
         run: |
@@ -133,7 +133,7 @@ jobs:
             .
 
       - name: Scan Docker image
-        uses: aquasecurity/trivy-action@<SHA>
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           image-ref: emulator-collection:security
           format: sarif
@@ -142,7 +142,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@<SHA>
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd
         with:
           sarif_file: trivy-results.sarif
 
@@ -156,9 +156,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@<SHA>
+        uses: actions/checkout@fbc6f3953b5f322a9c2e3b7a5d5c7c1e6b3c0e6a
 
       - name: zizmor
-        uses: zizmorcore/zizmor-action@<SHA>
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482
         with:
           advanced-security: true
