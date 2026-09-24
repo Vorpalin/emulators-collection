@@ -1,5 +1,6 @@
 #include "Atari2600Bus.hh"
 
+#include <iostream>
 #include <string>
 
 Atari2600Bus::Atari2600Bus() : cpu(this), cartbridge(), mos6532(), tia1a() {

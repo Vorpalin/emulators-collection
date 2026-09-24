@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <iostream>
 #include <vector>
 
 namespace {
@@ -47,7 +48,11 @@ const std::array<uint32_t, 128> kPalette = buildPalette();
 }  // namespace
 
 Atari2600::Atari2600()
-    : bus(), renderer(nullptr), frameTexture(nullptr), isRunning(true) {
+    : bus(),
+      renderer(nullptr),
+      frameTexture(nullptr),
+      audio(),
+      isRunning(true) {
   // Route TIA audio register writes to the sound generator
   bus.setAudioWriteHook(
       [this](uint16_t reg, uint8_t value) { audio.write(reg, value); });

@@ -56,7 +56,7 @@ void Chip8::audioCallback(void* userdata, Uint8* stream, int len) {
   auto* samples = reinterpret_cast<int16_t*>(stream);
   const int count = len / sizeof(int16_t);
 
-  const double sampleRate = self->sampleRate;
+  const double sampleRate = 44100.0;
   const double tone = 440.0;
   const float volume = 3000.0f;
   const float target = self->beepOn.load() ? 1.0f : 0.0f;
@@ -94,12 +94,9 @@ void Chip8::initAudio() {
 
   this->audioDevice = SDL_OpenAudioDevice(nullptr, 0, &want, &have,
                                           SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
-
-  this->sampleRate = have.freq;
   if (this->audioDevice == 0) {
-    std::cerr << "Audio: driver=" << SDL_GetCurrentAudioDriver() << ", "
-              << have.freq << " Hz, buffer " << have.samples << " samples (~"
-              << (1000.0 * have.samples / have.freq) << " ms)\n";
+    std::cerr << "Could not open audio device: " << SDL_GetError() << '\n';
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);  // undo SDL_InitSubSystem above
     return;
   }
   SDL_PauseAudioDevice(this->audioDevice, 0);  // tourne en permanence
@@ -109,8 +106,10 @@ void Chip8::setBeep(bool on) { this->beepOn.store(on); }
 
 void Chip8::shutdownAudio() {
   if (this->audioDevice != 0) {
-    SDL_CloseAudioDevice(this->audioDevice);
+    SDL_PauseAudioDevice(this->audioDevice, 1);
+    SDL_CloseAudioDevice(this->audioDevice);  // waits for the audio thread
     this->audioDevice = 0;
+    if (SDL_WasInit(SDL_INIT_AUDIO)) SDL_QuitSubSystem(SDL_INIT_AUDIO);
   }
 }
 
@@ -220,7 +219,6 @@ void Chip8::handleInput() {
             break;
           case SDLK_SPACE:
             this->running = !this->running;
-            if (!this->running) this->setBeep(false);
             break;
           case SDLK_0:
             this->key[0x0] = 1;
@@ -290,6 +288,12 @@ void Chip8::executeOpcode(uint16_t opcode) {
 
   int scale = this->highResolutionMode ? 2 : 1;
 
+  // All CHIP-8 RAM accesses go through here: a ROM can never read or write
+  // outside the memory array, whatever I holds.
+  auto ram = [this](std::size_t addr) -> uint8_t& {
+    return this->memory[addr % sizeof(this->memory)];
+  };
+
   switch (opcode & 0xF000) {
     case 0x0000:
       if ((opcode & 0xFFF0) == 0x00C0) {
@@ -316,6 +320,12 @@ void Chip8::executeOpcode(uint16_t opcode) {
           this->draw_flag = 1;
           break;
         case 0x00EE:  // 00EE: Return from subroutine
+          if (this->sp == 0) {
+            std::cerr << "Stack underflow\n";
+            this->quit = true;
+            this->running = false;
+            break;
+          }
           --this->sp;
           this->pc = this->stack[this->sp];
           break;
@@ -366,6 +376,12 @@ void Chip8::executeOpcode(uint16_t opcode) {
       this->pc = nnn;
       break;
     case 0x2000:  // 2NNN: Call subroutine at NNN
+      if (static_cast<std::size_t>(this->sp) >= std::size(this->stack)) {
+        std::cerr << "Stack overflow\n";
+        this->quit = true;
+        this->running = false;
+        break;
+      }
       this->stack[this->sp] = this->pc;
       ++this->sp;
       this->pc = nnn;
@@ -440,27 +456,37 @@ void Chip8::executeOpcode(uint16_t opcode) {
     case 0xC000:  // CXNN: Set VX to a random number AND NN
       this->V[x] = (rand() % 256) & nn;
       break;
-    case 0xD000:  // DXYN: Draw a sprite at position (VX, VY) with width 8 and
-                  // height N
+    case 0xD000:  // DXYN: Draw a sprite at position (VX, VY)
     {
-      uint8_t xPos = this->V[x] % (64 * scale);
-      uint8_t yPos = this->V[y] % (32 * scale);
+      const int width = 64 * scale;
+      const int height = 32 * scale;
+      const int xPos = this->V[x] % width;
+      const int yPos = this->V[y] % height;
       this->V[0xF] = 0;
 
-      if (n == 0 && this->highResolutionMode) {
-        n = 16;  // In high-resolution mode, N=0 means a 16-pixel tall sprite
-      }
+      // High-res DXY0 draws a 16x16 sprite (2 bytes per row).
+      const bool big = (n == 0 && this->highResolutionMode);
+      const int rows = big ? 16 : n;
+      const int cols = big ? 16 : 8;
 
-      for (int row = 0; row < n; ++row) {
-        uint8_t spriteByte = this->memory[this->I + row];
-        for (int col = 0; col < 8 * scale; ++col) {
-          if ((spriteByte & (0x80 >> col)) != 0) {
-            int pixelIndex = (yPos + row) * 64 * scale + (xPos + col);
-            if (this->gfx[pixelIndex] == 1) {
-              this->V[0xF] = 1;
-            }
-            this->gfx[pixelIndex] ^= 1;
-          }
+      for (int row = 0; row < rows; ++row) {
+        const int py = yPos + row;
+        if (py >= height) break;  // clip at the bottom edge
+
+        const int base = this->I + (big ? row * 2 : row);
+        const unsigned bits =
+            big ? static_cast<unsigned>((ram(base) << 8) | ram(base + 1))
+                : static_cast<unsigned>(ram(base) << 8);
+
+        for (int col = 0; col < cols; ++col) {
+          const int px = xPos + col;
+          if (px >= width) break;  // clip at the right edge
+          if ((bits & (0x8000u >> col)) == 0) continue;
+
+          const std::size_t idx = static_cast<std::size_t>(py * width + px);
+          if (idx >= std::size(this->gfx)) continue;  // never write past gfx
+          if (this->gfx[idx] == 1) this->V[0xF] = 1;
+          this->gfx[idx] ^= 1;
         }
       }
       this->draw_flag = 1;
@@ -469,13 +495,14 @@ void Chip8::executeOpcode(uint16_t opcode) {
     case 0xE000:
       if (nn == 0x9E) {  // EX9E: Skip next instruction if the key stored in VX
                          // is pressed
-        if (this->key[this->V[x]] != 0) {
+        if (this->key[this->V[x] & 0x0F] != 0) {
           this->pc += 2;
-          this->key[this->V[x]] = 0;  // Clear the key state after processing
+          this->key[this->V[x] & 0x0F] =
+              0;  // Clear the key state after processing
         }
       } else if (nn == 0xA1) {  // EXA1: Skip next instruction if the key stored
                                 // in VX isn't pressed
-        if (this->key[this->V[x]] == 0) {
+        if (this->key[this->V[x] & 0x0F] == 0) {
           this->pc += 2;
         }
       } else {
@@ -509,6 +536,7 @@ void Chip8::executeOpcode(uint16_t opcode) {
         case 0x18:  // FX18: Set the sound timer to VX
           this->sound_timer = this->V[x];
           if (this->sound_timer > 0) {
+            std::cerr << "FX18 beep, timer=" << int(this->sound_timer) << '\n';
             this->beepUntil =
                 std::chrono::steady_clock::now() +
                 std::chrono::milliseconds(100);  // minimum beep length
@@ -527,18 +555,18 @@ void Chip8::executeOpcode(uint16_t opcode) {
           this->I = this->V[x] * 10;
           break;
         case 0x33:  // FX33: Store the binary-coded decimal representation of VX
-          this->memory[this->I] = this->V[x] / 100;
-          this->memory[this->I + 1] = (this->V[x] / 10) % 10;
-          this->memory[this->I + 2] = this->V[x] % 10;
+          ram(this->I) = this->V[x] / 100;
+          ram(this->I + 1) = (this->V[x] / 10) % 10;
+          ram(this->I + 2) = this->V[x] % 10;
           break;
         case 0x55:  // FX55: Store V0 to VX in memory starting
           for (int i = 0; i <= x; ++i) {
-            this->memory[this->I + i] = this->V[i];
+            ram(this->I + i) = this->V[i];
           }
           break;
         case 0x65:  // FX65: Read V0 to VX from memory starting
           for (int i = 0; i <= x; ++i) {
-            this->V[i] = this->memory[this->I + i];
+            this->V[i] = ram(this->I + i);
           }
           break;
         case 0x75:    // FX75: Store V0 to VX in RPL user flags
@@ -574,8 +602,10 @@ void Chip8::clearKeyStates() {
 }
 
 void Chip8::cycle() {
-  uint16_t opcode = (this->memory[this->pc] << 8) | this->memory[this->pc + 1];
-  this->pc += 2;
+  const std::size_t addr = this->pc % sizeof(this->memory);
+  uint16_t opcode = (this->memory[addr] << 8) |
+                    this->memory[(addr + 1) % sizeof(this->memory)];
+  this->pc = static_cast<uint16_t>(addr + 2);
   this->executeOpcode(opcode);
 }
 
@@ -612,5 +642,8 @@ int Chip8::run() {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
+
+  // The audio thread uses `this`: stop it before the object can be destroyed.
+  this->shutdownAudio();
   return this->returnValue;
 }

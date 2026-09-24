@@ -23,6 +23,8 @@ class TIAAudio {
   static constexpr float kAmplitude = 8000.0f;  // out of 32767, keep it quiet
 
   TIAAudio() {
+    std::cerr << "TIA audio: " << kTiaAudioHz << " Hz, "
+              << (kTiaAudioHz / 44100.0) << " samples per 44.1 kHz sample\n";
     for (auto& r : regs_) r.store(0);
   }
   ~TIAAudio() { close(); }
@@ -69,6 +71,7 @@ class TIAAudio {
   // destructor, which may run after the program has already shut SDL down.
   void close() {
     if (dev_ != 0) {
+      std::cerr << "Closing audio device\n";
       SDL_PauseAudioDevice(dev_, 1);  // make sure the callback is idle
       SDL_CloseAudioDevice(dev_);     // waits for the audio thread to exit
       dev_ = 0;

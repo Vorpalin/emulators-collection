@@ -11,13 +11,6 @@ Game::Game(const std::string& file, const std::string& dir)
     : path(dir + "/" + file) {
   size_t lastindex = file.find_last_of(".");
   name = file.substr(0, lastindex);
-}
-
-std::string Game::getName() { return name; }
-
-int Game::loadGame(SDL_Renderer* renderer) {
-  std::string file = path.substr(path.find_last_of("/") + 1);
-  size_t lastindex = file.find_last_of(".");
 
   std::string extension = file.substr(lastindex + 1);
 
@@ -29,11 +22,15 @@ int Game::loadGame(SDL_Renderer* renderer) {
     std::cerr << "Unsupported file extension: " << extension << std::endl;
     emulator = nullptr;
   }
+}
+
+std::string Game::getName() { return name; }
+
+int Game::loadGame(SDL_Renderer* renderer) {
   if (emulator) {
     emulator->setRenderer(renderer);
     emulator->loadProgram(this->path);
     int result = emulator->run();
-    emulator = nullptr;  // Reset the emulator after running
     return result;
   }
   return 0;
