@@ -1,0 +1,110 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "include/**"
+      - "docs/**"
+      - "scripts/generate_wiki.py"
+      - "Doxyfile"
+      - ".github/workflows/documentation.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: documentation
+  cancel-in-progress: true
+
+jobs:
+  documentation:
+    name: Generate and publish Wiki
+    runs-on: ubuntu-24.04
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen
+
+      - name: Generate Doxygen XML
+        run: |
+          doxygen Doxyfile
+
+      - name: Generate Wiki API pages
+        run: |
+          python3 scripts/generate_wiki.py
+
+      - name: Verify documentation
+        run: |
+          test -f build/wiki/api/API.md
+
+          echo "Generated documentation:"
+          find build/wiki/api -type f -name '*.md' -print
+
+      - name: Clone GitHub Wiki
+        run: |
+          git clone \
+            "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.wiki.git" \
+            wiki
+
+      - name: Synchronize documentation
+        run: |
+          if [ -d "docs" ]; then
+            find docs -maxdepth 1 -type f -name '*.md' -exec cp {} wiki/ \;
+          fi
+
+      - name: Synchronize API documentation
+        run: |
+          mkdir -p wiki/API
+
+          # Remove previously generated API pages.
+          find wiki/API -type f -name '*.md' -delete
+
+          # Copy newly generated API pages.
+          cp build/wiki/api/*.md wiki/API/
+
+      - name: Create API Wiki page
+        run: |
+          cat > wiki/API-Reference.md << 'EOF'
+          # API Reference
+
+          The API documentation is automatically generated from the C++ source code using Doxygen.
+
+          ## Classes and structures
+
+          See the [API documentation](API/API.md).
+
+          ---
+
+          *This page is automatically generated. Do not edit it manually.*
+          EOF
+
+      - name: Commit Wiki changes
+        working-directory: wiki
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .
+
+          if git diff --cached --quiet; then
+            echo "Wiki is already up to date."
+            exit 0
+          fi
+
+          git commit -m "docs: update Wiki documentation"
+
+          git push
