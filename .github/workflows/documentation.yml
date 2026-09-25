@@ -41,6 +41,7 @@ jobs:
 
       - name: Generate Doxygen XML
         run: |
+          mkdir -p build/doxygen
           doxygen Doxyfile
 
       - name: Generate Wiki API pages
