@@ -73,8 +73,36 @@ def member_arguments(member: ET.Element) -> str:
 
 
 def member_signature(member: ET.Element) -> str:
-    name = member.get("name", "unknown")
+    name = member_name(member)
+
+    if not name:
+        definition = element_text(member.find("definition"))
+
+        if definition:
+            name = definition.split("::")[-1]
+
+    if not name:
+        return ""
+
+    args = element_text(member.find("argsstring"))
+
+    if args:
+        return f"{name}{args}"
+
     return f"{name}({member_arguments(member)})"
+
+def member_name(member: ET.Element) -> str:
+    name = element_text(member.find("name"))
+
+    if name:
+        return name
+
+    name = member.get("name")
+
+    if name:
+        return name
+
+    return ""
 
 
 def source_location(member: ET.Element) -> str:
@@ -165,6 +193,10 @@ def write_compound(compound: ET.Element) -> Path | None:
 
         for function in functions:
             signature = member_signature(function)
+
+            if not signature:
+                continue
+
             return_type = member_type(function)
             brief, detailed = description(function)
 
@@ -201,7 +233,11 @@ def write_compound(compound: ET.Element) -> Path | None:
         ]
 
         for variable in variables:
-            name = variable.get("name", "unknown")
+            name = member_name(variable)
+
+            if not name:
+                continue
+
             variable_type = member_type(variable)
             brief, detailed = description(variable)
 
