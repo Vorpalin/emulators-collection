@@ -1,18 +1,9 @@
-# ============================================================
-# Emulator Collection - Doxygen configuration
-# ============================================================
-
 PROJECT_NAME           = "Emulator Collection"
 PROJECT_BRIEF          = "A collection of emulators written in C++"
-
-# ------------------------------------------------------------
-# Input
-# ------------------------------------------------------------
 
 INPUT                  = src
 RECURSIVE              = YES
 
-# C/C++ extensions
 FILE_PATTERNS          = *.h \
                          *.hh \
                          *.hpp \
@@ -22,73 +13,34 @@ FILE_PATTERNS          = *.h \
                          *.cpp \
                          *.cxx
 
-# ------------------------------------------------------------
-# Extraction
-# ------------------------------------------------------------
-
 EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = YES
 EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
 
-# Extract undocumented members/classes too.
-# This is useful while the project is still being documented.
 WARN_IF_UNDOCUMENTED   = NO
-
-# ------------------------------------------------------------
-# Output
-# ------------------------------------------------------------
+WARN_IF_DOC_ERROR      = YES
 
 OUTPUT_DIRECTORY       = build/doxygen
 
 GENERATE_HTML          = NO
 GENERATE_LATEX         = NO
 GENERATE_XML           = YES
-
 XML_OUTPUT             = xml
-
-# ------------------------------------------------------------
-# Source browsing
-# ------------------------------------------------------------
 
 SOURCE_BROWSER         = YES
 INLINE_SOURCES         = NO
 
-# ------------------------------------------------------------
-# Class information
-# ------------------------------------------------------------
-
-HIDE_UNDOC_CLASSES     = NO
-SORT_MEMBER_DOCS       = YES
-SORT_BRIEF_DOCS        = YES
-
-# ------------------------------------------------------------
-# Preprocessor
-# ------------------------------------------------------------
-
 ENABLE_PREPROCESSING   = YES
-MACRO_EXPANSION        = NO
+MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = NO
-
-# ------------------------------------------------------------
-# Diagrams
-# ------------------------------------------------------------
 
 HAVE_DOT               = YES
 COLLABORATION_GRAPH    = YES
 GROUP_GRAPHS           = YES
 UML_LOOK               = YES
 
-# ------------------------------------------------------------
-# Warnings
-# ------------------------------------------------------------
-
 QUIET                  = NO
 WARNINGS               = YES
-WARN_IF_DOC_ERROR      = YES
-WARN_IF_INCOMPLETE_DOC = NO
-
-# ------------------------------------------------------------
-# Encoding
-# ------------------------------------------------------------
 
 INPUT_ENCODING         = UTF-8

@@ -1,28 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-Generate GitHub Wiki Markdown pages from Doxygen XML.
-
-The script reads:
-
-    build/doxygen/xml/
-
-and generates:
-
-    build/wiki/api/
-
-The generated pages contain information about:
-- classes
-- structs
-- enums
-- functions
-- variables
-- inheritance
-- brief descriptions
-- detailed descriptions
-- source files
-"""
-
 from __future__ import annotations
 
 import html
@@ -37,14 +14,11 @@ OUTPUT_DIR = Path("build/wiki/api")
 
 
 def clean_text(text: str | None) -> str:
-    """Convert Doxygen XML text into readable Markdown text."""
-
     if not text:
         return ""
 
     text = html.unescape(text)
 
-    # Basic Doxygen XML cleanup.
     replacements = {
         "<computeroutput>": "`",
         "</computeroutput>": "`",
@@ -62,410 +36,349 @@ def clean_text(text: str | None) -> str:
     return text.strip()
 
 
-def get_text(element: ET.Element | None, tag: str) -> str:
-    """Return the text contained in a child XML element."""
-
+def element_text(element: ET.Element | None) -> str:
     if element is None:
         return ""
 
-    child = element.find(tag)
-
-    if child is None:
-        return ""
-
-    return clean_text("".join(child.itertext()))
+    return clean_text("".join(element.itertext()))
 
 
-def get_compound_description(
-    compound: ET.Element,
-) -> tuple[str, str]:
-    """Return brief and detailed descriptions."""
+def description(element: ET.Element) -> tuple[str, str]:
+    brief = element.find("briefdescription")
+    detailed = element.find("detaileddescription")
 
-    brief = get_text(compound, "briefdescription")
-    detailed = get_text(compound, "detaileddescription")
-
-    return brief, detailed
-
-
-def get_member_description(
-    member: ET.Element,
-) -> tuple[str, str]:
-    """Return brief and detailed descriptions for a member."""
-
-    brief = get_text(member, "briefdescription")
-    detailed = get_text(member, "detaileddescription")
-
-    return brief, detailed
+    return (
+        element_text(brief),
+        element_text(detailed),
+    )
 
 
-def format_type(member: ET.Element) -> str:
-    """Return a readable member type."""
-
-    type_element = member.find("type")
-
-    if type_element is None:
-        return ""
-
-    return clean_text("".join(type_element.itertext())).strip()
+def member_type(member: ET.Element) -> str:
+    return element_text(member.find("type"))
 
 
-def format_args(member: ET.Element) -> str:
-    """Return a readable function argument list."""
-
-    args = []
+def member_arguments(member: ET.Element) -> str:
+    arguments = []
 
     for param in member.findall("param"):
-        type_element = param.find("type")
-        name_element = param.find("declname")
-
-        arg_type = ""
-
-        if type_element is not None:
-            arg_type = clean_text(
-                "".join(type_element.itertext())
-            ).strip()
-
-        arg_name = ""
-
-        if name_element is not None and name_element.text:
-            arg_name = name_element.text.strip()
+        param_type = element_text(param.find("type"))
+        param_name = element_text(param.find("declname"))
 
         argument = " ".join(
-            part for part in (arg_type, arg_name) if part
+            part
+            for part in (param_type, param_name)
+            if part
         )
 
         if argument:
-            args.append(argument)
+            arguments.append(argument)
 
-    return ", ".join(args)
+    return ", ".join(arguments)
 
 
-def format_signature(member: ET.Element) -> str:
-    """Build a readable C++ function signature."""
+def member_signature(member: ET.Element) -> str:
+    name = member.get("name", "unknown")
+    args = member_arguments(member)
 
-    name = member.get("name", "")
-    args = format_args(member)
     return f"{name}({args})"
 
 
-def get_location(member: ET.Element) -> str:
-    """Return the source file associated with a member."""
-
+def source_location(member: ET.Element) -> str:
     location = member.find("location")
 
     if location is None:
         return ""
 
-    file_name = location.get("file")
-
-    if not file_name:
-        return ""
-
-    return file_name
+    return location.get("file", "")
 
 
-def write_class_page(
-    compound: ET.Element,
-    output_dir: Path,
-) -> None:
-    """Generate a Markdown page for one class/struct."""
+def write_compound(compound: ET.Element) -> Path | None:
+    kind = compound.get("kind")
 
-    compound_name = compound.get("name", "Unknown")
+    if kind not in {"class", "struct"}:
+        return None
 
-    compound_kind = compound.get("kind", "class")
+    name = element_text(compound.find("compoundname"))
 
-    brief, detailed = get_compound_description(compound)
+    if not name:
+        return None
 
-    output_file = output_dir / f"{compound_name}.md"
+    # Doxygen peut utiliser des namespaces.
+    filename = name.replace("::", "_") + ".md"
+    output = OUTPUT_DIR / filename
 
-    lines: list[str] = []
+    brief, detailed = description(compound)
 
-    lines.append(f"# `{compound_name}`")
-    lines.append("")
-
-    if compound_kind == "struct":
-        lines.append("**Type:** struct")
-    else:
-        lines.append("**Type:** class")
-
-    lines.append("")
+    lines = [
+        f"# `{name}`",
+        "",
+        f"**Type:** {kind}",
+        "",
+    ]
 
     if brief:
-        lines.append(brief)
-        lines.append("")
+        lines += [
+            brief,
+            "",
+        ]
 
     if detailed:
-        lines.append(detailed)
-        lines.append("")
+        lines += [
+            detailed,
+            "",
+        ]
 
-    # --------------------------------------------------------
-    # Base classes
-    # --------------------------------------------------------
-
-    base_classes = []
+    # Inheritance
+    bases = []
 
     for base in compound.findall("basecompoundref"):
-        if base.text:
-            base_classes.append(base.text.strip())
+        base_name = element_text(base)
 
-    if base_classes:
-        lines.append("## Inheritance")
-        lines.append("")
+        if base_name:
+            bases.append(base_name)
 
-        for base in base_classes:
+    if bases:
+        lines += [
+            "## Inheritance",
+            "",
+        ]
+
+        for base in bases:
             lines.append(f"- `{base}`")
 
         lines.append("")
 
-    # --------------------------------------------------------
-    # Members
-    # --------------------------------------------------------
+    functions = []
+    variables = []
+    enums = []
+    typedefs = []
 
-    member_groups = compound.findall("sectiondef")
-
-    functions: list[ET.Element] = []
-    variables: list[ET.Element] = []
-    enums: list[ET.Element] = []
-    typedefs: list[ET.Element] = []
-
-    for section in member_groups:
+    for section in compound.findall("sectiondef"):
         for member in section.findall("memberdef"):
-            kind = member.get("kind")
+            member_kind = member.get("kind")
 
-            if kind == "function":
+            if member_kind == "function":
                 functions.append(member)
 
-            elif kind == "variable":
+            elif member_kind == "variable":
                 variables.append(member)
 
-            elif kind == "enum":
+            elif member_kind == "enum":
                 enums.append(member)
 
-            elif kind == "typedef":
+            elif member_kind == "typedef":
                 typedefs.append(member)
 
-    # --------------------------------------------------------
     # Functions
-    # --------------------------------------------------------
-
     if functions:
-        lines.append("## Functions")
-        lines.append("")
+        lines += [
+            "## Functions",
+            "",
+        ]
 
-        for member in functions:
-            name = member.get("name", "unknown")
-            signature = format_signature(member)
-            brief, detailed = get_member_description(member)
-            return_type = format_type(member)
+        for function in functions:
+            signature = member_signature(function)
+            return_type = member_type(function)
 
-            lines.append(f"### `{signature}`")
-            lines.append("")
+            brief, detailed = description(function)
+
+            lines += [
+                f"### `{signature}`",
+                "",
+            ]
 
             if return_type:
-                lines.append(f"**Return type:** `{return_type}`")
-                lines.append("")
+                lines += [
+                    f"**Return type:** `{return_type}`",
+                    "",
+                ]
 
             if brief:
-                lines.append(brief)
-                lines.append("")
+                lines += [
+                    brief,
+                    "",
+                ]
 
             if detailed:
-                lines.append(detailed)
-                lines.append("")
+                lines += [
+                    detailed,
+                    "",
+                ]
 
-            location = get_location(member)
+            location = source_location(function)
 
             if location:
-                lines.append(f"**Source:** `{location}`")
-                lines.append("")
+                lines += [
+                    f"**Source:** `{location}`",
+                    "",
+                ]
 
-    # --------------------------------------------------------
     # Variables
-    # --------------------------------------------------------
-
     if variables:
-        lines.append("## Variables")
-        lines.append("")
+        lines += [
+            "## Variables",
+            "",
+        ]
 
-        for member in variables:
-            name = member.get("name", "unknown")
-            member_type = format_type(member)
+        for variable in variables:
+            name = variable.get("name", "unknown")
+            var_type = member_type(variable)
 
-            brief, detailed = get_member_description(member)
+            brief, detailed = description(variable)
 
-            if member_type:
-                lines.append(f"### `{member_type} {name}`")
+            if var_type:
+                lines += [
+                    f"### `{var_type} {name}`",
+                    "",
+                ]
             else:
-                lines.append(f"### `{name}`")
-
-            lines.append("")
+                lines += [
+                    f"### `{name}`",
+                    "",
+                ]
 
             if brief:
-                lines.append(brief)
-                lines.append("")
+                lines += [
+                    brief,
+                    "",
+                ]
 
             if detailed:
-                lines.append(detailed)
-                lines.append("")
+                lines += [
+                    detailed,
+                    "",
+                ]
 
-    # --------------------------------------------------------
     # Enums
-    # --------------------------------------------------------
-
     if enums:
-        lines.append("## Enumerations")
-        lines.append("")
+        lines += [
+            "## Enumerations",
+            "",
+        ]
 
         for enum in enums:
             name = enum.get("name", "anonymous")
 
-            brief, detailed = get_member_description(enum)
+            brief, detailed = description(enum)
 
-            lines.append(f"### `{name}`")
-            lines.append("")
+            lines += [
+                f"### `{name}`",
+                "",
+            ]
 
             if brief:
-                lines.append(brief)
-                lines.append("")
+                lines += [
+                    brief,
+                    "",
+                ]
 
             if detailed:
-                lines.append(detailed)
-                lines.append("")
+                lines += [
+                    detailed,
+                    "",
+                ]
 
             for value in enum.findall("enumvalue"):
-                value_name = value.get("name", "")
+                value_name = value.get("name")
 
                 if value_name:
                     lines.append(f"- `{value_name}`")
 
             lines.append("")
 
-    # --------------------------------------------------------
     # Typedefs
-    # --------------------------------------------------------
-
     if typedefs:
-        lines.append("## Type definitions")
-        lines.append("")
+        lines += [
+            "## Type definitions",
+            "",
+        ]
 
         for typedef in typedefs:
             name = typedef.get("name", "unknown")
-            typedef_type = format_type(typedef)
+            typedef_type = member_type(typedef)
 
-            brief, detailed = get_member_description(typedef)
+            brief, detailed = description(typedef)
 
             if typedef_type:
-                lines.append(
-                    f"### `{typedef_type} {name}`"
-                )
+                lines += [
+                    f"### `{typedef_type} {name}`",
+                    "",
+                ]
             else:
-                lines.append(f"### `{name}`")
-
-            lines.append("")
+                lines += [
+                    f"### `{name}`",
+                    "",
+                ]
 
             if brief:
-                lines.append(brief)
-                lines.append("")
+                lines += [
+                    brief,
+                    "",
+                ]
 
             if detailed:
-                lines.append(detailed)
-                lines.append("")
+                lines += [
+                    detailed,
+                    "",
+                ]
 
-    # --------------------------------------------------------
-    # Footer
-    # --------------------------------------------------------
+    lines += [
+        "---",
+        "",
+        "*Automatically generated from Doxygen XML.*",
+        "",
+    ]
 
-    lines.append("---")
-    lines.append("")
-    lines.append(
-        "*This page was automatically generated from "
-        "Doxygen documentation.*"
-    )
-    lines.append("")
-
-    output_file.write_text(
+    output.write_text(
         "\n".join(lines),
         encoding="utf-8",
     )
 
-    print(f"Generated {output_file}")
+    return output
 
 
-def generate() -> None:
-    """Generate all API documentation."""
-
+def main() -> None:
     if not XML_DIR.exists():
         print(
-            f"ERROR: Doxygen XML directory not found: {XML_DIR}",
+            f"ERROR: Doxygen XML directory does not exist: {XML_DIR}",
             file=sys.stderr,
         )
         sys.exit(1)
-
-    if OUTPUT_DIR.exists():
-        shutil.rmtree(OUTPUT_DIR)
 
     OUTPUT_DIR.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    index_entries: list[str] = []
+    # Clean old generated pages.
+    for file in OUTPUT_DIR.glob("*.md"):
+        file.unlink()
 
-    index = XML_DIR / "index.xml"
+    xml_files = sorted(XML_DIR.glob("*.xml"))
 
-    if not index.exists():
-        print(
-            f"ERROR: Doxygen index not found: {index}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    print(f"Found {len(xml_files)} XML files.")
 
-    tree = ET.parse(index)
-    root = tree.getroot()
+    generated = []
 
-    compounds = root.findall("compound")
-
-    for compound_ref in compounds:
-        refid = compound_ref.get("refid")
-
-        if not refid:
+    for xml_file in xml_files:
+        try:
+            tree = ET.parse(xml_file)
+        except ET.ParseError as error:
+            print(
+                f"WARNING: Could not parse {xml_file}: {error}",
+                file=sys.stderr,
+            )
             continue
 
-        compound_xml = XML_DIR / f"{refid}.xml"
+        root = tree.getroot()
 
-        if not compound_xml.exists():
-            continue
+        output = write_compound(root)
 
-        compound_tree = ET.parse(compound_xml)
-        compound = compound_tree.getroot()
+        if output is not None:
+            generated.append(output)
 
-        kind = compound.get("kind")
-
-        if kind not in {
-            "class",
-            "struct",
-        }:
-            continue
-
-        name_element = compound.find("compoundname")
-
-        if name_element is None or not name_element.text:
-            continue
-
-        name = name_element.text.strip()
-
-        write_class_page(
-            compound,
-            OUTPUT_DIR,
-        )
-
-        index_entries.append(name)
-
-    # --------------------------------------------------------
-    # Generate API index
-    # --------------------------------------------------------
-
-    index_file = OUTPUT_DIR / "API.md"
+    # API index
+    index = OUTPUT_DIR / "API.md"
 
     lines = [
         "# API Reference",
@@ -474,33 +387,37 @@ def generate() -> None:
         "",
     ]
 
-    if index_entries:
-        lines.append("## Classes and structures")
-        lines.append("")
+    if generated:
+        lines += [
+            "## Classes and structures",
+            "",
+        ]
 
-        for name in sorted(index_entries):
+        for page in sorted(generated):
+            name = page.stem
+
             lines.append(
-                f"- [`{name}`]({name}.md)"
+                f"- [`{name}`]({page.name})"
             )
 
         lines.append("")
-    else:
-        lines.extend(
-            [
-                "No classes or structures were found.",
-                "",
-            ]
-        )
 
-    index_file.write_text(
+    else:
+        lines += [
+            "No classes or structures were found.",
+            "",
+        ]
+
+    index.write_text(
         "\n".join(lines),
         encoding="utf-8",
     )
 
-    print(
-        f"Generated {len(index_entries)} API pages."
-    )
+    print(f"Generated {len(generated)} API pages.")
+
+    for page in generated:
+        print(f"  {page}")
 
 
 if __name__ == "__main__":
-    generate()
+    main()

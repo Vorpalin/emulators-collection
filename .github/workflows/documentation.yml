@@ -44,6 +44,19 @@ jobs:
           mkdir -p build/doxygen
           doxygen Doxyfile
 
+      - name: Inspect Doxygen output
+        run: |
+          echo "=== Doxygen XML ==="
+          find build/doxygen/xml -maxdepth 2 -type f | sort | head -100
+
+          echo
+          echo "=== index.xml ==="
+          sed -n '1,120p' build/doxygen/xml/index.xml
+
+          echo
+          echo "=== XML compounds ==="
+          grep -R '<compound' build/doxygen/xml/index.xml || true
+
       - name: Generate Wiki API pages
         run: |
           python3 scripts/generate_wiki.py
