@@ -117,6 +117,56 @@ jobs:
           ctest \
             --test-dir build \
             --output-on-failure
+    fuzzing:
+      name: Fuzzing
+      runs-on: ubuntu-24.04
+
+      steps:
+        - name: Checkout
+          uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+          with:
+            persist-credentials: false
+
+        - name: Install dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y \
+              clang \
+              cmake \
+              ninja-build \
+              libsdl2-dev \
+              libsdl2-ttf-dev
+
+        - name: Configure
+          run: |
+            cmake -S . -B build-fuzz \
+              -G Ninja \
+              -DCMAKE_BUILD_TYPE=Debug \
+              -DCMAKE_C_COMPILER=clang \
+              -DCMAKE_CXX_COMPILER=clang++
+
+        - name: Build fuzzer
+          run: |
+            cmake --build build-fuzz \
+              --target cpu_fuzz \
+              --parallel
+
+        - name: Run fuzzer
+          run: |
+            mkdir -p fuzz-artifacts
+
+            ./build-fuzz/cpu_fuzz \
+              -max_total_time=60 \
+              -timeout=5 \
+              fuzz-artifacts
+
+        - name: Upload fuzzing artifacts
+          if: always()
+          uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+          with:
+            name: fuzz-artifacts
+            path: fuzz-artifacts/
+            if-no-files-found: ignore
 
   docker:
     name: Docker Security Scan
