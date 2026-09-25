@@ -1,0 +1,47 @@
+Atari 2600:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/emulators/console/Atari2600/**'
+
+CHIP-8:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/emulators/console/chip_8/**'
+
+CPU:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/emulators/CPU/**'
+
+Processor:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/emulators/Processor/**'
+
+Chip:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/emulators/chip/**'
+
+Cartridge:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/emulators/Cartridge/**'
+
+Bus:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/emulators/BUS/**'
+
+CI/CD:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+          - 'Dockerfile'
+          - 'docker-compose.yml'
+
+Documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**'
