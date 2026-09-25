@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import html
-import shutil
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -44,12 +43,9 @@ def element_text(element: ET.Element | None) -> str:
 
 
 def description(element: ET.Element) -> tuple[str, str]:
-    brief = element.find("briefdescription")
-    detailed = element.find("detaileddescription")
-
     return (
-        element_text(brief),
-        element_text(detailed),
+        element_text(element.find("briefdescription")),
+        element_text(element.find("detaileddescription")),
     )
 
 
@@ -78,9 +74,7 @@ def member_arguments(member: ET.Element) -> str:
 
 def member_signature(member: ET.Element) -> str:
     name = member.get("name", "unknown")
-    args = member_arguments(member)
-
-    return f"{name}({args})"
+    return f"{name}({member_arguments(member)})"
 
 
 def source_location(member: ET.Element) -> str:
@@ -103,7 +97,6 @@ def write_compound(compound: ET.Element) -> Path | None:
     if not name:
         return None
 
-    # Doxygen peut utiliser des namespaces.
     filename = name.replace("::", "_") + ".md"
     output = OUTPUT_DIR / filename
 
@@ -117,16 +110,10 @@ def write_compound(compound: ET.Element) -> Path | None:
     ]
 
     if brief:
-        lines += [
-            brief,
-            "",
-        ]
+        lines += [brief, ""]
 
     if detailed:
-        lines += [
-            detailed,
-            "",
-        ]
+        lines += [detailed, ""]
 
     # Inheritance
     bases = []
@@ -155,18 +142,18 @@ def write_compound(compound: ET.Element) -> Path | None:
 
     for section in compound.findall("sectiondef"):
         for member in section.findall("memberdef"):
-            member_kind = member.get("kind")
+            kind = member.get("kind")
 
-            if member_kind == "function":
+            if kind == "function":
                 functions.append(member)
 
-            elif member_kind == "variable":
+            elif kind == "variable":
                 variables.append(member)
 
-            elif member_kind == "enum":
+            elif kind == "enum":
                 enums.append(member)
 
-            elif member_kind == "typedef":
+            elif kind == "typedef":
                 typedefs.append(member)
 
     # Functions
@@ -179,7 +166,6 @@ def write_compound(compound: ET.Element) -> Path | None:
         for function in functions:
             signature = member_signature(function)
             return_type = member_type(function)
-
             brief, detailed = description(function)
 
             lines += [
@@ -194,16 +180,10 @@ def write_compound(compound: ET.Element) -> Path | None:
                 ]
 
             if brief:
-                lines += [
-                    brief,
-                    "",
-                ]
+                lines += [brief, ""]
 
             if detailed:
-                lines += [
-                    detailed,
-                    "",
-                ]
+                lines += [detailed, ""]
 
             location = source_location(function)
 
@@ -222,13 +202,12 @@ def write_compound(compound: ET.Element) -> Path | None:
 
         for variable in variables:
             name = variable.get("name", "unknown")
-            var_type = member_type(variable)
-
+            variable_type = member_type(variable)
             brief, detailed = description(variable)
 
-            if var_type:
+            if variable_type:
                 lines += [
-                    f"### `{var_type} {name}`",
+                    f"### `{variable_type} {name}`",
                     "",
                 ]
             else:
@@ -238,16 +217,10 @@ def write_compound(compound: ET.Element) -> Path | None:
                 ]
 
             if brief:
-                lines += [
-                    brief,
-                    "",
-                ]
+                lines += [brief, ""]
 
             if detailed:
-                lines += [
-                    detailed,
-                    "",
-                ]
+                lines += [detailed, ""]
 
     # Enums
     if enums:
@@ -258,7 +231,6 @@ def write_compound(compound: ET.Element) -> Path | None:
 
         for enum in enums:
             name = enum.get("name", "anonymous")
-
             brief, detailed = description(enum)
 
             lines += [
@@ -267,16 +239,10 @@ def write_compound(compound: ET.Element) -> Path | None:
             ]
 
             if brief:
-                lines += [
-                    brief,
-                    "",
-                ]
+                lines += [brief, ""]
 
             if detailed:
-                lines += [
-                    detailed,
-                    "",
-                ]
+                lines += [detailed, ""]
 
             for value in enum.findall("enumvalue"):
                 value_name = value.get("name")
@@ -296,7 +262,6 @@ def write_compound(compound: ET.Element) -> Path | None:
         for typedef in typedefs:
             name = typedef.get("name", "unknown")
             typedef_type = member_type(typedef)
-
             brief, detailed = description(typedef)
 
             if typedef_type:
@@ -311,16 +276,10 @@ def write_compound(compound: ET.Element) -> Path | None:
                 ]
 
             if brief:
-                lines += [
-                    brief,
-                    "",
-                ]
+                lines += [brief, ""]
 
             if detailed:
-                lines += [
-                    detailed,
-                    "",
-                ]
+                lines += [detailed, ""]
 
     lines += [
         "---",
@@ -350,7 +309,7 @@ def main() -> None:
         exist_ok=True,
     )
 
-    # Clean old generated pages.
+    # Remove previously generated pages.
     for file in OUTPUT_DIR.glob("*.md"):
         file.unlink()
 
@@ -372,10 +331,22 @@ def main() -> None:
 
         root = tree.getroot()
 
-        output = write_compound(root)
+        # Doxygen XML files contain:
+        #
+        # <doxygen>
+        #     <compounddef kind="class">
+        #         ...
+        #     </compounddef>
+        # </doxygen>
+        #
+        # Therefore we must process compounddef, not the root.
+        compounds = root.findall("compounddef")
 
-        if output is not None:
-            generated.append(output)
+        for compound in compounds:
+            output = write_compound(compound)
+
+            if output is not None:
+                generated.append(output)
 
     # API index
     index = OUTPUT_DIR / "API.md"
@@ -415,7 +386,7 @@ def main() -> None:
 
     print(f"Generated {len(generated)} API pages.")
 
-    for page in generated:
+    for page in sorted(generated):
         print(f"  {page}")
 
 
