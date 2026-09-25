@@ -1,5 +1,16 @@
 #pragma once
 
+/**
+ * @file opcodes.hh
+ * @brief Opcode byte values for the 6502 instruction set used by CPU65,
+ *        including the documented instructions and the common
+ *        undocumented/"illegal" opcodes.
+ *
+ * Values are grouped by mnemonic; the comment above each group names the
+ * instruction and its addressing modes (e.g. IMM = immediate, ZP = zero
+ * page, ZPX/ZPY = zero page indexed, ABS = absolute, ABSX/ABSY = absolute
+ * indexed, INDX/INDY = indexed indirect / indirect indexed).
+ */
 enum Opcodes {
   // LDA (Load Accumulator) opcodes
   INS_LDA_IMM = 0xA9,
