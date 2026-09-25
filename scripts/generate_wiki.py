@@ -72,6 +72,20 @@ def member_arguments(member: ET.Element) -> str:
     return ", ".join(arguments)
 
 
+def member_name(member: ET.Element) -> str:
+    name = element_text(member.find("name"))
+
+    if name:
+        return name
+
+    name = member.get("name")
+
+    if name:
+        return name
+
+    return ""
+
+
 def member_signature(member: ET.Element) -> str:
     name = member_name(member)
 
@@ -87,20 +101,48 @@ def member_signature(member: ET.Element) -> str:
     args = element_text(member.find("argsstring"))
 
     if args:
+        # Remove qualifiers that should not be displayed as part
+        # of the function argument list.
+        args = args.strip()
+
+        args = args.replace(" override", "")
+        args = args.replace(" final", "")
+
         return f"{name}{args}"
 
     return f"{name}({member_arguments(member)})"
 
-def member_name(member: ET.Element) -> str:
-    name = element_text(member.find("name"))
 
-    if name:
-        return name
+def parameter_descriptions(member: ET.Element) -> list[tuple[str, str]]:
+    result = []
 
-    name = member.get("name")
+    detailed = member.find("detaileddescription")
 
-    if name:
-        return name
+    if detailed is None:
+        return result
+
+    for parameter in detailed.findall(".//parameterlist[@kind='param']/parameteritem"):
+        name = element_text(parameter.find("parameternamelist/parametername"))
+        description = element_text(
+            parameter.find("parameterdescription")
+        )
+
+        if name:
+            result.append((name, description))
+
+    return result
+
+
+def return_description(member: ET.Element) -> str:
+    detailed = member.find("detaileddescription")
+
+    if detailed is None:
+        return ""
+
+    for parameter_list in detailed.findall(
+        ".//simplesect[@kind='return']"
+    ):
+        return element_text(parameter_list)
 
     return ""
 
@@ -200,28 +242,53 @@ def write_compound(compound: ET.Element) -> Path | None:
             return_type = member_type(function)
             brief, detailed = description(function)
 
-            lines += [
-                f"### `{signature}`",
-                "",
-            ]
+            lines.append(f"### `{signature}`")
+            lines.append("")
 
             if return_type:
+                lines.append(f"**Return type:** `{return_type}`")
+                lines.append("")
+
+            if brief:
+                lines.append(brief)
+                lines.append("")
+
+            if detailed:
+                lines.append(detailed)
+                lines.append("")
+
+            parameters = parameter_descriptions(function)
+
+            if parameters:
                 lines += [
-                    f"**Return type:** `{return_type}`",
+                    "#### Parameters",
+                    "",
+                    "| Name | Description |",
+                    "|---|---|",
+                ]
+
+                for name, parameter_description in parameters:
+                    lines.append(
+                        f"| `{name}` | {parameter_description} |"
+                    )
+
+                lines.append("")
+
+            returns = return_description(function)
+
+            if returns:
+                lines += [
+                    "#### Returns",
+                    "",
+                    returns,
                     "",
                 ]
 
-            if brief:
-                lines += [brief, ""]
+            source = source_location(function)
 
-            if detailed:
-                lines += [detailed, ""]
-
-            location = source_location(function)
-
-            if location:
+            if source:
                 lines += [
-                    f"**Source:** `{location}`",
+                    f"**Source:** `{source}`",
                     "",
                 ]
 
