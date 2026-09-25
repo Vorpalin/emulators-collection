@@ -17,6 +17,9 @@ add_executable(emulators-collection
     src/emulators/BUS/Atari2600Bus/Atari2600Bus.cc
     src/emulators/CPU/CPU65/CPU65.cc
     src/emulators/CPU/CPU65/setFlags.cc
+    src/emulators/CPU/SM83/SM83.cc
+    src/emulators/CPU/SM83/instructionSet.cc
+    src/emulators/CPU/SM83/prefixInstructionSet.cc
     src/emulators/Cartbridge/Cartbridge.cc
     src/emulators/Processor/MOS6532/MOS6532.cc
     src/main.cc
@@ -32,6 +35,7 @@ target_include_directories(emulators-collection
     PRIVATE
         src/emulators/CPU/
         src/emulators/CPU/CPU65
+        src/emulators/CPU/SM83
         src/emulators/BUS
         src/emulators/BUS/Atari2600Bus
         src/emulators/chip/TIA1A
