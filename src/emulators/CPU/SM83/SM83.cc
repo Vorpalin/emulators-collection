@@ -1,6 +1,7 @@
 #include "SM83.hh"
 
 #include "opcodes.hh"
+#include "opcodesPrefix.hh"
 
 SM83::SM83(Bus *bus) : CPU() {
   // Initialize registers and flags
@@ -782,9 +783,776 @@ uint32_t SM83::execute() {
 }
 
 void SM83::executeCBInstruction(uint8_t opcode, uint32_t &cycles) {
-  (void)opcode;  // Suppress unused variable warning
-  (void)cycles;  // Suppress unused variable warning
-  // FIXME: Implement the CB-prefixed instruction execution logic here.
-  // This function should handle the execution of CB-prefixed opcodes.
-  // For now, we will just increment the cycles to simulate execution.
+  switch (opcode) {
+    case RLC_B:  // RLC B
+      rlc_b();
+      break;
+    case RLC_C:  // RLC C
+      rlc_c();
+      break;
+    case RLC_D:  // RLC D
+      rlc_d();
+      break;
+    case RLC_E:  // RLC E
+      rlc_e();
+      break;
+    case RLC_H:  // RLC H
+      rlc_h();
+      break;
+    case RLC_L:  // RLC L
+      rlc_l();
+      break;
+    case RLC_HL:  // RLC (HL)
+      rlc_hl_ptr(cycles);
+      break;
+    case RLC_A:  // RLC A
+      rlc_a();
+      break;
+    case RRC_B:  // RRC B
+      rrc_b();
+      break;
+    case RRC_C:  // RRC C
+      rrc_c();
+      break;
+    case RRC_D:  // RRC D
+      rrc_d();
+      break;
+    case RRC_E:  // RRC E
+      rrc_e();
+      break;
+    case RRC_H:  // RRC H
+      rrc_h();
+      break;
+    case RRC_L:  // RRC L
+      rrc_l();
+      break;
+    case RRC_HL:  // RRC (HL)
+      rrc_hl_ptr(cycles);
+      break;
+    case RRC_A:  // RRC A
+      rrc_a();
+      break;
+    case RL_B:  // RL B
+      rl_b();
+      break;
+    case RL_C:  // RL C
+      rl_c();
+      break;
+    case RL_D:  // RL D
+      rl_d();
+      break;
+    case RL_E:  // RL E
+      rl_e();
+      break;
+    case RL_H:  // RL H
+      rl_h();
+      break;
+    case RL_L:  // RL L
+      rl_l();
+      break;
+    case RL_HL:  // RL (HL)
+      rl_hl_ptr(cycles);
+      break;
+    case RL_A:  // RL A
+      rl_a();
+      break;
+    case RR_B:  // RR B
+      rr_b();
+      break;
+    case RR_C:  // RR C
+      rr_c();
+      break;
+    case RR_D:  // RR D
+      rr_d();
+      break;
+    case RR_E:  // RR E
+      rr_e();
+      break;
+    case RR_H:  // RR H
+      rr_h();
+      break;
+    case RR_L:  // RR L
+      rr_l();
+      break;
+    case RR_HL:  // RR (HL)
+      rr_hl_ptr(cycles);
+      break;
+    case RR_A:  // RR A
+      rr_a();
+      break;
+    case SLA_B:  // SLA B
+      sla_b();
+      break;
+    case SLA_C:  // SLA C
+      sla_c();
+      break;
+    case SLA_D:  // SLA D
+      sla_d();
+      break;
+    case SLA_E:  // SLA E
+      sla_e();
+      break;
+    case SLA_H:  // SLA H
+      sla_h();
+      break;
+    case SLA_L:  // SLA L
+      sla_l();
+      break;
+    case SLA_HL:  // SLA (HL)
+      sla_hl_ptr(cycles);
+      break;
+    case SLA_A:  // SLA A
+      sla_a();
+      break;
+    case SRA_B:  // SRA B
+      sra_b();
+      break;
+    case SRA_C:  // SRA C
+      sra_c();
+      break;
+    case SRA_D:  // SRA D
+      sra_d();
+      break;
+    case SRA_E:  // SRA E
+      sra_e();
+      break;
+    case SRA_H:  // SRA H
+      sra_h();
+      break;
+    case SRA_L:  // SRA L
+      sra_l();
+      break;
+    case SRA_HL:  // SRA (HL)
+      sra_hl_ptr(cycles);
+      break;
+    case SRA_A:  // SRA A
+      sra_a();
+      break;
+    case SWAP_B:  // SWAP B
+      swap_b();
+      break;
+    case SWAP_C:  // SWAP C
+      swap_c();
+      break;
+    case SWAP_D:  // SWAP D
+      swap_d();
+      break;
+    case SWAP_E:  // SWAP E
+      swap_e();
+      break;
+    case SWAP_H:  // SWAP H
+      swap_h();
+      break;
+    case SWAP_L:  // SWAP L
+      swap_l();
+      break;
+    case SWAP_HL:  // SWAP (HL)
+      swap_hl_ptr(cycles);
+      break;
+    case SWAP_A:  // SWAP A
+      swap_a();
+      break;
+    case SRL_B:  // SRL B
+      srl_b();
+      break;
+    case SRL_C:  // SRL C
+      srl_c();
+      break;
+    case SRL_D:  // SRL D
+      srl_d();
+      break;
+    case SRL_E:  // SRL E
+      srl_e();
+      break;
+    case SRL_H:  // SRL H
+      srl_h();
+      break;
+    case SRL_L:  // SRL L
+      srl_l();
+      break;
+    case SRL_HL:  // SRL (HL)
+      srl_hl_ptr(cycles);
+      break;
+    case SRL_A:  // SRL A
+      srl_a();
+      break;
+    case BIT_0_B:  // BIT 0, B
+      bit_b_r(0);
+      break;
+    case BIT_0_C:  // BIT 0, C
+      bit_c_r(0);
+      break;
+    case BIT_0_D:  // BIT 0, D
+      bit_d_r(0);
+      break;
+    case BIT_0_E:  // BIT 0, E
+      bit_e_r(0);
+      break;
+    case BIT_0_H:  // BIT 0, H
+      bit_h_r(0);
+      break;
+    case BIT_0_L:  // BIT 0, L
+      bit_l_r(0);
+      break;
+    case BIT_0_HL:  // BIT 0, (HL)
+      bit_hl_ptr(0, cycles);
+      break;
+    case BIT_0_A:  // BIT 0, A
+      bit_a_r(0);
+      break;
+    case BIT_1_B:  // BIT 1, B
+      bit_b_r(1);
+      break;
+    case BIT_1_C:  // BIT 1, C
+      bit_c_r(1);
+      break;
+    case BIT_1_D:  // BIT 1, D
+      bit_d_r(1);
+      break;
+    case BIT_1_E:  // BIT 1, E
+      bit_e_r(1);
+      break;
+    case BIT_1_H:  // BIT 1, H
+      bit_h_r(1);
+      break;
+    case BIT_1_L:  // BIT 1, L
+      bit_l_r(1);
+      break;
+    case BIT_1_HL:  // BIT 1, (HL)
+      bit_hl_ptr(1, cycles);
+      break;
+    case BIT_1_A:  // BIT 1, A
+      bit_a_r(1);
+      break;
+    case BIT_2_B:  // BIT 2, B
+      bit_b_r(2);
+      break;
+    case BIT_2_C:  // BIT 2, C
+      bit_c_r(2);
+      break;
+    case BIT_2_D:  // BIT 2, D
+      bit_d_r(2);
+      break;
+    case BIT_2_E:  // BIT 2, E
+      bit_e_r(2);
+      break;
+    case BIT_2_H:  // BIT 2, H
+      bit_h_r(2);
+      break;
+    case BIT_2_L:  // BIT 2, L
+      bit_l_r(2);
+      break;
+    case BIT_2_HL:  // BIT 2, (HL)
+      bit_hl_ptr(2, cycles);
+      break;
+    case BIT_2_A:  // BIT 2, A
+      bit_a_r(2);
+      break;
+    case BIT_3_B:  // BIT 3, B
+      bit_b_r(3);
+      break;
+    case BIT_3_C:  // BIT 3, C
+      bit_c_r(3);
+      break;
+    case BIT_3_D:  // BIT 3, D
+      bit_d_r(3);
+      break;
+    case BIT_3_E:  // BIT 3, E
+      bit_e_r(3);
+      break;
+    case BIT_3_H:  // BIT 3, H
+      bit_h_r(3);
+      break;
+    case BIT_3_L:  // BIT 3, L
+      bit_l_r(3);
+      break;
+    case BIT_3_HL:  // BIT 3, (HL)
+      bit_hl_ptr(3, cycles);
+      break;
+    case BIT_3_A:  // BIT 3, A
+      bit_a_r(3);
+      break;
+    case BIT_4_B:  // BIT 4, B
+      bit_b_r(4);
+      break;
+    case BIT_4_C:  // BIT 4, C
+      bit_c_r(4);
+      break;
+    case BIT_4_D:  // BIT 4, D
+      bit_d_r(4);
+      break;
+    case BIT_4_E:  // BIT 4, E
+      bit_e_r(4);
+      break;
+    case BIT_4_H:  // BIT 4, H
+      bit_h_r(4);
+      break;
+    case BIT_4_L:  // BIT 4, L
+      bit_l_r(4);
+      break;
+    case BIT_4_HL:  // BIT 4, (HL)
+      bit_hl_ptr(4, cycles);
+      break;
+    case BIT_4_A:  // BIT 4, A
+      bit_a_r(4);
+      break;
+    case BIT_5_B:  // BIT 5, B
+      bit_b_r(5);
+      break;
+    case BIT_5_C:  // BIT 5, C
+      bit_c_r(5);
+      break;
+    case BIT_5_D:  // BIT 5, D
+      bit_d_r(5);
+      break;
+    case BIT_5_E:  // BIT 5, E
+      bit_e_r(5);
+      break;
+    case BIT_5_H:  // BIT 5, H
+      bit_h_r(5);
+      break;
+    case BIT_5_L:  // BIT 5, L
+      bit_l_r(5);
+      break;
+    case BIT_5_HL:  // BIT 5, (HL)
+      bit_hl_ptr(5, cycles);
+      break;
+    case BIT_5_A:  // BIT 5, A
+      bit_a_r(5);
+      break;
+    case BIT_6_B:  // BIT 6, B
+      bit_b_r(6);
+      break;
+    case BIT_6_C:  // BIT 6, C
+      bit_c_r(6);
+      break;
+    case BIT_6_D:  // BIT 6, D
+      bit_d_r(6);
+      break;
+    case BIT_6_E:  // BIT 6, E
+      bit_e_r(6);
+      break;
+    case BIT_6_H:  // BIT 6, H
+      bit_h_r(6);
+      break;
+    case BIT_6_L:  // BIT 6, L
+      bit_l_r(6);
+      break;
+    case BIT_6_HL:  // BIT 6, (HL)
+      bit_hl_ptr(6, cycles);
+      break;
+    case BIT_6_A:  // BIT 6, A
+      bit_a_r(6);
+      break;
+    case BIT_7_B:  // BIT 7, B
+      bit_b_r(7);
+      break;
+    case BIT_7_C:  // BIT 7, C
+      bit_c_r(7);
+      break;
+    case BIT_7_D:  // BIT 7, D
+      bit_d_r(7);
+      break;
+    case BIT_7_E:  // BIT 7, E
+      bit_e_r(7);
+      break;
+    case BIT_7_H:  // BIT 7, H
+      bit_h_r(7);
+      break;
+    case BIT_7_L:  // BIT 7, L
+      bit_l_r(7);
+      break;
+    case BIT_7_HL:  // BIT 7, (HL)
+      bit_hl_ptr(7, cycles);
+      break;
+    case BIT_7_A:  // BIT 7, A
+      bit_a_r(7);
+      break;
+    case RES_0_B:  // RES 0, B
+      res_b_r(0);
+      break;
+    case RES_0_C:  // RES 0, C
+      res_c_r(0);
+      break;
+    case RES_0_D:  // RES 0, D
+      res_d_r(0);
+      break;
+    case RES_0_E:  // RES 0, E
+      res_e_r(0);
+      break;
+    case RES_0_H:  // RES 0, H
+      res_h_r(0);
+      break;
+    case RES_0_L:  // RES 0, L
+      res_l_r(0);
+      break;
+    case RES_0_HL:  // RES 0, (HL)
+      res_hl_ptr(0, cycles);
+      break;
+    case RES_0_A:  // RES 0, A
+      res_a_r(0);
+      break;
+    case RES_1_B:  // RES 1, B
+      res_b_r(1);
+      break;
+    case RES_1_C:  // RES 1, C
+      res_c_r(1);
+      break;
+    case RES_1_D:  // RES 1, D
+      res_d_r(1);
+      break;
+    case RES_1_E:  // RES 1, E
+      res_e_r(1);
+      break;
+    case RES_1_H:  // RES 1, H
+      res_h_r(1);
+      break;
+    case RES_1_L:  // RES 1, L
+      res_l_r(1);
+      break;
+    case RES_1_HL:  // RES 1, (HL)
+      res_hl_ptr(1, cycles);
+      break;
+    case RES_1_A:  // RES 1, A
+      res_a_r(1);
+      break;
+    case RES_2_B:  // RES 2, B
+      res_b_r(2);
+      break;
+    case RES_2_C:  // RES 2, C
+      res_c_r(2);
+      break;
+    case RES_2_D:  // RES 2, D
+      res_d_r(2);
+      break;
+    case RES_2_E:  // RES 2, E
+      res_e_r(2);
+      break;
+    case RES_2_H:  // RES 2, H
+      res_h_r(2);
+      break;
+    case RES_2_L:  // RES 2, L
+      res_l_r(2);
+      break;
+    case RES_2_HL:  // RES 2, (HL)
+      res_hl_ptr(2, cycles);
+      break;
+    case RES_2_A:  // RES 2, A
+      res_a_r(2);
+      break;
+    case RES_3_B:  // RES 3, B
+      res_b_r(3);
+      break;
+    case RES_3_C:  // RES 3, C
+      res_c_r(3);
+      break;
+    case RES_3_D:  // RES 3, D
+      res_d_r(3);
+      break;
+    case RES_3_E:  // RES 3, E
+      res_e_r(3);
+      break;
+    case RES_3_H:  // RES 3, H
+      res_h_r(3);
+      break;
+    case RES_3_L:  // RES 3, L
+      res_l_r(3);
+      break;
+    case RES_3_HL:  // RES 3, (HL)
+      res_hl_ptr(3, cycles);
+      break;
+    case RES_3_A:  // RES 3, A
+      res_a_r(3);
+      break;
+    case RES_4_B:  // RES 4, B
+      res_b_r(4);
+      break;
+    case RES_4_C:  // RES 4, C
+      res_c_r(4);
+      break;
+    case RES_4_D:  // RES 4, D
+      res_d_r(4);
+      break;
+    case RES_4_E:  // RES 4, E
+      res_e_r(4);
+      break;
+    case RES_4_H:  // RES 4, H
+      res_h_r(4);
+      break;
+    case RES_4_L:  // RES 4, L
+      res_l_r(4);
+      break;
+    case RES_4_HL:  // RES 4, (HL)
+      res_hl_ptr(4, cycles);
+      break;
+    case RES_4_A:  // RES 4, A
+      res_a_r(4);
+      break;
+    case RES_5_B:  // RES 5, B
+      res_b_r(5);
+      break;
+    case RES_5_C:  // RES 5, C
+      res_c_r(5);
+      break;
+    case RES_5_D:  // RES 5, D
+      res_d_r(5);
+      break;
+    case RES_5_E:  // RES 5, E
+      res_e_r(5);
+      break;
+    case RES_5_H:  // RES 5, H
+      res_h_r(5);
+      break;
+    case RES_5_L:  // RES 5, L
+      res_l_r(5);
+      break;
+    case RES_5_HL:  // RES 5, (HL)
+      res_hl_ptr(5, cycles);
+      break;
+    case RES_5_A:  // RES 5, A
+      res_a_r(5);
+      break;
+    case RES_6_B:  // RES 6, B
+      res_b_r(6);
+      break;
+    case RES_6_C:  // RES 6, C
+      res_c_r(6);
+      break;
+    case RES_6_D:  // RES 6, D
+      res_d_r(6);
+      break;
+    case RES_6_E:  // RES 6, E
+      res_e_r(6);
+      break;
+    case RES_6_H:  // RES 6, H
+      res_h_r(6);
+      break;
+    case RES_6_L:  // RES 6, L
+      res_l_r(6);
+      break;
+    case RES_6_HL:  // RES 6, (HL)
+      res_hl_ptr(6, cycles);
+      break;
+    case RES_6_A:  // RES 6, A
+      res_a_r(6);
+      break;
+    case RES_7_B:  // RES 7, B
+      res_b_r(7);
+      break;
+    case RES_7_C:  // RES 7, C
+      res_c_r(7);
+      break;
+    case RES_7_D:  // RES 7, D
+      res_d_r(7);
+      break;
+    case RES_7_E:  // RES 7, E
+      res_e_r(7);
+      break;
+    case RES_7_H:  // RES 7, H
+      res_h_r(7);
+      break;
+    case RES_7_L:  // RES 7, L
+      res_l_r(7);
+      break;
+    case RES_7_HL:  // RES 7, (HL)
+      res_hl_ptr(7, cycles);
+      break;
+    case RES_7_A:  // RES 7, A
+      res_a_r(7);
+      break;
+    case SET_0_B:  // SET 0, B
+      set_b_r(0);
+      break;
+    case SET_0_C:  // SET 0, C
+      set_c_r(0);
+      break;
+    case SET_0_D:  // SET 0, D
+      set_d_r(0);
+      break;
+    case SET_0_E:  // SET 0, E
+      set_e_r(0);
+      break;
+    case SET_0_H:  // SET 0, H
+      set_h_r(0);
+      break;
+    case SET_0_L:  // SET 0, L
+      set_l_r(0);
+      break;
+    case SET_0_HL:  // SET 0, (HL)
+      set_hl_ptr(0, cycles);
+      break;
+    case SET_0_A:  // SET 0, A
+      set_a_r(0);
+      break;
+    case SET_1_B:  // SET 1, B
+      set_b_r(1);
+      break;
+    case SET_1_C:  // SET 1, C
+      set_c_r(1);
+      break;
+    case SET_1_D:  // SET 1, D
+      set_d_r(1);
+      break;
+    case SET_1_E:  // SET 1, E
+      set_e_r(1);
+      break;
+    case SET_1_H:  // SET 1, H
+      set_h_r(1);
+      break;
+    case SET_1_L:  // SET 1, L
+      set_l_r(1);
+      break;
+    case SET_1_HL:  // SET 1, (HL)
+      set_hl_ptr(1, cycles);
+      break;
+    case SET_1_A:  // SET 1, A
+      set_a_r(1);
+      break;
+    case SET_2_B:  // SET 2, B
+      set_b_r(2);
+      break;
+    case SET_2_C:  // SET 2, C
+      set_c_r(2);
+      break;
+    case SET_2_D:  // SET 2, D
+      set_d_r(2);
+      break;
+    case SET_2_E:  // SET 2, E
+      set_e_r(2);
+      break;
+    case SET_2_H:  // SET 2, H
+      set_h_r(2);
+      break;
+    case SET_2_L:  // SET 2, L
+      set_l_r(2);
+      break;
+    case SET_2_HL:  // SET 2, (HL)
+      set_hl_ptr(2, cycles);
+      break;
+    case SET_2_A:  // SET 2, A
+      set_a_r(2);
+      break;
+    case SET_3_B:  // SET 3, B
+      set_b_r(3);
+      break;
+    case SET_3_C:  // SET 3, C
+      set_c_r(3);
+      break;
+    case SET_3_D:  // SET 3, D
+      set_d_r(3);
+      break;
+    case SET_3_E:  // SET 3, E
+      set_e_r(3);
+      break;
+    case SET_3_H:  // SET 3, H
+      set_h_r(3);
+      break;
+    case SET_3_L:  // SET 3, L
+      set_l_r(3);
+      break;
+    case SET_3_HL:  // SET 3, (HL)
+      set_hl_ptr(3, cycles);
+      break;
+    case SET_3_A:  // SET 3, A
+      set_a_r(3);
+      break;
+    case SET_4_B:  // SET 4, B
+      set_b_r(4);
+      break;
+    case SET_4_C:  // SET 4, C
+      set_c_r(4);
+      break;
+    case SET_4_D:  // SET 4, D
+      set_d_r(4);
+      break;
+    case SET_4_E:  // SET 4, E
+      set_e_r(4);
+      break;
+    case SET_4_H:  // SET 4, H
+      set_h_r(4);
+      break;
+    case SET_4_L:  // SET 4, L
+      set_l_r(4);
+      break;
+    case SET_4_HL:  // SET 4, (HL)
+      set_hl_ptr(4, cycles);
+      break;
+    case SET_4_A:  // SET 4, A
+      set_a_r(4);
+      break;
+    case SET_5_B:  // SET 5, B
+      set_b_r(5);
+      break;
+    case SET_5_C:  //	SET	5, C
+      set_c_r(5);
+      break;
+    case SET_5_D:  // SET 5, D
+      set_d_r(5);
+      break;
+    case SET_5_E:  // SET 5, E
+      set_e_r(5);
+      break;
+    case SET_5_H:  // SET 5, H
+      set_h_r(5);
+      break;
+    case SET_5_L:  // SET 5, L
+      set_l_r(5);
+      break;
+    case SET_5_HL:  // SET 5, (HL)
+      set_hl_ptr(5, cycles);
+      break;
+    case SET_5_A:  // SET 5, A
+      set_a_r(5);
+      break;
+    case SET_6_B:  // SET 6, B
+      set_b_r(6);
+      break;
+    case SET_6_C:  // SET 6, C
+      set_c_r(6);
+      break;
+    case SET_6_D:  // SET 6, D
+      set_d_r(6);
+      break;
+    case SET_6_E:  // SET 6, E
+      set_e_r(6);
+      break;
+    case SET_6_H:  // SET 6, H
+      set_h_r(6);
+      break;
+    case SET_6_L:  // SET 6, L
+      set_l_r(6);
+      break;
+    case SET_6_HL:  // SET 6, (HL)
+      set_hl_ptr(6, cycles);
+      break;
+    case SET_6_A:  // SET 6, A
+      set_a_r(6);
+      break;
+    case SET_7_B:  // SET 7, B
+      set_b_r(7);
+      break;
+    case SET_7_C:  // SET 7, C
+      set_c_r(7);
+      break;
+    case SET_7_D:  // SET 7, D
+      set_d_r(7);
+      break;
+    case SET_7_E:  // SET 7, E
+      set_e_r(7);
+      break;
+    case SET_7_H:  // SET 7, H
+      set_h_r(7);
+      break;
+    case SET_7_L:  // SET 7, L
+      set_l_r(7);
+      break;
+    case SET_7_HL:  // SET 7, (HL)
+      set_hl_ptr(7, cycles);
+      break;
+    case SET_7_A:  // SET 7, A
+      set_a_r(7);
+      break;
+    default:
+      break;
+  }
 }

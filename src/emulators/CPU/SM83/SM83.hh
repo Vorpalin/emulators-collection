@@ -27,6 +27,11 @@ class SM83 : CPU {
 
   Bus *bus;
 
+  uint8_t flagZ() const { return (F & 0x80) != 0; }
+  uint8_t flagN() const { return (F & 0x40) != 0; }
+  uint8_t flagH() const { return (F & 0x20) != 0; }
+  uint8_t flagC() const { return (F & 0x10) != 0; }
+
   // Instruction set methods
   void ld_bc_d16(uint32_t &cycles);
   void ld_bc_a(uint32_t &cycles);
@@ -272,4 +277,94 @@ class SM83 : CPU {
   void ei();
   void cp_a_d8(uint32_t &cycles);
   void rst_38(uint32_t &cycles);
+
+  // prefix CB instruction set methods
+  void rlc_b();
+  void rlc_c();
+  void rlc_d();
+  void rlc_e();
+  void rlc_h();
+  void rlc_l();
+  void rlc_hl_ptr(uint32_t &cycles);
+  void rlc_a();
+  void rrc_b();
+  void rrc_c();
+  void rrc_d();
+  void rrc_e();
+  void rrc_h();
+  void rrc_l();
+  void rrc_hl_ptr(uint32_t &cycles);
+  void rrc_a();
+  void rl_b();
+  void rl_c();
+  void rl_d();
+  void rl_e();
+  void rl_h();
+  void rl_l();
+  void rl_hl_ptr(uint32_t &cycles);
+  void rl_a();
+  void rr_b();
+  void rr_c();
+  void rr_d();
+  void rr_e();
+  void rr_h();
+  void rr_l();
+  void rr_hl_ptr(uint32_t &cycles);
+  void rr_a();
+  void sla_b();
+  void sla_c();
+  void sla_d();
+  void sla_e();
+  void sla_h();
+  void sla_l();
+  void sla_hl_ptr(uint32_t &cycles);
+  void sla_a();
+  void sra_b();
+  void sra_c();
+  void sra_d();
+  void sra_e();
+  void sra_h();
+  void sra_l();
+  void sra_hl_ptr(uint32_t &cycles);
+  void sra_a();
+  void swap_b();
+  void swap_c();
+  void swap_d();
+  void swap_e();
+  void swap_h();
+  void swap_l();
+  void swap_hl_ptr(uint32_t &cycles);
+  void swap_a();
+  void srl_b();
+  void srl_c();
+  void srl_d();
+  void srl_e();
+  void srl_h();
+  void srl_l();
+  void srl_hl_ptr(uint32_t &cycles);
+  void srl_a();
+  void bit_b_r(uint8_t bit);
+  void bit_c_r(uint8_t bit);
+  void bit_d_r(uint8_t bit);
+  void bit_e_r(uint8_t bit);
+  void bit_h_r(uint8_t bit);
+  void bit_l_r(uint8_t bit);
+  void bit_hl_ptr(uint8_t bit, uint32_t &cycles);
+  void bit_a_r(uint8_t bit);
+  void res_b_r(uint8_t bit);
+  void res_c_r(uint8_t bit);
+  void res_d_r(uint8_t bit);
+  void res_e_r(uint8_t bit);
+  void res_h_r(uint8_t bit);
+  void res_l_r(uint8_t bit);
+  void res_hl_ptr(uint8_t bit, uint32_t &cycles);
+  void res_a_r(uint8_t bit);
+  void set_b_r(uint8_t bit);
+  void set_c_r(uint8_t bit);
+  void set_d_r(uint8_t bit);
+  void set_e_r(uint8_t bit);
+  void set_h_r(uint8_t bit);
+  void set_l_r(uint8_t bit);
+  void set_hl_ptr(uint8_t bit, uint32_t &cycles);
+  void set_a_r(uint8_t bit);
 };
