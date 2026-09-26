@@ -1,0 +1,112 @@
+name: README Update
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  readme:
+    name: Suggest README updates
+    runs-on: ubuntu-24.04
+
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Copilot
+        run: npm install -g @github/copilot
+
+      - name: Get diff
+        id: diff
+        run: |
+          echo "diff<<EOF" >> "$GITHUB_OUTPUT"
+          git diff "origin/${{ github.base_ref }}...HEAD" -- . ':!README.md' >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Read current README
+        id: readme_current
+        run: |
+          echo "content<<EOF" >> "$GITHUB_OUTPUT"
+          cat README.md >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Run AI inference
+        id: readme_update
+        uses: actions/ai-inference@2c43c91ae16266ca159d311430343c67a5ffa222
+        with:
+          model: gpt-4.1
+          prompt: |
+            You are an assistant responsible for keeping the README.md file up to date.
+
+            Here is the current content of README.md:
+            ---
+            ${{ steps.readme_current.outputs.content }}
+            ---
+
+            Here are the changes introduced by this pull request (diff):
+            ---
+            ${{ steps.diff.outputs.diff }}
+            ---
+
+            Task:
+            1. Analyze the diff to detect any changes that would make the README inaccurate, incomplete, or outdated: new features, added/removed configuration options, public API changes, new dependencies, changes to installation or usage commands, renamed items, or removal of documented functionality.
+            2. If the README is already consistent with the code after these changes, respond with only:
+            NO_CHANGE_NEEDED
+            3. If an update is needed, respond with exactly two sections, in this order, with no extra commentary:
+            ===SUMMARY===
+            (short bullet list explaining what changed and why the README needs updating)
+            ===README_UPDATED===
+            (the full, corrected content of the README.md file, nothing else)
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
+
+      - name: Apply update if needed
+        id: apply
+        if: ${{ !contains(steps.readme_update.outputs.response, 'NO_CHANGE_NEEDED') }}
+        run: |
+          python3 - <<'PYEOF'
+          import os, re, sys
+
+          response = os.environ["AI_RESPONSE"]
+          match = re.search(r"===README_UPDATED===\s*(.*)", response, re.DOTALL)
+          if not match:
+              print("Could not find README_UPDATED section in response; skipping.")
+              sys.exit(0)
+
+          new_readme = match.group(1).strip() + "\n"
+          with open("README.md", "w") as f:
+              f.write(new_readme)
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("needs_update=true\n")
+          PYEOF
+        env:
+          AI_RESPONSE: ${{ steps.readme_update.outputs.response }}
+
+      - name: Commit updated README
+        if: steps.apply.outputs.needs_update == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: update README to reflect code changes"
+          git push origin HEAD:${{ github.head_ref }}
