@@ -13,7 +13,8 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 
 add_executable(emulators-collection
-    src/emulators/chip/TIA1A/TIA1A.cc
+    src/emulators/PPU/TIA1A/TIA1A.cc
+    src/emulators/PPU/GameBoyPPU/GameBoyPPU.cc
     src/emulators/BUS/Atari2600Bus/Atari2600Bus.cc
     src/emulators/CPU/CPU65/CPU65.cc
     src/emulators/CPU/CPU65/setFlags.cc
@@ -38,7 +39,8 @@ target_include_directories(emulators-collection
         src/emulators/CPU/LR35902
         src/emulators/BUS
         src/emulators/BUS/Atari2600Bus
-        src/emulators/chip/TIA1A
+        src/emulators/PPU/GameBoyPPU
+        src/emulators/PPU/TIA1A
         src/emulators/Cartbridge
         src/emulators/Processor/MOS6532
         src/emulators/console/Atari2600
