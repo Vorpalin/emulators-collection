@@ -15,6 +15,7 @@
 class GameBoyBus : public Bus {
  public:
   GameBoyBus();
+  ~GameBoyBus();
 
   void loadROM(std::string& filename) override;
   void reset() override;
@@ -23,6 +24,10 @@ class GameBoyBus : public Bus {
   void tick() override;
 
   GameBoyController& getJoypad() { return joypad; }
+
+  std::array<uint8_t, 160 * 144> getFramebuffer() const {
+    return ppu.framebuffer();
+  }
 
  private:
   void startOamDma(uint8_t sourceHigh);

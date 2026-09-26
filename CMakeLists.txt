@@ -16,6 +16,7 @@ add_executable(emulators-collection
     src/emulators/PPU/TIA1A/TIA1A.cc
     src/emulators/PPU/GameBoyPPU/GameBoyPPU.cc
     src/emulators/BUS/Atari2600Bus/Atari2600Bus.cc
+    src/emulators/BUS/GameBoyBus/GameBoyBus.cc
     src/emulators/CPU/CPU65/CPU65.cc
     src/emulators/Timer/GameBoyTimer/GameBoyTimer.cc
     src/emulators/CPU/CPU65/setFlags.cc
@@ -27,6 +28,7 @@ add_executable(emulators-collection
     src/main.cc
     src/emulators/console/Atari2600/Atari2600.cc
     src/emulators/console/chip_8/chip8.cc
+    src/emulators/console/GameBoy/GameBoy.cc
     src/game/game.cc
     src/game_selector/game_selector.cc
     src/UI/UI.cc
@@ -40,12 +42,14 @@ target_include_directories(emulators-collection
         src/emulators/CPU/LR35902
         src/emulators/BUS
         src/emulators/BUS/Atari2600Bus
+        src/emulators/BUS/GameBoyBus
         src/emulators/PPU/GameBoyPPU
         src/emulators/PPU/TIA1A
         src/emulators/Cartbridge
         src/emulators/Processor/MOS6532
         src/emulators/console/Atari2600
         src/emulators/console/chip_8
+        src/emulators/console/GameBoy
         src/emulators/Timer/GameBoyTimer/
         src/emulators/Controller/GameBoyController
         src/emulator_schema

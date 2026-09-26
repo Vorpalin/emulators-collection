@@ -1,6 +1,9 @@
 #include "GameBoyTimer.hh"
 
-GameBoyTimer::GameBoyTimer() { reset(); }
+GameBoyTimer::GameBoyTimer() {
+  interrupts = nullptr;
+  reset();
+}
 
 void GameBoyTimer::reset() {
   divider = 0;
@@ -9,7 +12,7 @@ void GameBoyTimer::reset() {
   timerControl = 0;
   timerCycles = 0;
   dividerCounter = 0;
-  interruptController.reset();
+  if (interrupts) interrupts->reset();
 }
 
 void GameBoyTimer::tick(uint8_t cycles) {
@@ -38,7 +41,7 @@ void GameBoyTimer::tick(uint8_t cycles) {
     timerCounter++;
     if (timerCounter == 0) {       // Overflow occurred
       timerCounter = timerModulo;  // Reset to modulo value
-      interruptController.request(
+      interrupts->request(
           InterruptController::Timer);  // Request timer interrupt
     }
   }

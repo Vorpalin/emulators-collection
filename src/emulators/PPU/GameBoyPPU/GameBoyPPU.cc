@@ -38,6 +38,8 @@ void GameBoyPPU::tick(uint8_t cycles) {
       if (dotCounter_ >= CYCLES_DRAWING) {
         dotCounter_ -= CYCLES_DRAWING;
         renderScanline();
+        std::cout << "Rendered scanline: " << static_cast<int>(regs_.ly)
+                  << std::endl;
         changeMode(HBlank);
       }
       break;

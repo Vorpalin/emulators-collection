@@ -1,6 +1,14 @@
 #include "GameBoyBus.hh"
 
-GameBoyBus::GameBoyBus() : cpu(this), cartbridge(), ppu(), wram(), hram() {}
+GameBoyBus::GameBoyBus()
+    : cpu(this), cartbridge(), ppu(), timer(&interrupts), joypad(&interrupts) {
+  for (auto& byte : wram) {
+    byte = 0;
+  }
+  for (auto& byte : hram) {
+    byte = 0;
+  }
+}
 
 GameBoyBus::~GameBoyBus() {}
 
@@ -39,9 +47,10 @@ void GameBoyBus::writeMemory(uint16_t address, uint8_t value) {
   } else if (address < 0xC000) {
     cartbridge.write(address, value);  // external/save RAM
   } else if (address < 0xE000) {
-    wram[address - 0xC000] = value;
+    wram[address & 0x1FFF] = value;
   } else if (address < 0xFE00) {
-    wram[address - 0x2000] = value;  // echo RAM mirrors 0xC000-0xDDFF
+    wram[(address - 0x2000) & 0x1FFF] =
+        value;  // echo RAM mirrors 0xC000-0xDDFF
   } else if (address < 0xFEA0) {
     ppu.writeMemory(address, value);  // OAM
   } else if (address < 0xFF00) {
@@ -88,9 +97,9 @@ uint8_t GameBoyBus::readMemory(uint16_t address) {
   } else if (address < 0xC000) {
     return cartbridge.read(address);  // external/save RAM
   } else if (address < 0xE000) {
-    return wram[address - 0xC000];
+    return wram[address & 0x1FFF];
   } else if (address < 0xFE00) {
-    return wram[address - 0x2000];  // echo RAM
+    return wram[(address - 0x2000) & 0x1FFF];  // echo RAM
   } else if (address < 0xFEA0) {
     return ppu.readMemory(address);  // OAM
   } else if (address < 0xFF00) {
