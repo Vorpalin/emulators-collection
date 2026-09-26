@@ -5,9 +5,15 @@
 
 LR35902::LR35902(Bus *bus) : CPU() {
   // Initialize registers and flags
-  A = B = C = D = E = H = L = 0;
-  F = 0;
-  PC = 0;
+  A = 0x1;
+  F = 0xB0;
+  B = 0;
+  C = 0x13;
+  D = 0x00;
+  E = 0xD8;
+  H = 0x01;
+  L = 0x4D;
+  PC = 0x100;
   SP = 0xFFFE;  // Stack pointer initialized to top of stack
   IME = false;  // Interrupt Master Enable flag initialized to false
   this->bus = bus;
@@ -19,12 +25,17 @@ LR35902::~LR35902() {
 
 void LR35902::reset() {
   // Reset registers and flags
-  A = B = C = D = E = H = L = 0;
-  F = 0;
-  PC = 0;
-  SP = 0xFFFE;   // Reset stack pointer
-  IME = false;   // Reset interrupt master enable flag
-  bus->reset();  // Reset the bus if needed
+  A = 0x1;
+  F = 0xB0;
+  B = 0;
+  C = 0x13;
+  D = 0x00;
+  E = 0xD8;
+  H = 0x01;
+  L = 0x4D;
+  PC = 0x100;
+  SP = 0xFFFE;  // Stack pointer initialized to top of stack
+  IME = false;  // Interrupt Master Enable flag initialized to false
 }
 
 uint8_t LR35902::readMemory(uint32_t &cycles, uint16_t address) {
@@ -642,6 +653,27 @@ uint32_t LR35902::execute() {
       break;
     case CP_A_A:  // CP A, A
       cp_a_a();
+      break;
+    case RET_NZ:
+      ret_nz(cycles);
+      break;
+    case POP_BC:
+      pop_bc(cycles);
+      break;
+    case JP_NZ_a16:
+      jp_nz_a16(cycles);
+      break;
+    case JP_a16:
+      jp_a16(cycles);
+      break;
+    case CALL_NZ_a16:
+      call_nz_a16(cycles);
+      break;
+    case PUSH_BC:
+      push_bc(cycles);
+      break;
+    case ADD_A_d8:
+      add_a_d8(cycles);
       break;
     case RET_Z:  // RET Z
       ret_z(cycles);

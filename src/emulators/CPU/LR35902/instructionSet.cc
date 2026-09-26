@@ -72,10 +72,10 @@ void LR35902::add_hl_bc(uint32_t &cycles) {
   H = (result >> 8) & 0xFF;   // Update H with the high byte of the result
   L = result & 0xFF;          // Update L with the low byte of the result
 
-  // Update flags based on the result of the addition
-  F = (F & 0x10) |
-      (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
-  ++cycles;                          // Increment cycles for the operation
+  F &= 0x80 F |= ((A & 0x0F) == 0 ? 0x20 : 0)
+      // Update flags based on the result of the addition
+      F |= (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
+  ++cycles;                               // Increment cycles for the operation
 }
 
 void LR35902::ld_a_bc(uint32_t &cycles) {
@@ -197,9 +197,10 @@ void LR35902::add_hl_de(uint32_t &cycles) {
   L = result & 0xFF;          // Update L with the low byte of the result
 
   // Update flags based on the result of the addition
-  F = (F & 0x10) |
-      (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
-  ++cycles;                          // Increment cycles for the operation
+  F &= 0x80 F |= ((A & 0x0F) == 0 ? 0x20 : 0)
+      // Update flags based on the result of the addition
+      F |= (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
+  ++cycles;                               // Increment cycles for the operation
 }
 
 void LR35902::ld_a_de(uint32_t &cycles) {
@@ -352,9 +353,10 @@ void LR35902::add_hl_hl(uint32_t &cycles) {
   L = result & 0xFF;           // Update L with the low byte of the result
 
   // Update flags based on the result of the addition
-  F = (F & 0x10) |
-      (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
-  ++cycles;                          // Increment cycles for the operation
+  F &= 0x80 F |= ((A & 0x0F) == 0 ? 0x20 : 0)
+      // Update flags based on the result of the addition
+      F |= (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
+  ++cycles;                               // Increment cycles for the operation
 }
 
 void LR35902::ld_a_hli(uint32_t &cycles) {
@@ -494,9 +496,10 @@ void LR35902::add_hl_sp(uint32_t &cycles) {
   L = result & 0xFF;           // Update L with the low byte of the result
 
   // Update flags based on the result of the addition
-  F = (F & 0x10) |
-      (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
-  ++cycles;                          // Increment cycles for the operation
+  F &= 0x80 F |= ((A & 0x0F) == 0 ? 0x20 : 0)
+      // Update flags based on the result of the addition
+      F |= (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
+  ++cycles;                               // Increment cycles for the operation
 }
 
 void LR35902::ld_a_hld(uint32_t &cycles) {
@@ -1032,6 +1035,7 @@ void LR35902::adc_a_hl_ptr(uint32_t &cycles) {
 void LR35902::sub_a_b() {
   // Subtract the value of register B from register A
   uint16_t result = A - B;  // Perform subtraction
+
   F = (F & 0x10) |
       (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
   A = result & 0xFF;               // Store the result in register A
@@ -1846,6 +1850,14 @@ void LR35902::push_af(uint32_t &cycles) {
   // Push the values of registers A and F onto the stack
   writeMemory(cycles, SP - 1, A);  // Write the high byte (A) to the stack
   writeMemory(cycles, SP - 2, F);  // Write the low byte (F) to the stack
+  SP -= 2;                         // Decrement stack pointer by 2
+  ++cycles;                        // Increment cycles for the push operation
+}
+
+void LR35902::push_bc(uint32_t &cycles) {
+  // Push the values of registers B and C onto the stack
+  writeMemory(cycles, SP - 1, B);  // Write the high byte (B) to the stack
+  writeMemory(cycles, SP - 2, C);  // Write the low byte (C) to the stack
   SP -= 2;                         // Decrement stack pointer by 2
   ++cycles;                        // Increment cycles for the push operation
 }

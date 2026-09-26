@@ -38,8 +38,6 @@ void GameBoyPPU::tick(uint8_t cycles) {
       if (dotCounter_ >= CYCLES_DRAWING) {
         dotCounter_ -= CYCLES_DRAWING;
         renderScanline();
-        std::cout << "Rendered scanline: " << static_cast<int>(regs_.ly)
-                  << std::endl;
         changeMode(HBlank);
       }
       break;
@@ -146,7 +144,7 @@ void GameBoyPPU::renderBackgroundLine(int line) {
     int pixelColInTile = scrolledX % 8;
 
     uint16_t tileMapAddr = tileMapBase + (tileRow * 32) + tileCol;
-    uint8_t tileIndex = readVRAM(tileMapAddr);
+    uint8_t tileIndex = readVRAM(tileMapAddr - 0x8000);
 
     uint16_t tileDataAddr;
     if (regs_.bgWindowDataLow()) {
@@ -184,7 +182,7 @@ void GameBoyPPU::renderWindowLine(int line) {
     int pixelColInTile = winPixelX % 8;
 
     uint16_t tileMapAddr = tileMapBase + (tileRow * 32) + tileCol;
-    uint8_t tileIndex = readVRAM(tileMapAddr);
+    uint8_t tileIndex = readVRAM(tileMapAddr - 0x8000);
 
     uint16_t tileDataAddr;
     if (regs_.bgWindowDataLow()) {
@@ -391,8 +389,8 @@ uint8_t GameBoyPPU::readTilePixel(uint16_t tileDataAddr, int tileX,
                                   int tileY) const {
   // Each tile is 16 bytes: 2 bytes per row (8 pixels)
   uint16_t rowAddr = tileDataAddr + (tileY * 2);
-  uint8_t byte1 = readVRAM(rowAddr);
-  uint8_t byte2 = readVRAM(rowAddr + 1);
+  uint8_t byte1 = readVRAM(rowAddr - 0x8000);
+  uint8_t byte2 = readVRAM(rowAddr + 1 - 0x8000);
 
   // Pixels are stored in bits: bit 7 is leftmost pixel
   int bitIndex = 7 - tileX;

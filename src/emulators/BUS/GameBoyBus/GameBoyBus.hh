@@ -5,7 +5,7 @@
 #include <string>
 
 #include "Bus.hh"
-#include "Cartbridge.hh"
+#include "GameBoyCartbridge.hh"
 #include "GameBoyController.hh"
 #include "GameBoyPPU.hh"
 #include "GameBoyTimer.hh"
@@ -33,7 +33,7 @@ class GameBoyBus : public Bus {
   void startOamDma(uint8_t sourceHigh);
 
   LR35902 cpu;
-  Cartbridge cartbridge;
+  GameBoyCartbridge cartbridge;
   GameBoyPPU ppu;
   std::array<uint8_t, 0x2000> wram;  // Work RAM (0xC000 - 0xDFFF)
   std::array<uint8_t, 0x7F> hram;    // High RAM (0xFF80 - 0xFFFE)

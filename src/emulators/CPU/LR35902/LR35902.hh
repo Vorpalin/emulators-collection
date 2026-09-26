@@ -19,6 +19,8 @@ class LR35902 : CPU {
   uint16_t popStack(uint32_t &cycles);
   uint16_t pushStack(uint32_t &cycles, uint16_t value);
 
+  uint16_t getPC() { return PC; };
+
  private:
   uint8_t A, B, C, D, E, H, L;
   uint16_t PC, SP;

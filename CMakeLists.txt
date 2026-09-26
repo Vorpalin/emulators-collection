@@ -24,6 +24,7 @@ add_executable(emulators-collection
     src/emulators/CPU/LR35902/instructionSet.cc
     src/emulators/CPU/LR35902/prefixInstructionSet.cc
     src/emulators/Cartbridge/Cartbridge.cc
+    src/emulators/Cartbridge/GameBoyCartbridge/GameBoyCartbridge.cc
     src/emulators/Processor/MOS6532/MOS6532.cc
     src/main.cc
     src/emulators/console/Atari2600/Atari2600.cc
@@ -46,6 +47,7 @@ target_include_directories(emulators-collection
         src/emulators/PPU/GameBoyPPU
         src/emulators/PPU/TIA1A
         src/emulators/Cartbridge
+        src/emulators/Cartbridge/GameBoyCartbridge
         src/emulators/Processor/MOS6532
         src/emulators/console/Atari2600
         src/emulators/console/chip_8
