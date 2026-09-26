@@ -5,10 +5,10 @@
 #include "Bus.hh"
 #include "CPU.hh"
 
-class SM83 : CPU {
+class LR35902 : CPU {
  public:
-  SM83(Bus *bus);
-  ~SM83();
+  LR35902(Bus *bus);
+  ~LR35902();
 
   void reset() override;
   uint32_t execute() override;

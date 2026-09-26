@@ -1,9 +1,9 @@
-#include "SM83.hh"
+#include "LR35902.hh"
 
 #include "opcodes.hh"
 #include "opcodesPrefix.hh"
 
-SM83::SM83(Bus *bus) : CPU() {
+LR35902::LR35902(Bus *bus) : CPU() {
   // Initialize registers and flags
   A = B = C = D = E = H = L = 0;
   F = 0;
@@ -13,11 +13,11 @@ SM83::SM83(Bus *bus) : CPU() {
   this->bus = bus;
 }
 
-SM83::~SM83() {
+LR35902::~LR35902() {
   // Destructor logic if needed
 }
 
-void SM83::reset() {
+void LR35902::reset() {
   // Reset registers and flags
   A = B = C = D = E = H = L = 0;
   F = 0;
@@ -27,19 +27,19 @@ void SM83::reset() {
   bus->reset();  // Reset the bus if needed
 }
 
-uint8_t SM83::readMemory(uint32_t &cycles, uint16_t address) {
+uint8_t LR35902::readMemory(uint32_t &cycles, uint16_t address) {
   // Read a byte from memory through the bus
   ++cycles;  // Increment cycles for the memory read operation
   return bus->readMemory(address);
 }
 
-void SM83::writeMemory(uint32_t &cycles, uint16_t address, uint8_t value) {
+void LR35902::writeMemory(uint32_t &cycles, uint16_t address, uint8_t value) {
   // Write a byte to memory through the bus
   ++cycles;  // Increment cycles for the memory write operation
   bus->writeMemory(address, value);
 }
 
-uint16_t SM83::popStack(uint32_t &cycles) {
+uint16_t LR35902::popStack(uint32_t &cycles) {
   // Pop a 16-bit value from the stack
   uint8_t lowByte = readMemory(cycles, SP);   // Read low byte from stack
   SP++;                                       // Increment stack pointer
@@ -48,7 +48,7 @@ uint16_t SM83::popStack(uint32_t &cycles) {
   return (highByte << 8) | lowByte;  // Combine bytes into a 16-bit value
 }
 
-uint16_t SM83::pushStack(uint32_t &cycles, uint16_t value) {
+uint16_t LR35902::pushStack(uint32_t &cycles, uint16_t value) {
   // Push a 16-bit value onto the stack
   uint8_t highByte = (value >> 8) & 0xFF;  // Extract high byte
   uint8_t lowByte = value & 0xFF;          // Extract low byte
@@ -59,7 +59,7 @@ uint16_t SM83::pushStack(uint32_t &cycles, uint16_t value) {
   return value;                            // Return the pushed value
 }
 
-uint32_t SM83::execute() {
+uint32_t LR35902::execute() {
   // Fetch the next instruction from memory
   uint32_t cycles = 0;
   uint8_t opcode = readMemory(cycles, PC);
@@ -782,7 +782,7 @@ uint32_t SM83::execute() {
   return cycles;  // Return the number of cycles taken for this instruction
 }
 
-void SM83::executeCBInstruction(uint8_t opcode, uint32_t &cycles) {
+void LR35902::executeCBInstruction(uint8_t opcode, uint32_t &cycles) {
   switch (opcode) {
     case RLC_B:  // RLC B
       rlc_b();
