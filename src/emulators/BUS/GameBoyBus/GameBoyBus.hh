@@ -29,6 +29,13 @@ class GameBoyBus : public Bus {
     return ppu.framebuffer();
   }
 
+  bool consumeFrameReady() {
+    bool r = frameReady;
+    frameReady = false;
+    return r;
+  }
+  InterruptController interrupts;
+
  private:
   void startOamDma(uint8_t sourceHigh);
 
@@ -40,10 +47,10 @@ class GameBoyBus : public Bus {
 
   GameBoyTimer timer;
   GameBoyController joypad;
-  InterruptController interrupts;
 
   uint8_t serialData = 0;
   uint8_t serialControl = 0;
 
   bool dmaActive = false;
+  bool frameReady = false;
 };

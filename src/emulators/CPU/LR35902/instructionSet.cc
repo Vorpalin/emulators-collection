@@ -896,6 +896,7 @@ void LR35902::ld_hl_a(uint32_t &cycles) {
 }
 
 void LR35902::halt() {
+  halted = true;
   // Halt the CPU until an interrupt occurs
   // This is a placeholder implementation; actual behavior may vary based on the
   // emulator design In a real implementation, you would set a flag to indicate

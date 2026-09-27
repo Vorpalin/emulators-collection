@@ -1,9 +1,10 @@
 #include "LR35902.hh"
 
+#include "GameBoyBus.hh"
 #include "opcodes.hh"
 #include "opcodesPrefix.hh"
 
-LR35902::LR35902(Bus *bus) : CPU() {
+LR35902::LR35902(GameBoyBus *bus) : CPU() {
   // Initialize registers and flags
   A = 0x1;
   F = 0xB0;
@@ -14,8 +15,9 @@ LR35902::LR35902(Bus *bus) : CPU() {
   H = 0x01;
   L = 0x4D;
   PC = 0x100;
-  SP = 0xFFFE;  // Stack pointer initialized to top of stack
-  IME = false;  // Interrupt Master Enable flag initialized to false
+  SP = 0xFFFE;     // Stack pointer initialized to top of stack
+  IME = false;     // Interrupt Master Enable flag initialized to false
+  halted = false;  // CPU is not halted initially
   this->bus = bus;
 }
 
@@ -34,8 +36,9 @@ void LR35902::reset() {
   H = 0x01;
   L = 0x4D;
   PC = 0x100;
-  SP = 0xFFFE;  // Stack pointer initialized to top of stack
-  IME = false;  // Interrupt Master Enable flag initialized to false
+  SP = 0xFFFE;     // Stack pointer initialized to top of stack
+  IME = false;     // Interrupt Master Enable flag initialized to false
+  halted = false;  // CPU is not halted initially
 }
 
 void LR35902::setFlagZ(bool value) {
@@ -100,7 +103,48 @@ uint16_t LR35902::pushStack(uint32_t &cycles, uint16_t value) {
 
 uint32_t LR35902::execute() {
   // Fetch the next instruction from memory
+
   uint32_t cycles = 0;
+  // Dispatch d'interruption (avant le fetch normal)
+  if (IME) {
+    uint8_t pending = bus->interrupts.pending();  // adapte à ton accesseur réel
+    if (pending) {
+      halted = false;  // sort du HALT s'il y était
+      IME = false;     // désactive IME pendant le traitement
+      pushStack(cycles, PC);
+      cycles += 3;  // 2 push + 1 délai interne, en plus du fetch normal
+
+      if (pending & InterruptController::VBlank) {
+        PC = 0x40;
+        bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x01);
+      } else if (pending & InterruptController::LCDStat) {
+        PC = 0x48;
+        bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x02);
+      } else if (pending & InterruptController::Timer) {
+        PC = 0x50;
+        bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x04);
+      } else if (pending & InterruptController::Serial) {
+        PC = 0x58;
+        bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x08);
+      } else if (pending & InterruptController::Joypad) {
+        PC = 0x60;
+        bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x10);
+      }
+
+      cycles +=
+          2;  // 2 M-cycles de délai avant de reprendre l'exécution normale
+      return cycles;  // ne fetch pas d'instruction normale ce tick-ci
+    }
+  }
+
+  // Réveil du HALT même si IME=false, tant qu'une interruption est en attente
+  if (halted) {
+    if (bus->interrupts.pending()) {
+      halted = false;
+    } else {
+      return 1;  // reste en HALT, consomme un minimum de cycles
+    }
+  }
   uint8_t opcode = readMemory(cycles, PC);
   PC++;  // Increment program counter
 

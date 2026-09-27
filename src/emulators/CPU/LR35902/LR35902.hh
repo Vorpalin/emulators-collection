@@ -5,9 +5,11 @@
 #include "Bus.hh"
 #include "CPU.hh"
 
+class GameBoyBus;
+
 class LR35902 : CPU {
  public:
-  LR35902(Bus *bus);
+  LR35902(GameBoyBus *bus);
   ~LR35902();
 
   void reset() override;
@@ -25,9 +27,10 @@ class LR35902 : CPU {
   uint8_t A, B, C, D, E, H, L;
   uint16_t PC, SP;
   uint8_t F;
-  bool IME;  // Interrupt Master Enable flag
+  bool IME;     // Interrupt Master Enable flag
+  bool halted;  // Flag to indicate if the CPU is in a halted state
 
-  Bus *bus;
+  GameBoyBus *bus;
 
   void setFlagZ(bool value);
   void setFlagN(bool value);

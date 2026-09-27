@@ -1,5 +1,7 @@
 #include "GameBoy.hh"
 
+#include <iostream>
+
 const int GB_WIDTH = 160;
 const int GB_HEIGHT = 144;
 
@@ -84,7 +86,10 @@ int GameBoy::run() {
   while (isRunning) {
     handleInput();
     bus.tick();
-    renderFrame();
+    if (bus.consumeFrameReady()) {
+      std::cout << "Frame ready, rendering...\n";
+      renderFrame();
+    }
   }
   return 0;
 }

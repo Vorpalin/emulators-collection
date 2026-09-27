@@ -68,6 +68,7 @@ target_compile_options(emulators-collection
         -pedantic
         -Wold-style-cast
         -std=c++20
+        -O3
 )
 
 target_link_libraries(emulators-collection

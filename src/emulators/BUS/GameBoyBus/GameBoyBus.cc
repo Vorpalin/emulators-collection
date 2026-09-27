@@ -10,6 +10,11 @@ GameBoyBus::GameBoyBus()
   for (auto& byte : hram) {
     byte = 0;
   }
+  ppu.onVBlankInterrupt(
+      [this]() { interrupts.request(InterruptController::VBlank); });
+  ppu.onStatInterrupt(
+      [this]() { interrupts.request(InterruptController::LCDStat); });
+  ppu.onFrameReady([this]() { frameReady = true; });
 }
 
 GameBoyBus::~GameBoyBus() {}
