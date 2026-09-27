@@ -42,6 +42,7 @@ void GameBoyBus::tick() {
   // In a real implementation, we would need to handle timing and
   // synchronization with other components like the GPU and APU.
   uint32_t cycles = cpu.execute();
+
   ppu.tick(cycles * 4);
   timer.tick(cycles * 4);
 }

@@ -1,5 +1,7 @@
 #include "LR35902.hh"
 
+#include <iostream>
+
 #include "GameBoyBus.hh"
 #include "opcodes.hh"
 #include "opcodesPrefix.hh"

@@ -7,9 +7,21 @@ GameBoyCartbridge::GameBoyCartbridge() { reset(); }
 
 void GameBoyCartbridge::reset() {
   ramEnabled = false;
-  romBankLow = 1;
-  bankHigh = 0;
-  mode1 = false;
+
+  mbc1RomBankLow = 1;
+  mbc1BankHigh = 0;
+  mbc1Mode1 = false;
+
+  mbc2RomBank = 1;
+
+  mbc3RomBank = 1;
+  mbc3RamBank = 0;
+  for (auto &r : rtcRegs) r = 0;
+  for (auto &r : rtcLatchedRegs) r = 0;
+  rtcLatchState = 0xFF;
+
+  mbc5RomBank = 1;
+  mbc5RamBank = 0;
 }
 
 void GameBoyCartbridge::detectMBC() {
@@ -35,17 +47,42 @@ void GameBoyCartbridge::detectMBC() {
     case 0x03:  // MBC1+RAM+BATTERY
       mbcType = MBCType::MBC1;
       break;
+    case 0x05:  // MBC2
+    case 0x06:  // MBC2+BATTERY
+      mbcType = MBCType::MBC2;
+      break;
+    case 0x0F:  // MBC3+TIMER+BATTERY
+    case 0x10:  // MBC3+TIMER+RAM+BATTERY
+    case 0x11:  // MBC3
+    case 0x12:  // MBC3+RAM
+    case 0x13:  // MBC3+RAM+BATTERY
+      mbcType = MBCType::MBC3;
+      break;
+    case 0x19:  // MBC5
+    case 0x1A:  // MBC5+RAM
+    case 0x1B:  // MBC5+RAM+BATTERY
+    case 0x1C:  // MBC5+RUMBLE
+    case 0x1D:  // MBC5+RUMBLE+RAM
+    case 0x1E:  // MBC5+RUMBLE+RAM+BATTERY
+      mbcType = MBCType::MBC5;
+      break;
     default:
       std::cerr << "Cartridge type 0x" << std::hex << static_cast<int>(cartType)
-                << std::dec << " not supported, treating as MBC1\n";
-      mbcType = MBCType::MBC1;
+                << std::dec << " not supported, treating as MBC5\n";
+      mbcType = MBCType::MBC5;  // widest addressing, safest generic fallback
       break;
   }
 
   // ROM size: 32KB << romSizeCode, in 16KB (0x4000) banks.
   romBankCount = (romSizeCode <= 8) ? (2 << romSizeCode) : 2;
 
-  // RAM size code -> number of 8KB (0x2000) banks.
+  if (mbcType == MBCType::MBC2) {
+    // MBC2 has a fixed 512x4-bit built-in RAM, not derived from the header.
+    ramBankCount = 1;
+    ramData.assign(512, 0);
+    return;
+  }
+
   switch (ramSizeCode) {
     case 0x00:
       ramBankCount = 0;
@@ -78,28 +115,48 @@ void GameBoyCartbridge::detectMBC() {
 }
 
 int GameBoyCartbridge::currentRomBank() const {
-  if (mbcType != MBCType::MBC1) return 1;
-
-  int bank = romBankLow;
-  if (!mode1)
-    bank |= (bankHigh << 5);          // simple mode: bankHigh extends ROM bank
-  if ((bank & 0x1F) == 0) bank |= 1;  // bank 0/0x20/0x40/0x60 read as +1
-  return bank % romBankCount;
+  switch (mbcType) {
+    case MBCType::MBC1: {
+      int bank = mbc1RomBankLow;
+      if (!mbc1Mode1)
+        bank |= (mbc1BankHigh << 5);      // simple mode extends ROM bank
+      if ((bank & 0x1F) == 0) bank |= 1;  // bank 0/0x20/0x40/0x60 read as +1
+      return bank % romBankCount;
+    }
+    case MBCType::MBC2:
+      return mbc2RomBank % romBankCount;
+    case MBCType::MBC3:
+      return mbc3RomBank % romBankCount;
+    case MBCType::MBC5:
+      return mbc5RomBank % romBankCount;
+    default:
+      return 1;
+  }
 }
 
 int GameBoyCartbridge::currentRamBank() const {
-  if (mbcType != MBCType::MBC1) return 0;
-  if (!mode1) return 0;  // simple mode: always RAM bank 0
-  if (ramBankCount == 0) return 0;
-  return bankHigh % ramBankCount;
+  switch (mbcType) {
+    case MBCType::MBC1:
+      if (!mbc1Mode1) return 0;  // simple mode: always RAM bank 0
+      if (ramBankCount == 0) return 0;
+      return mbc1BankHigh % ramBankCount;
+    case MBCType::MBC3:
+      if (mbc3RamBank > 0x03 || ramBankCount == 0)
+        return 0;  // RTC register selected instead
+      return mbc3RamBank % ramBankCount;
+    case MBCType::MBC5:
+      if (ramBankCount == 0) return 0;
+      return mbc5RamBank % ramBankCount;
+    default:
+      return 0;
+  }
 }
 
 uint8_t GameBoyCartbridge::read(uint16_t address) {
   if (romData.empty()) return 0xFF;
 
   if (address < 0x4000) {
-    // Bank 0 is always fixed, even in MBC1 mode1 (only ROM bank switching
-    // through the low register moves it, and that never touches bank 0).
+    // Bank 0 is always fixed at this range for every MBC.
     return romData[address];
   }
 
@@ -111,7 +168,22 @@ uint8_t GameBoyCartbridge::read(uint16_t address) {
   }
 
   if (address >= 0xA000 && address < 0xC000) {
-    if (!ramEnabled || ramData.empty()) return 0xFF;
+    if (!ramEnabled) return 0xFF;
+
+    if (mbcType == MBCType::MBC2) {
+      // Only the low 9 bits of the address are wired; upper nibble floats high.
+      size_t offset = (address - 0xA000) & 0x1FF;
+      if (offset >= ramData.size()) return 0xFF;
+      return static_cast<uint8_t>(0xF0 | (ramData[offset] & 0x0F));
+    }
+
+    if (mbcType == MBCType::MBC3 && mbc3RamBank >= 0x08 &&
+        mbc3RamBank <= 0x0C) {
+      // RTC register selected instead of RAM bank.
+      return rtcLatchedRegs[mbc3RamBank - 0x08];
+    }
+
+    if (ramData.empty()) return 0xFF;
     size_t offset =
         static_cast<size_t>(currentRamBank()) * 0x2000 + (address - 0xA000);
     if (offset >= ramData.size()) return 0xFF;
@@ -123,7 +195,6 @@ uint8_t GameBoyCartbridge::read(uint16_t address) {
 
 void GameBoyCartbridge::write(uint16_t address, uint8_t value) {
   if (mbcType == MBCType::None) {
-    // ROM only carts can still have plain external RAM with no enable gate.
     if (address >= 0xA000 && address < 0xC000 && !ramData.empty()) {
       size_t offset = address - 0xA000;
       if (offset < ramData.size()) ramData[offset] = value;
@@ -131,21 +202,89 @@ void GameBoyCartbridge::write(uint16_t address, uint8_t value) {
     return;
   }
 
-  // MBC1 register writes.
-  if (address < 0x2000) {
-    ramEnabled = (value & 0x0F) == 0x0A;
-  } else if (address < 0x4000) {
-    romBankLow = value & 0x1F;
-    if (romBankLow == 0) romBankLow = 1;
-  } else if (address < 0x6000) {
-    bankHigh = value & 0x03;
-  } else if (address < 0x8000) {
-    mode1 = value & 0x01;
-  } else if (address >= 0xA000 && address < 0xC000) {
-    if (!ramEnabled || ramData.empty()) return;
-    size_t offset =
-        static_cast<size_t>(currentRamBank()) * 0x2000 + (address - 0xA000);
-    if (offset < ramData.size()) ramData[offset] = value;
+  switch (mbcType) {
+    case MBCType::MBC1:
+      if (address < 0x2000) {
+        ramEnabled = (value & 0x0F) == 0x0A;
+      } else if (address < 0x4000) {
+        mbc1RomBankLow = value & 0x1F;
+        if (mbc1RomBankLow == 0) mbc1RomBankLow = 1;
+      } else if (address < 0x6000) {
+        mbc1BankHigh = value & 0x03;
+      } else if (address < 0x8000) {
+        mbc1Mode1 = value & 0x01;
+      } else if (address >= 0xA000 && address < 0xC000) {
+        if (!ramEnabled || ramData.empty()) return;
+        size_t offset =
+            static_cast<size_t>(currentRamBank()) * 0x2000 + (address - 0xA000);
+        if (offset < ramData.size()) ramData[offset] = value;
+      }
+      break;
+
+    case MBCType::MBC2:
+      if (address < 0x4000) {
+        if (address & 0x0100) {
+          mbc2RomBank = value & 0x0F;
+          if (mbc2RomBank == 0) mbc2RomBank = 1;
+        } else {
+          ramEnabled = (value & 0x0F) == 0x0A;
+        }
+      } else if (address >= 0xA000 && address < 0xC000) {
+        if (!ramEnabled) return;
+        size_t offset = (address - 0xA000) & 0x1FF;
+        if (offset < ramData.size()) ramData[offset] = value & 0x0F;
+      }
+      break;
+
+    case MBCType::MBC3:
+      if (address < 0x2000) {
+        ramEnabled = (value & 0x0F) == 0x0A;
+      } else if (address < 0x4000) {
+        mbc3RomBank = value & 0x7F;
+        if (mbc3RomBank == 0) mbc3RomBank = 1;
+      } else if (address < 0x6000) {
+        mbc3RamBank = value;  // 0x00-0x03 RAM bank, or 0x08-0x0C RTC register
+      } else if (address < 0x8000) {
+        // Latch clock data: a 0x00 write followed by a 0x01 write copies
+        // the live RTC registers into the latched snapshot the CPU reads.
+        if (rtcLatchState == 0x00 && value == 0x01) {
+          for (int i = 0; i < 5; i++) rtcLatchedRegs[i] = rtcRegs[i];
+        }
+        rtcLatchState = value;
+      } else if (address >= 0xA000 && address < 0xC000) {
+        if (!ramEnabled) return;
+        if (mbc3RamBank >= 0x08 && mbc3RamBank <= 0x0C) {
+          rtcRegs[mbc3RamBank - 0x08] = value;  // write to live RTC register
+          return;
+        }
+        if (ramData.empty()) return;
+        size_t offset =
+            static_cast<size_t>(currentRamBank()) * 0x2000 + (address - 0xA000);
+        if (offset < ramData.size()) ramData[offset] = value;
+      }
+      break;
+
+    case MBCType::MBC5:
+      if (address < 0x2000) {
+        ramEnabled = (value & 0x0F) == 0x0A;
+      } else if (address < 0x3000) {
+        mbc5RomBank = (mbc5RomBank & 0x100) | value;  // low 8 bits
+      } else if (address < 0x4000) {
+        mbc5RomBank =
+            (mbc5RomBank & 0x0FF) | (static_cast<uint16_t>(value & 0x01) << 8);
+      } else if (address < 0x6000) {
+        mbc5RamBank =
+            value & 0x0F;  // bit 3 doubles as the rumble motor on +RUMBLE carts
+      } else if (address >= 0xA000 && address < 0xC000) {
+        if (!ramEnabled || ramData.empty()) return;
+        size_t offset =
+            static_cast<size_t>(currentRamBank()) * 0x2000 + (address - 0xA000);
+        if (offset < ramData.size()) ramData[offset] = value;
+      }
+      break;
+
+    default:
+      break;
   }
 }
 
