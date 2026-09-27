@@ -536,7 +536,6 @@ void Chip8::executeOpcode(uint16_t opcode) {
         case 0x18:  // FX18: Set the sound timer to VX
           this->sound_timer = this->V[x];
           if (this->sound_timer > 0) {
-            std::cerr << "FX18 beep, timer=" << int(this->sound_timer) << '\n';
             this->beepUntil =
                 std::chrono::steady_clock::now() +
                 std::chrono::milliseconds(100);  // minimum beep length

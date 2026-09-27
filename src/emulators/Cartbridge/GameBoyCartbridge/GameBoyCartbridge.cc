@@ -41,21 +41,25 @@ void GameBoyCartbridge::detectMBC() {
   switch (cartType) {
     case 0x00:  // ROM ONLY
       mbcType = MBCType::None;
+      std::cout << "Detected ROM ONLY cartridge\n";
       break;
     case 0x01:  // MBC1
     case 0x02:  // MBC1+RAM
     case 0x03:  // MBC1+RAM+BATTERY
       mbcType = MBCType::MBC1;
+      std::cout << "Detected MBC1 cartridge\n";
       break;
     case 0x05:  // MBC2
     case 0x06:  // MBC2+BATTERY
       mbcType = MBCType::MBC2;
+      std::cout << "Detected MBC2 cartridge\n";
       break;
     case 0x0F:  // MBC3+TIMER+BATTERY
     case 0x10:  // MBC3+TIMER+RAM+BATTERY
     case 0x11:  // MBC3
     case 0x12:  // MBC3+RAM
     case 0x13:  // MBC3+RAM+BATTERY
+      std::cout << "Detected MBC3 cartridge\n";
       mbcType = MBCType::MBC3;
       break;
     case 0x19:  // MBC5
@@ -65,6 +69,7 @@ void GameBoyCartbridge::detectMBC() {
     case 0x1D:  // MBC5+RUMBLE+RAM
     case 0x1E:  // MBC5+RUMBLE+RAM+BATTERY
       mbcType = MBCType::MBC5;
+      std::cout << "Detected MBC5 cartridge\n";
       break;
     default:
       std::cerr << "Cartridge type 0x" << std::hex << static_cast<int>(cartType)
@@ -118,8 +123,6 @@ int GameBoyCartbridge::currentRomBank() const {
   switch (mbcType) {
     case MBCType::MBC1: {
       int bank = mbc1RomBankLow;
-      if (!mbc1Mode1)
-        bank |= (mbc1BankHigh << 5);      // simple mode extends ROM bank
       if ((bank & 0x1F) == 0) bank |= 1;  // bank 0/0x20/0x40/0x60 read as +1
       return bank % romBankCount;
     }

@@ -26,7 +26,7 @@ class GameBoyBus : public Bus {
 
   GameBoyController& getJoypad() { return joypad; }
 
-  std::array<uint8_t, 160 * 144> getFramebuffer() const {
+  const std::array<uint8_t, 160 * 144>& getFramebuffer() const {
     return ppu.framebuffer();
   }
 

@@ -8,6 +8,7 @@ GameBoy::GameBoy() : bus() {}
 GameBoy::~GameBoy() {}
 
 void GameBoy::loadProgram(const std::string& filename) {
+  reset();
   bus.loadROM(const_cast<std::string&>(filename));
   texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
                               SDL_TEXTUREACCESS_STREAMING, GB_WIDTH, GB_HEIGHT);
@@ -32,6 +33,9 @@ void GameBoy::handleInput() {
           break;
         case SDLK_LEFT:
           joypad.setButton(GameBoyController::Left, pressed);
+          break;
+        case SDLK_ESCAPE:
+          isRunning = false;
           break;
         case SDLK_UP:
           joypad.setButton(GameBoyController::Up, pressed);
@@ -67,7 +71,8 @@ void GameBoy::renderFrame() {
       0xFF000000u,  // noir
   };
 
-  const uint8_t* shades = bus.getFramebuffer().data();  // 160*144 valeurs 0-3
+  const auto& framebuffer = bus.getFramebuffer();  // prolonge la durée de vie
+  const uint8_t* shades = framebuffer.data();
 
   static uint32_t pixels[GB_WIDTH * GB_HEIGHT];
   for (int i = 0; i < GB_WIDTH * GB_HEIGHT; ++i) {

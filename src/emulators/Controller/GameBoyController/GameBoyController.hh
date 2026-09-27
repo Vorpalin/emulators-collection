@@ -35,9 +35,14 @@ class GameBoyController {
     else
       buttons &= ~(1 << button);
 
-    // A newly-pressed button while its group is selected fires the
-    // joypad interrupt (used to wake the CPU from HALT).
-    if (pressed && wasUnset) interrupts->request(InterruptController::Joypad);
+    if (!pressed || !wasUnset) return;
+
+    bool isDirection = button <= Down;  // Right, Left, Up, Down = 0-3
+    bool selectDirections = !(selectBits & 0x10);
+    bool selectActions = !(selectBits & 0x20);
+    bool groupSelected = isDirection ? selectDirections : selectActions;
+
+    if (groupSelected) interrupts->request(InterruptController::Joypad);
   }
 
   uint8_t read() const {
