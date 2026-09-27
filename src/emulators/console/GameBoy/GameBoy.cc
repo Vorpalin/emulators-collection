@@ -1,7 +1,5 @@
 #include "GameBoy.hh"
 
-#include <iostream>
-
 const int GB_WIDTH = 160;
 const int GB_HEIGHT = 144;
 
@@ -41,10 +39,10 @@ void GameBoy::handleInput() {
         case SDLK_DOWN:
           joypad.setButton(GameBoyController::Down, pressed);
           break;
-        case SDLK_z:
+        case SDLK_a:
           joypad.setButton(GameBoyController::A, pressed);
           break;
-        case SDLK_x:
+        case SDLK_b:
           joypad.setButton(GameBoyController::B, pressed);
           break;
         case SDLK_RSHIFT:
@@ -87,7 +85,6 @@ int GameBoy::run() {
     handleInput();
     bus.tick();
     if (bus.consumeFrameReady()) {
-      std::cout << "Frame ready, rendering...\n";
       renderFrame();
     }
   }

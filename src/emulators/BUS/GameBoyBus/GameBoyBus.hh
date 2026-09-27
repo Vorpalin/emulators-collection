@@ -22,6 +22,7 @@ class GameBoyBus : public Bus {
   uint8_t readMemory(uint16_t address) override;
   void writeMemory(uint16_t address, uint8_t value) override;
   void tick() override;
+  GameBoyPPU getPPU() const { return ppu; }
 
   GameBoyController& getJoypad() { return joypad; }
 
