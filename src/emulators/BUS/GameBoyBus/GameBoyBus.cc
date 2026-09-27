@@ -36,13 +36,7 @@ void GameBoyBus::tick() {
   // For now, we will just execute one instruction per tick.
   // In a real implementation, we would need to handle timing and
   // synchronization with other components like the GPU and APU.
-  std::cout << "PC=" << std::hex << cpu.getPC() << "\n";
   uint32_t cycles = cpu.execute();
-  std::cout << "PC=" << std::hex << cpu.getPC() << std::dec
-            << " cycles=" << cycles
-            << " lcdc=" << static_cast<int>(ppu.registers().lcdc)
-            << " mode=" << static_cast<int>(ppu.registers().mode())
-            << " ly=" << static_cast<int>(ppu.registers().ly) << "\n";
   ppu.tick(cycles * 4);
   timer.tick(cycles * 4);
 }

@@ -4,62 +4,70 @@ void LR35902::rlc_b() {
   // Rotate B left through carry
   uint8_t carry = (B & 0x80) >> 7;  // Get the carry bit (bit 7)
   B = (B << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) | (B == 0 ? 0x80 : 0);
-  F &= ~(0x40 | 0x20);  // Clear N, H flags
+  setFlagZ(B == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rlc_c() {
   // Rotate C left through carry
   uint8_t carry = (C & 0x80) >> 7;  // Get the carry bit (bit 7)
   C = (C << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (C == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear N, H flags
+  setFlagZ(C == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);             // Set carry flag if the original bit
 }
 
 void LR35902::rlc_d() {
   // Rotate D left through carry
   uint8_t carry = (D & 0x80) >> 7;  // Get the carry bit (bit 7)
   D = (D << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (D == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(D == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rlc_e() {
   // Rotate E left through carry
   uint8_t carry = (E & 0x80) >> 7;  // Get the carry bit (bit 7)
   E = (E << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (E == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(E == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rlc_h() {
   // Rotate H left through carry
   uint8_t carry = (H & 0x80) >> 7;  // Get the carry bit (bit 7)
   H = (H << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (H == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(H == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rlc_l() {
   // Rotate L left through carry
   uint8_t carry = (L & 0x80) >> 7;  // Get the carry bit (bit 7)
   L = (L << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (L == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(L == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rlc_a() {
   // Rotate A left through carry
   uint8_t carry = (A & 0x80) >> 7;  // Get the carry bit (bit 7)
   A = (A << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (A == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(A == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rlc_hl_ptr(uint32_t &cycles) {
@@ -69,73 +77,81 @@ void LR35902::rlc_hl_ptr(uint32_t &cycles) {
   uint8_t carry = (value & 0x80) >> 7;          // Get the carry bit (bit 7)
   value = (value << 1) | carry;  // Rotate left and set the new carry
   writeMemory(cycles, address,
-              value);  // Write the rotated value back to memory
-  F = (carry ? (F & 0x10) : 0) |
-      (value == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);          // Clear Z, N, H flags
+              value);    // Write the rotated value back to memory
+  setFlagZ(value == 0);  // Update zero flag if result is zero
+  setFlagN(false);       // Clear subtract flag
+  setFlagH(false);       // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rrc_b() {
   // Rotate B right through carry
   uint8_t carry = B & 0x01;     // Get the carry bit (bit 0)
   B = (B >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (B == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(B == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit 0 was 1
 }
 
 void LR35902::rrc_c() {
   // Rotate C right through carry
   uint8_t carry = C & 0x01;     // Get the carry bit (bit 0)
   C = (C >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (C == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(C == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit 0 was 1
 }
 
 void LR35902::rrc_d() {
   // Rotate D right through carry
   uint8_t carry = D & 0x01;     // Get the carry bit (bit 0)
   D = (D >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (D == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(D == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit 0 was 1
 }
 
 void LR35902::rrc_e() {
   // Rotate E right through carry
   uint8_t carry = E & 0x01;     // Get the carry bit (bit 0)
   E = (E >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (E == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(E == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit 0 was 1
 }
 
 void LR35902::rrc_h() {
   // Rotate H right through carry
   uint8_t carry = H & 0x01;     // Get the carry bit (bit 0)
   H = (H >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (H == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(H == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit 0 was 1
 }
 
 void LR35902::rrc_l() {
   // Rotate L right through carry
   uint8_t carry = L & 0x01;     // Get the carry bit (bit 0)
   L = (L >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (L == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(L == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit 0 was 1
 }
 
 void LR35902::rrc_a() {
   // Rotate A right through carry
   uint8_t carry = A & 0x01;     // Get the carry bit (bit 0)
   A = (A >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (A == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(A == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit 0 was 1
 }
 
 void LR35902::rrc_hl_ptr(uint32_t &cycles) {
@@ -145,73 +161,81 @@ void LR35902::rrc_hl_ptr(uint32_t &cycles) {
   uint8_t carry = value & 0x01;                 // Get the carry bit (bit 0)
   value = (value >> 1) | (carry << 7);  // Rotate right and set the new carry
   writeMemory(cycles, address,
-              value);  // Write the rotated value back to memory
-  F = (carry ? (F & 0x10) : 0) |
-      (value == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);          // Clear Z, N, H flags
+              value);    // Write the rotated value back to memory
+  setFlagZ(value == 0);  // Update zero flag if result is zero
+  setFlagN(false);       // Clear subtract flag
+  setFlagH(false);       // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 0 was 1
 }
 
 void LR35902::rl_b() {
   // Rotate B left through carry
   uint8_t carry = (B & 0x80) >> 7;  // Get the carry bit (bit 7)
   B = (B << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (B == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(B == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rl_c() {
   // Rotate C left through carry
   uint8_t carry = (C & 0x80) >> 7;  // Get the carry bit (bit 7)
   C = (C << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (C == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(C == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rl_d() {
   // Rotate D left through carry
   uint8_t carry = (D & 0x80) >> 7;  // Get the carry bit (bit 7)
   D = (D << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (D == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(D == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rl_e() {
   // Rotate E left through carry
   uint8_t carry = (E & 0x80) >> 7;  // Get the carry bit (bit 7)
   E = (E << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (E == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(E == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rl_h() {
   // Rotate H left through carry
   uint8_t carry = (H & 0x80) >> 7;  // Get the carry bit (bit 7)
   H = (H << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (H == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(H == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rl_l() {
   // Rotate L left through carry
   uint8_t carry = (L & 0x80) >> 7;  // Get the carry bit (bit 7)
   L = (L << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (L == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(L == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rl_a() {
   // Rotate A left through carry
   uint8_t carry = (A & 0x80) >> 7;  // Get the carry bit (bit 7)
   A = (A << 1) | carry;             // Rotate left and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (A == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(A == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rl_hl_ptr(uint32_t &cycles) {
@@ -221,73 +245,81 @@ void LR35902::rl_hl_ptr(uint32_t &cycles) {
   uint8_t carry = (value & 0x80) >> 7;          // Get the carry bit (bit 7)
   value = (value << 1) | carry;  // Rotate left and set the new carry
   writeMemory(cycles, address,
-              value);  // Write the rotated value back to memory
-  F = (carry ? (F & 0x10) : 0) |
-      (value == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);          // Clear Z, N, H flags
+              value);    // Write the rotated value back to memory
+  setFlagZ(value == 0);  // Update zero flag if result is zero
+  setFlagN(false);       // Clear subtract flag
+  setFlagH(false);       // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::rr_b() {
   // Rotate B right through carry
   uint8_t carry = B & 0x01;     // Get the carry bit (bit 0)
   B = (B >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (B == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(B == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit
 }
 
 void LR35902::rr_c() {
   // Rotate C right through carry
   uint8_t carry = C & 0x01;     // Get the carry bit (bit 0)
   C = (C >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (C == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(C == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit
 }
 
 void LR35902::rr_d() {
   // Rotate D right through carry
   uint8_t carry = D & 0x01;     // Get the carry bit (bit 0)
   D = (D >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (D == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(D == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit
 }
 
 void LR35902::rr_e() {
   // Rotate E right through carry
   uint8_t carry = E & 0x01;     // Get the carry bit (bit 0)
   E = (E >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (E == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(E == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit
 }
 
 void LR35902::rr_h() {
   // Rotate H right through carry
   uint8_t carry = H & 0x01;     // Get the carry bit (bit 0)
   H = (H >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (H == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(H == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit
 }
 
 void LR35902::rr_l() {
   // Rotate L right through carry
   uint8_t carry = L & 0x01;     // Get the carry bit (bit 0)
   L = (L >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (L == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(L == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit
 }
 
 void LR35902::rr_a() {
   // Rotate A right through carry
   uint8_t carry = A & 0x01;     // Get the carry bit (bit 0)
   A = (A >> 1) | (carry << 7);  // Rotate right and set the new carry
-  F = (carry ? (F & 0x10) : 0) |
-      (A == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(A == 0);             // Update zero flag if result is zero
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if the original bit
 }
 
 void LR35902::rr_hl_ptr(uint32_t &cycles) {
@@ -297,10 +329,11 @@ void LR35902::rr_hl_ptr(uint32_t &cycles) {
   uint8_t carry = value & 0x01;                 // Get the carry bit (bit 0)
   value = (value >> 1) | (carry << 7);  // Rotate right and set the new carry
   writeMemory(cycles, address,
-              value);  // Write the rotated value back to memory
-  F = (carry ? (F & 0x10) : 0) |
-      (value == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);          // Clear Z, N, H flags
+              value);    // Write the rotated value back to memory
+  setFlagZ(value == 0);  // Update zero flag if result is zero
+  setFlagN(false);       // Clear subtract flag
+  setFlagH(false);       // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit
 }
 
 void LR35902::sla_b() {
@@ -308,9 +341,10 @@ void LR35902::sla_b() {
   // flag
   uint8_t carry = (B & 0x80) >> 7;  // Get the carry bit (bit 7)
   B <<= 1;                          // Shift left
-  F = (carry ? (F & 0x10) : 0) |
-      (B == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(B == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::sla_c() {
@@ -318,9 +352,10 @@ void LR35902::sla_c() {
   // flag
   uint8_t carry = (C & 0x80) >> 7;  // Get the carry bit (bit 7)
   C <<= 1;                          // Shift left
-  F = (carry ? (F & 0x10) : 0) |
-      (C == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(C == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::sla_d() {
@@ -328,9 +363,10 @@ void LR35902::sla_d() {
   // flag
   uint8_t carry = (D & 0x80) >> 7;  // Get the carry bit (bit 7)
   D <<= 1;                          // Shift left
-  F = (carry ? (F & 0x10) : 0) |
-      (D == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(D == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::sla_e() {
@@ -338,9 +374,10 @@ void LR35902::sla_e() {
   // flag
   uint8_t carry = (E & 0x80) >> 7;  // Get the carry bit (bit 7)
   E <<= 1;                          // Shift left
-  F = (carry ? (F & 0x10) : 0) |
-      (E == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(E == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::sla_h() {
@@ -348,9 +385,10 @@ void LR35902::sla_h() {
   // flag
   uint8_t carry = (H & 0x80) >> 7;  // Get the carry bit (bit 7)
   H <<= 1;                          // Shift left
-  F = (carry ? (F & 0x10) : 0) |
-      (H == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(H == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::sla_l() {
@@ -358,9 +396,10 @@ void LR35902::sla_l() {
   // flag
   uint8_t carry = (L & 0x80) >> 7;  // Get the carry bit (bit 7)
   L <<= 1;                          // Shift left
-  F = (carry ? (F & 0x10) : 0) |
-      (L == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(L == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::sla_a() {
@@ -368,9 +407,10 @@ void LR35902::sla_a() {
   // flag
   uint8_t carry = (A & 0x80) >> 7;  // Get the carry bit (bit 7)
   A <<= 1;                          // Shift left
-  F = (carry ? (F & 0x10) : 0) |
-      (A == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(A == 0);                 // Update zero flag if result is zero
+  setFlagN(false);                  // Clear subtract flag
+  setFlagH(false);                  // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::sla_hl_ptr(uint32_t &cycles) {
@@ -381,10 +421,11 @@ void LR35902::sla_hl_ptr(uint32_t &cycles) {
   uint8_t carry = (value & 0x80) >> 7;          // Get the carry bit (bit 7)
   value <<= 1;                                  // Shift left
   writeMemory(cycles, address,
-              value);  // Write the shifted value back to memory
-  F = (carry ? (F & 0x10) : 0) |
-      (value == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);          // Clear Z, N, H flags
+              value);    // Write the shifted value back to memory
+  setFlagZ(value == 0);  // Update zero flag if result is zero
+  setFlagN(false);       // Clear subtract flag
+  setFlagH(false);       // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit 7 was 1
 }
 
 void LR35902::sra_b() {
@@ -392,9 +433,10 @@ void LR35902::sra_b() {
   // the carry flag
   uint8_t carry = B & 0x01;   // Get the carry bit (bit 0)
   B = (B >> 1) | (B & 0x80);  // Shift right and preserve the sign bit
-  F = (carry ? (F & 0x10) : 0) |
-      (B == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(B == 0);           // Update zero flag if result is zero
+  setFlagN(false);            // Clear subtract flag
+  setFlagH(false);            // Clear half-carry flag
+  setFlagC(carry == 1);       // Set carry flag if the original bit
 }
 
 void LR35902::sra_c() {
@@ -402,9 +444,10 @@ void LR35902::sra_c() {
   // the carry flag
   uint8_t carry = C & 0x01;   // Get the carry bit (bit 0)
   C = (C >> 1) | (C & 0x80);  // Shift right and preserve the sign bit
-  F = (carry ? (F & 0x10) : 0) |
-      (C == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(C == 0);           // Update zero flag if result is zero
+  setFlagN(false);            // Clear subtract flag
+  setFlagH(false);            // Clear half-carry flag
+  setFlagC(carry == 1);       // Set carry flag if the original bit
 }
 
 void LR35902::sra_d() {
@@ -412,9 +455,10 @@ void LR35902::sra_d() {
   // the carry flag
   uint8_t carry = D & 0x01;   // Get the carry bit (bit 0)
   D = (D >> 1) | (D & 0x80);  // Shift right and preserve the sign bit
-  F = (carry ? (F & 0x10) : 0) |
-      (D == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(D == 0);           // Update zero flag if result is zero
+  setFlagN(false);            // Clear subtract flag
+  setFlagH(false);            // Clear half-carry flag
+  setFlagC(carry == 1);       // Set carry flag if the original bit
 }
 
 void LR35902::sra_e() {
@@ -422,9 +466,10 @@ void LR35902::sra_e() {
   // the carry flag
   uint8_t carry = E & 0x01;   // Get the carry bit (bit 0)
   E = (E >> 1) | (E & 0x80);  // Shift right and preserve the sign bit
-  F = (carry ? (F & 0x10) : 0) |
-      (E == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(E == 0);           // Update zero flag if result is zero
+  setFlagN(false);            // Clear subtract flag
+  setFlagH(false);            // Clear half-carry flag
+  setFlagC(carry == 1);       // Set carry flag if the original bit
 }
 
 void LR35902::sra_h() {
@@ -432,9 +477,10 @@ void LR35902::sra_h() {
   // the carry flag
   uint8_t carry = H & 0x01;   // Get the carry bit (bit 0)
   H = (H >> 1) | (H & 0x80);  // Shift right and preserve the sign bit
-  F = (carry ? (F & 0x10) : 0) |
-      (H == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(H == 0);           // Update zero flag if result is zero
+  setFlagN(false);            // Clear subtract flag
+  setFlagH(false);            // Clear half-carry flag
+  setFlagC(carry == 1);       // Set carry flag if the original bit
 }
 
 void LR35902::sra_l() {
@@ -442,9 +488,10 @@ void LR35902::sra_l() {
   // the carry flag
   uint8_t carry = L & 0x01;   // Get the carry bit (bit 0)
   L = (L >> 1) | (L & 0x80);  // Shift right and preserve the sign bit
-  F = (carry ? (F & 0x10) : 0) |
-      (L == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(L == 0);           // Update zero flag if result is zero
+  setFlagN(false);            // Clear subtract flag
+  setFlagH(false);            // Clear half-carry flag
+  setFlagC(carry == 1);       // Set carry flag if the original bit
 }
 
 void LR35902::sra_a() {
@@ -452,9 +499,10 @@ void LR35902::sra_a() {
   // the carry flag
   uint8_t carry = A & 0x01;   // Get the carry bit (bit 0)
   A = (A >> 1) | (A & 0x80);  // Shift right and preserve the sign bit
-  F = (carry ? (F & 0x10) : 0) |
-      (A == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagZ(A == 0);           // Update zero flag if result is zero
+  setFlagN(false);            // Clear subtract flag
+  setFlagH(false);            // Clear half-carry flag
+  setFlagC(carry == 1);       // Set carry flag if the original bit
 }
 
 void LR35902::sra_hl_ptr(uint32_t &cycles) {
@@ -466,59 +514,74 @@ void LR35902::sra_hl_ptr(uint32_t &cycles) {
   value =
       (value >> 1) | (value & 0x80);  // Shift right and preserve the sign bit
   writeMemory(cycles, address,
-              value);  // Write the shifted value back to memory
-  F = (carry ? (F & 0x10) : 0) |
-      (value == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);          // Clear Z, N, H flags
+              value);    // Write the shifted value back to memory
+  setFlagZ(value == 0);  // Update zero flag if result is zero
+  setFlagN(false);       // Clear subtract flag
+  setFlagH(false);       // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if the original bit
 }
 
 void LR35902::swap_b() {
   // Swap the upper and lower nibbles of B
-  B = (B << 4) | (B >> 4);     // Swap nibbles
-  F = (B == 0 ? 0x80 : 0);     // Set Z flag if result is zero
-  F &= ~(0x40 | 0x20 | 0x10);  // Clear N, H, C flags
+  B = (B << 4) | (B >> 4);  // Swap nibbles
+  setFlagZ(B == 0);         // Set Z flag if result is zero
+  setFlagN(false);          // Clear N flag
+  setFlagH(false);          // Clear H flag
+  setFlagC(false);          // Clear C flag
 }
 
 void LR35902::swap_c() {
   // Swap the upper and lower nibbles of C
-  C = (C << 4) | (C >> 4);     // Swap nibbles
-  F = (C == 0 ? 0x80 : 0);     // Set Z flag if result is zero
-  F &= ~(0x40 | 0x20 | 0x10);  // Clear N, H, C flags
+  C = (C << 4) | (C >> 4);  // Swap nibbles
+  setFlagZ(C == 0);         // Set Z flag if result is zero
+  setFlagN(false);          // Clear N flag
+  setFlagH(false);          // Clear H flag
+  setFlagC(false);          // Clear C flag
 }
 
 void LR35902::swap_d() {
   // Swap the upper and lower nibbles of D
-  D = (D << 4) | (D >> 4);     // Swap nibbles
-  F = (D == 0 ? 0x80 : 0);     // Set Z flag if result is zero
-  F &= ~(0x40 | 0x20 | 0x10);  // Clear N, H, C flags
+  D = (D << 4) | (D >> 4);  // Swap nibbles
+  setFlagZ(D == 0);         // Set Z flag if result is zero
+  setFlagN(false);          // Clear N flag
+  setFlagH(false);          // Clear H flag
+  setFlagC(false);          // Clear C flag
 }
 
 void LR35902::swap_e() {
   // Swap the upper and lower nibbles of E
-  E = (E << 4) | (E >> 4);     // Swap nibbles
-  F = (E == 0 ? 0x80 : 0);     // Set Z flag if result is zero
-  F &= ~(0x40 | 0x20 | 0x10);  // Clear N, H, C flags
+  E = (E << 4) | (E >> 4);  // Swap nibbles
+  setFlagZ(E == 0);         // Set Z flag if result is zero
+  setFlagN(false);          // Clear N flag
+  setFlagH(false);          // Clear H flag
+  setFlagC(false);          // Clear C flag
 }
 
 void LR35902::swap_h() {
   // Swap the upper and lower nibbles of H
-  H = (H << 4) | (H >> 4);     // Swap nibbles
-  F = (H == 0 ? 0x80 : 0);     // Set Z flag if result is zero
-  F &= ~(0x40 | 0x20 | 0x10);  // Clear N, H, C flags
+  H = (H << 4) | (H >> 4);  // Swap nibbles
+  setFlagZ(H == 0);         // Set Z flag if result is zero
+  setFlagN(false);          // Clear N flag
+  setFlagH(false);          // Clear H flag
+  setFlagC(false);          // Clear C flag
 }
 
 void LR35902::swap_l() {
   // Swap the upper and lower nibbles of L
-  L = (L << 4) | (L >> 4);     // Swap nibbles
-  F = (L == 0 ? 0x80 : 0);     // Set Z flag if result is zero
-  F &= ~(0x40 | 0x20 | 0x10);  // Clear N, H, C flags
+  L = (L << 4) | (L >> 4);  // Swap nibbles
+  setFlagZ(L == 0);         // Set Z flag if result is zero
+  setFlagN(false);          // Clear N flag
+  setFlagH(false);          // Clear H flag
+  setFlagC(false);          // Clear C flag
 }
 
 void LR35902::swap_a() {
   // Swap the upper and lower nibbles of A
-  A = (A << 4) | (A >> 4);     // Swap nibbles
-  F = (A == 0 ? 0x80 : 0);     // Set Z flag if result is zero
-  F &= ~(0x40 | 0x20 | 0x10);  // Clear N, H, C flags
+  A = (A << 4) | (A >> 4);  // Swap nibbles
+  setFlagZ(A == 0);         // Set Z flag if result is zero
+  setFlagN(false);          // Clear N flag
+  setFlagH(false);          // Clear H flag
+  setFlagC(false);          // Clear C flag
 }
 
 void LR35902::swap_hl_ptr(uint32_t &cycles) {
@@ -527,9 +590,11 @@ void LR35902::swap_hl_ptr(uint32_t &cycles) {
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
   value = (value << 4) | (value >> 4);          // Swap nibbles
   writeMemory(cycles, address,
-              value);           // Write the swapped value back to memory
-  F = (value == 0 ? 0x80 : 0);  // Set Z flag if result is zero
-  F &= ~(0x40 | 0x20 | 0x10);   // Clear N, H, C flags
+              value);    // Write the swapped value back to memory
+  setFlagZ(value == 0);  // Set Z flag if result is zero
+  setFlagN(false);       // Clear N flag
+  setFlagH(false);       // Clear H flag
+  setFlagC(false);       // Clear C flag
 }
 
 void LR35902::srl_b() {
@@ -537,9 +602,10 @@ void LR35902::srl_b() {
   // flag
   uint8_t carry = B & 0x01;  // Get the carry bit (bit 0)
   B >>= 1;                   // Shift right
-  F = (carry ? (F & 0x10) : 0) |
-      (B == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagC(carry);           // Set the carry flag if needed
+  setFlagZ(B == 0);          // Set Z flag if result is zero
+  setFlagN(false);           // Clear N flag
+  setFlagH(false);           // Clear H flag
 }
 
 void LR35902::srl_c() {
@@ -547,9 +613,10 @@ void LR35902::srl_c() {
   // flag
   uint8_t carry = C & 0x01;  // Get the carry bit (bit 0)
   C >>= 1;                   // Shift right
-  F = (carry ? (F & 0x10) : 0) |
-      (C == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagC(carry);           // Set the carry flag if needed
+  setFlagZ(C == 0);          // Set Z flag if result is zero
+  setFlagN(false);           // Clear N flag
+  setFlagH(false);           // Clear H flag
 }
 
 void LR35902::srl_d() {
@@ -557,9 +624,10 @@ void LR35902::srl_d() {
   // flag
   uint8_t carry = D & 0x01;  // Get the carry bit (bit 0)
   D >>= 1;                   // Shift right
-  F = (carry ? (F & 0x10) : 0) |
-      (D == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagC(carry);           // Set the carry flag if needed
+  setFlagZ(D == 0);          // Set Z flag if result is zero
+  setFlagN(false);           // Clear N flag
+  setFlagH(false);           // Clear H flag
 }
 
 void LR35902::srl_e() {
@@ -567,9 +635,10 @@ void LR35902::srl_e() {
   // flag
   uint8_t carry = E & 0x01;  // Get the carry bit (bit 0)
   E >>= 1;                   // Shift right
-  F = (carry ? (F & 0x10) : 0) |
-      (E == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagC(carry);           // Set the carry flag if needed
+  setFlagZ(E == 0);          // Set Z flag if result is zero
+  setFlagN(false);           // Clear N flag
+  setFlagH(false);           // Clear H flag
 }
 
 void LR35902::srl_h() {
@@ -577,9 +646,10 @@ void LR35902::srl_h() {
   // flag
   uint8_t carry = H & 0x01;  // Get the carry bit (bit 0)
   H >>= 1;                   // Shift right
-  F = (carry ? (F & 0x10) : 0) |
-      (H == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagC(carry);           // Set the carry flag if needed
+  setFlagZ(H == 0);          // Set Z flag if result is zero
+  setFlagN(false);           // Clear N flag
+  setFlagH(false);           // Clear H flag
 }
 
 void LR35902::srl_l() {
@@ -587,9 +657,10 @@ void LR35902::srl_l() {
   // flag
   uint8_t carry = L & 0x01;  // Get the carry bit (bit 0)
   L >>= 1;                   // Shift right
-  F = (carry ? (F & 0x10) : 0) |
-      (L == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagC(carry);           // Set the carry flag if needed
+  setFlagZ(L == 0);          // Set Z flag if result is zero
+  setFlagN(false);           // Clear N flag
+  setFlagH(false);           // Clear H flag
 }
 
 void LR35902::srl_a() {
@@ -597,9 +668,10 @@ void LR35902::srl_a() {
   // flag
   uint8_t carry = A & 0x01;  // Get the carry bit (bit 0)
   A >>= 1;                   // Shift right
-  F = (carry ? (F & 0x10) : 0) |
-      (A == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);      // Clear Z, N, H flags
+  setFlagC(carry);           // Set the carry flag if needed
+  setFlagZ(A == 0);          // Set Z flag if result is zero
+  setFlagN(false);           // Clear N flag
+  setFlagH(false);           // Clear H flag
 }
 
 void LR35902::srl_hl_ptr(uint32_t &cycles) {
@@ -610,69 +682,69 @@ void LR35902::srl_hl_ptr(uint32_t &cycles) {
   uint8_t carry = value & 0x01;                 // Get the carry bit (bit 0)
   value >>= 1;                                  // Shift right
   writeMemory(cycles, address,
-              value);  // Write the shifted value back to memory
-  F = (carry ? (F & 0x10) : 0) |
-      (value == 0 ? 0x80 : 0);  // Set the carry flag if needed
-  F &= ~(0x40 | 0x20);          // Clear Z, N, H flags
+              value);    // Write the shifted value back to memory
+  setFlagC(carry);       // Set the carry flag if needed
+  setFlagZ(value == 0);  // Set Z flag if result is zero
+  setFlagN(false);       // Clear N flag
+  setFlagH(false);       // Clear H flag
 }
 
 void LR35902::bit_b_r(uint8_t bit) {
   // Test bit 'bit' of register B
-  F = (B & (1 << bit)) ? (F & ~0x80) : (F | 0x80);  // Set Z flag if bit is 0
-  F |= 0x20;                                        // Set H flag
-  F &= ~(0x40);                                     // Clear flags
+  setFlagZ((B & (1 << bit)) == 0);  // Set Z flag if bit is 0
+  setFlagN(false);                  // Clear N flag
+  setFlagH(true);                   // Set H flag
 }
 
 void LR35902::bit_c_r(uint8_t bit) {
   // Test bit 'bit' of register C
-  F = (C & (1 << bit)) ? (F & ~0x80) : (F | 0x80);  // Set Z flag if bit is 0
-  F |= 0x20;                                        // Set H flag
-  F &= ~(0x40);                                     // Clear flags
+  setFlagZ((C & (1 << bit)) == 0);  // Set Z flag if bit is 0
+  setFlagN(false);                  // Clear N flag
+  setFlagH(true);                   // Set H flag
 }
 
 void LR35902::bit_d_r(uint8_t bit) {
   // Test bit 'bit' of register D
-  F = (D & (1 << bit)) ? (F & ~0x80) : (F | 0x80);  // Set Z flag if bit is 0
-  F |= 0x20;                                        // Set H flag
-  F &= ~(0x40);                                     // Clear flags
+  setFlagZ((D & (1 << bit)) == 0);  // Set Z flag if bit is 0
+  setFlagN(false);                  // Clear N flag
+  setFlagH(true);                   // Set H flag
 }
 
 void LR35902::bit_e_r(uint8_t bit) {
   // Test bit 'bit' of register E
-  F = (E & (1 << bit)) ? (F & ~0x80) : (F | 0x80);  // Set Z flag if bit is 0
-  F |= 0x20;                                        // Set H flag
-  F &= ~(0x40);                                     // Clear flags
+  setFlagZ((E & (1 << bit)) == 0);  // Set Z flag if bit is 0
+  setFlagN(false);                  // Clear N flag
+  setFlagH(true);                   // Set H flag
 }
 
 void LR35902::bit_h_r(uint8_t bit) {
   // Test bit 'bit' of register H
-  F = (H & (1 << bit)) ? (F & ~0x80) : (F | 0x80);  // Set Z flag if bit is 0
-  F |= 0x20;                                        // Set H flag
-  F &= ~(0x40);                                     // Clear flags
+  setFlagZ((H & (1 << bit)) == 0);  // Set Z flag if bit is 0
+  setFlagN(false);                  // Clear N flag
+  setFlagH(true);                   // Set H flag
 }
 
 void LR35902::bit_l_r(uint8_t bit) {
   // Test bit 'bit' of register L
-  F = (L & (1 << bit)) ? (F & ~0x80) : (F | 0x80);  // Set Z flag if bit is 0
-  F |= 0x20;                                        // Set H flag
-  F &= ~(0x40);                                     // Clear flags
+  setFlagZ((L & (1 << bit)) == 0);  // Set Z flag if bit is 0
+  setFlagN(false);                  // Clear N flag
+  setFlagH(true);                   // Set H flag
 }
 
 void LR35902::bit_a_r(uint8_t bit) {
   // Test bit 'bit' of register A
-  F = (A & (1 << bit)) ? (F & ~0x80) : (F | 0x80);  // Set Z flag if bit is 0
-  F |= 0x20;                                        // Set H flag
-  F &= ~(0x40);                                     // Clear flags
+  setFlagZ((A & (1 << bit)) == 0);  // Set Z flag if bit is 0
+  setFlagN(false);                  // Clear N flag
+  setFlagH(true);                   // Set H flag
 }
 
 void LR35902::bit_hl_ptr(uint8_t bit, uint32_t &cycles) {
   // Test bit 'bit' of the value at memory address HL
   uint16_t address = (H << 8) | L;  // Combine H and L to get the address
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  F = (value & (1 << bit)) ? (F & ~0x80)
-                           : (F | 0x80);  // Set Z flag if bit is 0
-  F |= 0x20;                              // Set H flag
-  F &= ~(0x40);                           // Clear flags
+  setFlagZ((value & (1 << bit)) == 0);          // Set Z flag if bit is 0
+  setFlagN(false);                              // Clear N flag
+  setFlagH(true);                               // Set H flag
 }
 
 void LR35902::set_b_r(uint8_t bit) {

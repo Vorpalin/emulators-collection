@@ -25,15 +25,21 @@ void LR35902::inc_bc(uint32_t &cycles) {
 }
 
 void LR35902::inc_b() {
+  uint8_t oldB = B;
   B++;  // Increment register B
   // Update flags based on the result of the increment operation
-  F = (F & 0x10) | (B == 0 ? 0x80 : 0) | ((B & 0x0F) == 0 ? 0x20 : 0);
+  setFlagZ(B == 0);
+  setFlagN(false);
+  setFlagH((oldB & 0x0F) == 0x0F);
 }
 
 void LR35902::dec_b() {
+  uint8_t oldB = B;
   B--;  // Decrement register B
   // Update flags based on the result of the decrement operation
-  F = (F & 0x10) | (B == 0 ? 0x80 : 0) | ((B & 0x0F) == 0x0F ? 0x20 : 0);
+  setFlagZ(B == 0);
+  setFlagN(true);
+  setFlagH((oldB & 0x0F) == 0x0F);
 }
 
 void LR35902::ld_b_d8(uint32_t &cycles) {
@@ -47,8 +53,10 @@ void LR35902::rlca() {
   uint8_t carry = (A & 0x80) >> 7;  // Get the most significant bit (MSB)
   A = (A << 1) | carry;  // Shift A left and set the least significant bit (LSB)
                          // to the carry
-  F = (F & 0x10) |
-      (carry ? 0x10 : 0);  // Update flags: set carry flag if MSB was 1
+  setFlagZ(false);       // Clear zero flag
+  setFlagN(false);       // Clear subtract flag
+  setFlagH(false);       // Clear half-carry flag
+  setFlagC(carry == 1);  // Set carry flag if MSB was 1
 }
 
 void LR35902::ld_a16_sp(uint32_t &cycles) {
@@ -60,8 +68,8 @@ void LR35902::ld_a16_sp(uint32_t &cycles) {
 
   uint16_t address = (highByte << 8) |
                      lowByte;  // Combine high and low bytes to form the address
-  ++cycles;                    // Increment cycles for the operation
-  writeMemory(cycles, address, SP);
+  writeMemory(cycles, address, SP & 0xFF);
+  writeMemory(cycles, address + 1, (SP >> 8) & 0xFF);
 }
 
 void LR35902::add_hl_bc(uint32_t &cycles) {
@@ -72,10 +80,10 @@ void LR35902::add_hl_bc(uint32_t &cycles) {
   H = (result >> 8) & 0xFF;   // Update H with the high byte of the result
   L = result & 0xFF;          // Update L with the low byte of the result
 
-  F &= 0x80 F |= ((A & 0x0F) == 0 ? 0x20 : 0)
-      // Update flags based on the result of the addition
-      F |= (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
-  ++cycles;                               // Increment cycles for the operation
+  setFlagN(false);                                     // Clear subtract flag
+  setFlagH(((hl & 0x0FFF) + (bc & 0x0FFF)) > 0x0FFF);  // Set half-carry flag
+  setFlagC(result > 0xFFFF);  // Set carry flag if overflow occurred
+  ++cycles;                   // Increment cycles for the operation
 }
 
 void LR35902::ld_a_bc(uint32_t &cycles) {
@@ -93,15 +101,21 @@ void LR35902::dec_bc(uint32_t &cycles) {
 }
 
 void LR35902::inc_c() {
+  uint8_t oldC = C;
   C++;  // Increment register C
   // Update flags based on the result of the increment operation
-  F = (F & 0x10) | (C == 0 ? 0x80 : 0) | ((C & 0x0F) == 0 ? 0x20 : 0);
+  setFlagZ(C == 0);
+  setFlagN(false);
+  setFlagH((oldC & 0x0F) == 0x0F);
 }
 
 void LR35902::dec_c() {
+  uint8_t oldC = C;
   C--;  // Decrement register C
   // Update flags based on the result of the decrement operation
-  F = (F & 0x10) | (C == 0 ? 0x80 : 0) | ((C & 0x0F) == 0x0F ? 0x20 : 0);
+  setFlagZ(C == 0);
+  setFlagN(true);
+  setFlagH((oldC & 0x0F) == 0x0F);
 }
 
 void LR35902::ld_c_d8(uint32_t &cycles) {
@@ -115,8 +129,10 @@ void LR35902::rrca() {
   uint8_t carry = A & 0x01;     // Get the least significant bit (LSB)
   A = (A >> 1) | (carry << 7);  // Shift A right and set the most significant
                                 // bit (MSB) to the carry
-  F = (F & 0x10) |
-      (carry ? 0x10 : 0);  // Update flags: set carry flag if LSB was 1
+  setFlagZ(false);              // Clear zero flag
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(carry == 1);         // Set carry flag if MSB was
 }
 
 void LR35902::stop() {
@@ -151,15 +167,21 @@ void LR35902::inc_de(uint32_t &cycles) {
 }
 
 void LR35902::inc_d() {
+  uint8_t oldD = D;
   D++;  // Increment register D
   // Update flags based on the result of the increment operation
-  F = (F & 0x10) | (D == 0 ? 0x80 : 0) | ((D & 0x0F) == 0 ? 0x20 : 0);
+  setFlagZ(D == 0);
+  setFlagN(false);
+  setFlagH((oldD & 0x0F) == 0x0F);
 }
 
 void LR35902::dec_d() {
+  uint8_t oldD = D;
   D--;  // Decrement register D
   // Update flags based on the result of the decrement operation
-  F = (F & 0x10) | (D == 0 ? 0x80 : 0) | ((D & 0x0F) == 0x0F ? 0x20 : 0);
+  setFlagZ(D == 0);
+  setFlagN(true);
+  setFlagH((oldD & 0x0F) == 0x0F);
 }
 
 void LR35902::ld_d_d8(uint32_t &cycles) {
@@ -175,8 +197,10 @@ void LR35902::rla() {
       (A & 0x80) >> 7;   // Get the most significant bit (MSB) of A
   A = (A << 1) | carry;  // Shift A left and set the least significant bit (LSB)
                          // to the previous carry
-  F = (F & 0x10) |
-      (newCarry ? 0x10 : 0);  // Update flags: set carry flag if MSB was 1
+  setFlagZ(false);       // Clear zero flag
+  setFlagN(false);       // Clear subtract flag
+  setFlagH(false);       // Clear half-carry flag
+  setFlagC(newCarry == 1);  // Set carry flag if MSB was
 }
 
 void LR35902::jr_r8(uint32_t &cycles) {
@@ -197,10 +221,10 @@ void LR35902::add_hl_de(uint32_t &cycles) {
   L = result & 0xFF;          // Update L with the low byte of the result
 
   // Update flags based on the result of the addition
-  F &= 0x80 F |= ((A & 0x0F) == 0 ? 0x20 : 0)
-      // Update flags based on the result of the addition
-      F |= (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
-  ++cycles;                               // Increment cycles for the operation
+  setFlagN(false);                                     // Clear subtract flag
+  setFlagH(((hl & 0x0FFF) + (de & 0x0FFF)) > 0x0FFF);  // Set half-carry flag
+  setFlagC(result > 0xFFFF);  // Set carry flag if overflow occurred
+  ++cycles;                   // Increment cycles for the operation
 }
 
 void LR35902::ld_a_de(uint32_t &cycles) {
@@ -218,15 +242,21 @@ void LR35902::dec_de(uint32_t &cycles) {
 }
 
 void LR35902::inc_e() {
+  uint8_t oldE = E;
   E++;  // Increment register E
   // Update flags based on the result of the increment operation
-  F = (F & 0x10) | (E == 0 ? 0x80 : 0) | ((E & 0x0F) == 0 ? 0x20 : 0);
+  setFlagZ(E == 0);
+  setFlagN(false);
+  setFlagH((oldE & 0x0F) == 0x0F);
 }
 
 void LR35902::dec_e() {
+  uint8_t oldE = E;
   E--;  // Decrement register E
   // Update flags based on the result of the decrement operation
-  F = (F & 0x10) | (E == 0 ? 0x80 : 0) | ((E & 0x0F) == 0x0F ? 0x20 : 0);
+  setFlagZ(E == 0);
+  setFlagN(true);
+  setFlagH((oldE & 0x0F) == 0x0F);
 }
 
 void LR35902::ld_e_d8(uint32_t &cycles) {
@@ -241,8 +271,10 @@ void LR35902::rra() {
   uint8_t newCarry = A & 0x01;  // Get the least significant bit (LSB) of A
   A = (A >> 1) | (carry << 7);  // Shift A right and set the most significant
                                 // bit (MSB) to the previous carry
-  F = (F & 0x10) |
-      (newCarry ? 0x10 : 0);  // Update flags: set carry flag if LSB was 1
+  setFlagZ(false);              // Clear zero flag
+  setFlagN(false);              // Clear subtract flag
+  setFlagH(false);              // Clear half-carry flag
+  setFlagC(newCarry == 1);      // Set carry flag if MSB was
 }
 
 void LR35902::jr_nz_r8(uint32_t &cycles) {
@@ -288,15 +320,21 @@ void LR35902::inc_hl(uint32_t &cycles) {
 }
 
 void LR35902::inc_h() {
+  uint8_t oldH = H;
   H++;  // Increment register H
   // Update flags based on the result of the increment operation
-  F = (F & 0x10) | (H == 0 ? 0x80 : 0) | ((H & 0x0F) == 0 ? 0x20 : 0);
+  setFlagZ(H == 0);
+  setFlagN(false);
+  setFlagH((oldH & 0x0F) == 0x0F);
 }
 
 void LR35902::dec_h() {
+  uint8_t oldH = H;
   H--;  // Decrement register H
   // Update flags based on the result of the decrement operation
-  F = (F & 0x10) | (H == 0 ? 0x80 : 0) | ((H & 0x0F) == 0x0F ? 0x20 : 0);
+  setFlagZ(H == 0);
+  setFlagN(true);
+  setFlagH((oldH & 0x0F) == 0x0F);
 }
 
 void LR35902::ld_h_d8(uint32_t &cycles) {
@@ -311,7 +349,7 @@ void LR35902::daa() {
   bool carry = (F & 0x10) != 0;      // Check if carry flag is set
   bool halfCarry = (F & 0x20) != 0;  // Check if half-carry flag is set
 
-  if ((F & 0x80) == 0) {  // If the last operation was an addition
+  if ((F & 0x40) == 0) {  // If the last operation was an addition
     if (halfCarry || (A & 0x0F) > 9) {
       correction |= 0x06;  // Add 6 to the lower nibble
     }
@@ -328,9 +366,11 @@ void LR35902::daa() {
     }
   }
 
-  A += correction;  // Adjust the accumulator
-  F = (F & 0x10) |
-      (A == 0 ? 0x80 : 0);  // Update flags: set zero flag if A is zero
+  A += correction;   // Adjust the accumulator
+  setFlagZ(A == 0);  // Set zero flag if A is zero
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(carry ||
+           (A > 0x99));  // Set carry flag if there was a carry or A > 0x99
 }
 
 void LR35902::jr_z_r8(uint32_t &cycles) {
@@ -353,10 +393,10 @@ void LR35902::add_hl_hl(uint32_t &cycles) {
   L = result & 0xFF;           // Update L with the low byte of the result
 
   // Update flags based on the result of the addition
-  F &= 0x80 F |= ((A & 0x0F) == 0 ? 0x20 : 0)
-      // Update flags based on the result of the addition
-      F |= (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
-  ++cycles;                               // Increment cycles for the operation
+  setFlagN(false);                                     // Clear subtract flag
+  setFlagH(((hl & 0x0FFF) + (hl & 0x0FFF)) > 0x0FFF);  // Set half-carry flag
+  setFlagC(result > 0xFFFF);  // Set carry flag if overflow occurred
+  ++cycles;                   // Increment cycles for the operation
 }
 
 void LR35902::ld_a_hli(uint32_t &cycles) {
@@ -378,15 +418,21 @@ void LR35902::dec_hl(uint32_t &cycles) {
 }
 
 void LR35902::inc_l() {
+  uint8_t oldL = L;
   L++;  // Increment register L
   // Update flags based on the result of the increment operation
-  F = (F & 0x10) | (L == 0 ? 0x80 : 0) | ((L & 0x0F) == 0 ? 0x20 : 0);
+  setFlagZ(L == 0);
+  setFlagN(false);
+  setFlagH((oldL & 0x0F) == 0x0F);
 }
 
 void LR35902::dec_l() {
+  uint8_t oldL = L;
   L--;  // Decrement register L
   // Update flags based on the result of the decrement operation
-  F = (F & 0x10) | (L == 0 ? 0x80 : 0) | ((L & 0x0F) == 0x0F ? 0x20 : 0);
+  setFlagZ(L == 0);
+  setFlagN(true);
+  setFlagH((oldL & 0x0F) == 0x0F);
 }
 
 void LR35902::ld_l_d8(uint32_t &cycles) {
@@ -397,9 +443,9 @@ void LR35902::ld_l_d8(uint32_t &cycles) {
 
 void LR35902::cpl() {
   // Complement (invert) all bits in register A
-  A = ~A;     // Invert all bits of A
-  F |= 0x20;  // Set the half-carry flag
-  F |= 0x10;  // Set the carry flag
+  A = ~A;          // Invert all bits of A
+  setFlagH(true);  // Set the half-carry flag
+  setFlagN(true);  // Set the subtract flag
 }
 
 void LR35902::jr_nc_r8(uint32_t &cycles) {
@@ -471,9 +517,9 @@ void LR35902::ld_hl_d8(uint32_t &cycles) {
 
 void LR35902::scf() {
   // Set carry flag
-  F |= 0x10;   // Set the carry flag
-  F &= ~0x20;  // Clear the half-carry flag
-  F &= ~0x80;  // Clear the zero flag
+  setFlagC(true);   // Set carry flag
+  setFlagN(false);  // Clear subtract flag
+  setFlagH(false);  // Clear half-carry flag
 }
 
 void LR35902::jr_c_r8(uint32_t &cycles) {
@@ -496,10 +542,10 @@ void LR35902::add_hl_sp(uint32_t &cycles) {
   L = result & 0xFF;           // Update L with the low byte of the result
 
   // Update flags based on the result of the addition
-  F &= 0x80 F |= ((A & 0x0F) == 0 ? 0x20 : 0)
-      // Update flags based on the result of the addition
-      F |= (result > 0xFFFF ? 0x10 : 0);  // Set carry flag if overflow occurred
-  ++cycles;                               // Increment cycles for the operation
+  setFlagN(false);                                     // Clear subtract flag
+  setFlagH(((hl & 0x0FFF) + (SP & 0x0FFF)) > 0x0FFF);  // Set half-carry flag
+  setFlagC(result > 0xFFFF);  // Set carry flag if overflow occurred
+  ++cycles;                   // Increment cycles for the operation
 }
 
 void LR35902::ld_a_hld(uint32_t &cycles) {
@@ -518,15 +564,21 @@ void LR35902::dec_sp(uint32_t &cycles) {
 }
 
 void LR35902::inc_a() {
+  uint8_t oldA = A;
   A++;  // Increment register A
   // Update flags based on the result of the increment operation
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) | ((A & 0x0F) == 0 ? 0x20 : 0);
+  setFlagZ(A == 0);
+  setFlagN(false);
+  setFlagH((oldA & 0x0F) == 0x0F);
 }
 
 void LR35902::dec_a() {
+  uint8_t oldA = A;
   A--;  // Decrement register A
   // Update flags based on the result of the decrement operation
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) | ((A & 0x0F) == 0x0F ? 0x20 : 0);
+  setFlagZ(A == 0);
+  setFlagN(true);
+  setFlagH((oldA & 0x0F) == 0x0F);
 }
 
 void LR35902::ld_a_d8(uint32_t &cycles) {
@@ -537,9 +589,9 @@ void LR35902::ld_a_d8(uint32_t &cycles) {
 
 void LR35902::ccf() {
   // Complement carry flag
-  F ^= 0x10;   // Toggle the carry flag
-  F &= ~0x20;  // Clear the half-carry flag
-  F &= ~0x80;  // Clear the zero flag
+  setFlagN(false);            // Clear subtract flag
+  setFlagH(false);            // Clear half-carry flag
+  setFlagC((F & 0x10) != 0);  // Update carry flag based on the new value
 }
 
 void LR35902::ld_b_b() {
@@ -894,58 +946,79 @@ void LR35902::ld_a_hl_ptr(uint32_t &cycles) {
 
 void LR35902::add_a_b() {
   // Add the value of register B to register A
-  uint16_t result = A + B;  // Perform addition
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A + B;         // Perform addition
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (B & 0x0F)) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::add_a_c() {
   // Add the value of register C to register A
-  uint16_t result = A + C;  // Perform addition
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A + C;         // Perform addition
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (C & 0x0F)) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::add_a_d() {
   // Add the value of register D to register A
-  uint16_t result = A + D;  // Perform addition
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A + D;         // Perform addition
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (D & 0x0F)) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::add_a_e() {
   // Add the value of register E to register A
-  uint16_t result = A + E;  // Perform addition
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A + E;         // Perform addition
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (E & 0x0F)) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::add_a_h() {
   // Add the value of register H to register A
-  uint16_t result = A + H;  // Perform addition
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A + H;         // Perform addition
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (H & 0x0F)) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::add_a_l() {
   // Add the value of register L to register A
-  uint16_t result = A + L;  // Perform addition
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A + L;         // Perform addition
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (L & 0x0F)) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::add_a_a() {
   // Add the value of register A to itself
-  uint16_t result = A + A;  // Perform addition
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A + A;         // Perform addition
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (A & 0x0F)) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::add_a_hl_ptr(uint32_t &cycles) {
@@ -953,72 +1026,96 @@ void LR35902::add_a_hl_ptr(uint32_t &cycles) {
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
   uint16_t result = A + value;                  // Perform addition
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (value & 0x0F)) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::adc_a_b() {
   // Add the value of register B and the carry flag to register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A + B + carry;      // Perform addition with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (B & 0x0F) + carry) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::adc_a_c() {
   // Add the value of register C and the carry flag to register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A + C + carry;      // Perform addition with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (C & 0x0F) + carry) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::adc_a_d() {
   // Add the value of register D and the carry flag to register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A + D + carry;      // Perform addition with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (D & 0x0F) + carry) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::adc_a_e() {
   // Add the value of register E and the carry flag to register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A + E + carry;      // Perform addition with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (E & 0x0F) + carry) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::adc_a_h() {
   // Add the value of register H and the carry flag to register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A + H + carry;      // Perform addition with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (H & 0x0F) + carry) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::adc_a_l() {
   // Add the value of register L and the carry flag to register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A + L + carry;      // Perform addition with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (L & 0x0F) + carry) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::adc_a_a() {
   // Add the value of register A and the carry flag to itself
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A + A + carry;      // Perform addition with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (A & 0x0F) + carry) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::adc_a_hl_ptr(uint32_t &cycles) {
@@ -1027,66 +1124,85 @@ void LR35902::adc_a_hl_ptr(uint32_t &cycles) {
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
   uint16_t carry = (F & 0x10) ? 1 : 0;          // Get the current carry flag
   uint16_t result = A + value + carry;          // Perform addition with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (value & 0x0F) + carry) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::sub_a_b() {
   // Subtract the value of register B from register A
   uint16_t result = A - B;  // Perform subtraction
 
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (B & 0x0F));  // Update half-carry flag if needed
+  A = result & 0xFF;                  // Store the result in register A
 }
 
 void LR35902::sub_a_c() {
   // Subtract the value of register C from register A
-  uint16_t result = A - C;  // Perform subtraction
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A - C;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (C & 0x0F));  // Update half-carry flag if needed
+  A = result & 0xFF;                  // Store the result in register A
 }
 
 void LR35902::sub_a_d() {
   // Subtract the value of register D from register A
-  uint16_t result = A - D;  // Perform subtraction
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A - D;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (D & 0x0F));  // Update half-carry flag if needed
+  A = result & 0xFF;                  // Store the result in register A
 }
 
 void LR35902::sub_a_e() {
   // Subtract the value of register E from register A
-  uint16_t result = A - E;  // Perform subtraction
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A - E;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (E & 0x0F));  // Update half-carry flag if needed
+  A = result & 0xFF;                  // Store the result in register A
 }
 
 void LR35902::sub_a_h() {
   // Subtract the value of register H from register A
-  uint16_t result = A - H;  // Perform subtraction
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A - H;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (H & 0x0F));  // Update half-carry flag if needed
+  A = result & 0xFF;                  // Store the result in register A
 }
 
 void LR35902::sub_a_l() {
   // Subtract the value of register L from register A
-  uint16_t result = A - L;  // Perform subtraction
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  uint16_t result = A - L;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (L & 0x0F));  // Update half-carry flag if needed
+  A = result & 0xFF;                  // Store the result in register A
 }
 
 void LR35902::sub_a_a() {
   // Subtract the value of register A from itself
   uint16_t result = A - A;  // Perform subtraction
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(
+      false);  // No underflow can occur when subtracting a register from itself
+  setFlagZ(true);   // Result is always zero
+  setFlagN(true);   // Set subtract flag
+  setFlagH(false);  // No half-carry can occur when subtracting a register from
+                    // itself
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::sub_a_hl_ptr(uint32_t &cycles) {
@@ -1094,17 +1210,22 @@ void LR35902::sub_a_hl_ptr(uint32_t &cycles) {
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
   uint16_t result = A - value;                  // Perform subtraction
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) < (value & 0x0F));  // Update half-carry flag if needed
+  A = result & 0xFF;                      // Store the result in register A
 }
 
 void LR35902::sbc_a_b() {
   // Subtract the value of register B and the carry flag from register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A - B - carry;      // Perform subtraction with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) <
+           ((B & 0x0F) + carry));  // Update half-carry flag if needed
   A = result & 0xFF;               // Store the result in register A
 }
 
@@ -1112,8 +1233,11 @@ void LR35902::sbc_a_c() {
   // Subtract the value of register C and the carry flag from register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A - C - carry;      // Perform subtraction with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) <
+           ((C & 0x0F) + carry));  // Update half-carry flag if needed
   A = result & 0xFF;               // Store the result in register A
 }
 
@@ -1121,8 +1245,11 @@ void LR35902::sbc_a_d() {
   // Subtract the value of register D and the carry flag from register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A - D - carry;      // Perform subtraction with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) <
+           ((D & 0x0F) + carry));  // Update half-carry flag if needed
   A = result & 0xFF;               // Store the result in register A
 }
 
@@ -1130,8 +1257,11 @@ void LR35902::sbc_a_e() {
   // Subtract the value of register E and the carry flag from register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A - E - carry;      // Perform subtraction with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) <
+           ((E & 0x0F) + carry));  // Update half-carry flag if needed
   A = result & 0xFF;               // Store the result in register A
 }
 
@@ -1139,8 +1269,11 @@ void LR35902::sbc_a_h() {
   // Subtract the value of register H and the carry flag from register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A - H - carry;      // Perform subtraction with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) <
+           ((H & 0x0F) + carry));  // Update half-carry flag if needed
   A = result & 0xFF;               // Store the result in register A
 }
 
@@ -1148,8 +1281,11 @@ void LR35902::sbc_a_l() {
   // Subtract the value of register L and the carry flag from register A
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A - L - carry;      // Perform subtraction with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) <
+           ((L & 0x0F) + carry));  // Update half-carry flag if needed
   A = result & 0xFF;               // Store the result in register A
 }
 
@@ -1157,8 +1293,10 @@ void LR35902::sbc_a_a() {
   // Subtract the value of register A and the carry flag from itself
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A - A - carry;      // Perform subtraction with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH(carry);                 // Update half-carry flag if needed
   A = result & 0xFF;               // Store the result in register A
 }
 
@@ -1169,58 +1307,75 @@ void LR35902::sbc_a_hl_ptr(uint32_t &cycles) {
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
   uint16_t carry = (F & 0x10) ? 1 : 0;          // Get the current carry flag
   uint16_t result = A - value - carry;  // Perform subtraction with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) <
+           ((value & 0x0F) + carry));  // Update half-carry flag if needed
+  A = result & 0xFF;                   // Store the result in register A
 }
 
 void LR35902::and_a_b() {
   // Perform bitwise AND between register A and register B
-  A &= B;  // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) |
-      ((A & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+  A &= B;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(true);    // Set half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::and_a_c() {
   // Perform bitwise AND between register A and register C
-  A &= C;  // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) |
-      ((A & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+  A &= C;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(true);    // Set half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::and_a_d() {
   // Perform bitwise AND between register A and register D
-  A &= D;  // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) |
-      ((A & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+  A &= D;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(true);    // Set half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::and_a_e() {
   // Perform bitwise AND between register A and register E
-  A &= E;  // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) |
-      ((A & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+  A &= E;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(true);    // Set half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::and_a_h() {
   // Perform bitwise AND between register A and register H
-  A &= H;  // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) |
-      ((A & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+  A &= H;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(true);    // Set half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::and_a_l() {
   // Perform bitwise AND between register A and register L
-  A &= L;  // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) |
-      ((A & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+  A &= L;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(true);    // Set half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::and_a_a() {
   // Perform bitwise AND between register A and itself
-  A &= A;  // Update register A with the result (no change)
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) |
-      ((A & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+  A &= A;            // Update register A with the result (no change)
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(true);    // Set half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::and_a_hl_ptr(uint32_t &cycles) {
@@ -1228,51 +1383,74 @@ void LR35902::and_a_hl_ptr(uint32_t &cycles) {
   // HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  A &= value;  // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) |
-      ((A & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+  A &= value;        // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(true);    // Set half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::or_a_b() {
   // Perform bitwise OR between register A and register B
-  A |= B;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A |= B;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::or_a_c() {
   // Perform bitwise OR between register A and register C
-  A |= C;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A |= C;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::or_a_d() {
   // Perform bitwise OR between register A and register D
-  A |= D;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A |= D;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::or_a_e() {
   // Perform bitwise OR between register A and register E
-  A |= E;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A |= E;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::or_a_h() {
   // Perform bitwise OR between register A and register H
-  A |= H;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A |= H;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::or_a_l() {
   // Perform bitwise OR between register A and register L
-  A |= L;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A |= L;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::or_a_a() {
   // Perform bitwise OR between register A and itself
-  A |= A;  // Update register A with the result (no change)
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A |= A;            // Update register A with the result (no change)
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::or_a_hl_ptr(uint32_t &cycles) {
@@ -1280,50 +1458,74 @@ void LR35902::or_a_hl_ptr(uint32_t &cycles) {
   // HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  A |= value;                            // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A |= value;        // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::xor_a_b() {
   // Perform bitwise XOR between register A and register B
-  A ^= B;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A ^= B;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::xor_a_c() {
   // Perform bitwise XOR between register A and register C
-  A ^= C;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A ^= C;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::xor_a_d() {
   // Perform bitwise XOR between register A and register D
-  A ^= D;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A ^= D;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::xor_a_e() {
   // Perform bitwise XOR between register A and register E
-  A ^= E;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A ^= E;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::xor_a_h() {
   // Perform bitwise XOR between register A and register H
-  A ^= H;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A ^= H;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::xor_a_l() {
   // Perform bitwise XOR between register A and register L
-  A ^= L;                                // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A ^= L;            // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::xor_a_a() {
   // Perform bitwise XOR between register A and itself
-  A ^= A;  // Update register A with the result (will be 0)
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A ^= A;            // Update register A with the result (will be 0)
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::xor_a_hl_ptr(uint32_t &cycles) {
@@ -1331,57 +1533,75 @@ void LR35902::xor_a_hl_ptr(uint32_t &cycles) {
   // HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  A ^= value;                            // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+  A ^= value;        // Update register A with the result
+  setFlagZ(A == 0);  // Update zero flag if result is zero
+  setFlagN(false);   // Clear subtract flag
+  setFlagH(false);   // Clear half-carry flag
+  setFlagC(false);   // Clear carry flag
 }
 
 void LR35902::cp_a_b() {
   // Compare register A with register B (A - B)
-  uint16_t result = A - B;  // Perform subtraction
-  F = (F & 0x10) | (result > 0xFF ? 0x10 : 0) |
-      (result == 0 ? 0x80 : 0);  // Update flags based on the result
+  uint16_t result = A - B;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (B & 0x0F));  // Update half-carry flag if needed
 }
 
 void LR35902::cp_a_c() {
   // Compare register A with register C (A - C)
-  uint16_t result = A - C;  // Perform subtraction
-  F = (F & 0x10) | (result > 0xFF ? 0x10 : 0) |
-      (result == 0 ? 0x80 : 0);  // Update flags based on the result
+  uint16_t result = A - C;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (C & 0x0F));  // Update half-carry flag if needed
 }
 
 void LR35902::cp_a_d() {
   // Compare register A with register D (A - D)
-  uint16_t result = A - D;  // Perform subtraction
-  F = (F & 0x10) | (result > 0xFF ? 0x10 : 0) |
-      (result == 0 ? 0x80 : 0);  // Update flags based on the result
+  uint16_t result = A - D;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (D & 0x0F));  // Update half-carry flag if needed
 }
 
 void LR35902::cp_a_e() {
   // Compare register A with register E (A - E)
-  uint16_t result = A - E;  // Perform subtraction
-  F = (F & 0x10) | (result > 0xFF ? 0x10 : 0) |
-      (result == 0 ? 0x80 : 0);  // Update flags based on the result
+  uint16_t result = A - E;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (E & 0x0F));  // Update half-carry flag if needed
 }
 
 void LR35902::cp_a_h() {
   // Compare register A with register H (A - H)
-  uint16_t result = A - H;  // Perform subtraction
-  F = (F & 0x10) | (result > 0xFF ? 0x10 : 0) |
-      (result == 0 ? 0x80 : 0);  // Update flags based on the result
+  uint16_t result = A - H;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (H & 0x0F));  // Update half-carry flag if needed
 }
 
 void LR35902::cp_a_l() {
   // Compare register A with register L (A - L)
-  uint16_t result = A - L;  // Perform subtraction
-  F = (F & 0x10) | (result > 0xFF ? 0x10 : 0) |
-      (result == 0 ? 0x80 : 0);  // Update flags based on the result
+  uint16_t result = A - L;            // Perform subtraction
+  setFlagC(result > 0xFF);            // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);     // Update zero flag if result is zero
+  setFlagN(true);                     // Set subtract flag
+  setFlagH((A & 0x0F) < (L & 0x0F));  // Update half-carry flag if needed
 }
 
 void LR35902::cp_a_a() {
-  // Compare register A with itself (A - A)
-  uint16_t result = A - A;  // Perform subtraction
-  F = (F & 0x10) | (result > 0xFF ? 0x10 : 0) |
-      (result == 0 ? 0x80 : 0);  // Update flags based on the result
+  // Compare register A with register A (A - A)
+  setFlagC(
+      false);  // No underflow can occur when comparing a register with itself
+  setFlagZ(true);  // Result is always zero
+  setFlagN(true);  // Set subtract flag
+  setFlagH(
+      false);  // No half-carry can occur when comparing a register with itself
 }
 
 void LR35902::cp_a_hl_ptr(uint32_t &cycles) {
@@ -1389,8 +1609,10 @@ void LR35902::cp_a_hl_ptr(uint32_t &cycles) {
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
   uint16_t result = A - value;                  // Perform subtraction
-  F = (F & 0x10) | (result > 0xFF ? 0x10 : 0) |
-      (result == 0 ? 0x80 : 0);  // Update flags based on the result
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) < (value & 0x0F));  // Update half-carry flag if needed
 }
 
 void LR35902::ret_nz(uint32_t &cycles) {
@@ -1450,9 +1672,9 @@ void LR35902::call_nz_a16(uint32_t &cycles) {
     PC++;                        // Increment program counter
     address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
     PC++;                                      // Increment program counter
-    writeMemory(cycles, SP,
-                PC);  // Push the current program counter onto the stack
-    PC = address;     // Set the program counter to the new address
+    pushStack(cycles, PC);  // Push the current program counter onto the stack
+    PC = address;           // Set the program counter to the new address
+    ++cycles;               // Increment cycles for the call operation
   } else {
     PC += 2;      // Skip over the two bytes of the address if not calling
     cycles += 1;  // Increment cycles for reading the two bytes
@@ -1462,12 +1684,15 @@ void LR35902::call_nz_a16(uint32_t &cycles) {
 void LR35902::add_a_d8(uint32_t &cycles) {
   // Add the immediate 8-bit value to register A
   uint8_t value =
-      readMemory(cycles, PC);   // Read the immediate value from memory
-  PC++;                         // Increment program counter
-  uint16_t result = A + value;  // Perform addition
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+      readMemory(cycles, PC);      // Read the immediate value from memory
+  PC++;                            // Increment program counter
+  uint16_t result = A + value;     // Perform addition
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (value & 0x0F)) >
+           0x0F);     // Update half-carry flag if needed
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::rst_00(uint32_t &cycles) {
@@ -1530,9 +1755,9 @@ void LR35902::call_z_a16(uint32_t &cycles) {
     PC++;                        // Increment program counter
     address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
     PC++;                                      // Increment program counter
-    writeMemory(cycles, SP,
-                PC);  // Push the current program counter onto the stack
-    PC = address;     // Set the program counter to the new address
+    pushStack(cycles, PC);  // Push the current program counter onto the stack
+    PC = address;           // Set the program counter to the new address
+    ++cycles;               // Increment cycles for the call operation
   } else {
     PC += 2;      // Skip over the two bytes of the address if not calling
     cycles += 1;  // Increment cycles for reading the two bytes
@@ -1547,9 +1772,9 @@ void LR35902::call_a16(uint32_t &cycles) {
   PC++;                                      // Increment program counter
   address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
   PC++;                                      // Increment program counter
-  writeMemory(cycles, SP,
-              PC);  // Push the current program counter onto the stack
-  PC = address;     // Set the program counter to the new address
+  pushStack(cycles, PC);  // Push the current program counter onto the stack
+  PC = address;           // Set the program counter to the new address
+  ++cycles;               // Increment cycles for the call operation
 }
 
 void LR35902::adc_a_d8(uint32_t &cycles) {
@@ -1559,9 +1784,11 @@ void LR35902::adc_a_d8(uint32_t &cycles) {
   PC++;                                 // Increment program counter
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A + value + carry;  // Perform addition with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if overflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(false);                 // Clear subtract flag
+  setFlagH(((A & 0x0F) + (value & 0x0F) + carry) > 0x0F);  // Update half-carry
+  A = result & 0xFF;  // Store the result in register A
 }
 
 void LR35902::rst_08(uint32_t &cycles) {
@@ -1617,9 +1844,9 @@ void LR35902::call_nc_a16(uint32_t &cycles) {
     PC++;                        // Increment program counter
     address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
     PC++;                                      // Increment program counter
-    writeMemory(cycles, SP,
-                PC);  // Push the current program counter onto the stack
-    PC = address;     // Set the program counter to the new address
+    pushStack(cycles, PC);  // Push the current program counter onto the stack
+    PC = address;           // Set the program counter to the new address
+    ++cycles;               // Increment cycles for the call operation
   } else {
     PC += 2;      // Skip over the two bytes of the address if not calling
     cycles += 1;  // Increment cycles for reading the two bytes
@@ -1637,12 +1864,14 @@ void LR35902::push_de(uint32_t &cycles) {
 void LR35902::sub_a_d8(uint32_t &cycles) {
   // Subtract the immediate 8-bit value from register A
   uint8_t value =
-      readMemory(cycles, PC);   // Read the immediate value from memory
-  PC++;                         // Increment program counter
-  uint16_t result = A - value;  // Perform subtraction
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+      readMemory(cycles, PC);      // Read the immediate value from memory
+  PC++;                            // Increment program counter
+  uint16_t result = A - value;     // Perform subtraction
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) < (value & 0x0F));  // Update half-carry flag if needed
+  A = result & 0xFF;                      // Store the result in register A
 }
 
 void LR35902::rst_10(uint32_t &cycles) {
@@ -1699,9 +1928,9 @@ void LR35902::call_c_a16(uint32_t &cycles) {
     PC++;                        // Increment program counter
     address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
     PC++;                                      // Increment program counter
-    writeMemory(cycles, SP,
-                PC);  // Push the current program counter onto the stack
-    PC = address;     // Set the program counter to the new address
+    pushStack(cycles, PC);  // Push the current program counter onto the stack
+    PC = address;           // Set the program counter to the new address
+    ++cycles;               // Increment cycles for the call operation
   } else {
     PC += 2;      // Skip over the two bytes of the address if not calling
     cycles += 1;  // Increment cycles for reading the two bytes
@@ -1715,9 +1944,12 @@ void LR35902::sbc_a_d8(uint32_t &cycles) {
   PC++;                                 // Increment program counter
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A - value - carry;  // Perform subtraction with carry
-  F = (F & 0x10) |
-      (result > 0xFF ? 0x10 : 0);  // Update carry flag if underflow occurred
-  A = result & 0xFF;               // Store the result in register A
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) <
+           ((value & 0x0F) + carry));  // Update half-carry flag if needed
+  A = result & 0xFF;                   // Store the result in register A
 }
 
 void LR35902::rst_18(uint32_t &cycles) {
@@ -1767,8 +1999,10 @@ void LR35902::and_a_d8(uint32_t &cycles) {
       readMemory(cycles, PC);  // Read the immediate value from memory
   PC++;                        // Increment program counter
   A &= value;                  // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0) |
-      ((A & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+  setFlagZ(A == 0);            // Update zero flag if result is zero
+  setFlagN(false);             // Clear subtract flag
+  setFlagH(true);              // Set half-carry flag
+  setFlagC(false);             // Clear carry flag
 }
 
 void LR35902::rst_20(uint32_t &cycles) {
@@ -1784,10 +2018,13 @@ void LR35902::add_sp_r8(uint32_t &cycles) {
       readMemory(cycles, PC));   // Read the immediate signed value from memory
   PC++;                          // Increment program counter
   uint16_t result = SP + value;  // Perform addition
-  F = (F & 0x10) | ((SP ^ value ^ result) & 0x10
-                        ? 0x10
-                        : 0);  // Update carry flag if overflow occurred
-  SP = result;                 // Store the result in stack pointer
+  setFlagZ(false);               // Clear zero flag (result is not stored in A)
+  setFlagN(false);               // Clear subtract flag
+  setFlagH(((SP & 0x0F) + (value & 0x0F)) >
+           0x0F);  // Update half-carry flag if needed
+  setFlagC(((SP & 0xFF) + (value & 0xFF)) >
+           0xFF);  // Update carry flag if needed
+  SP = result;     // Store the result in stack pointer
 }
 
 void LR35902::jp_hl(uint32_t &cycles) {
@@ -1812,10 +2049,13 @@ void LR35902::ld_a16_a(uint32_t &cycles) {
 void LR35902::xor_a_d8(uint32_t &cycles) {
   // Perform bitwise XOR between register A and the immediate 8-bit value
   uint8_t value =
-      readMemory(cycles, PC);            // Read the immediate value from memory
-  PC++;                                  // Increment program counter
-  A ^= value;                            // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+      readMemory(cycles, PC);  // Read the immediate value from memory
+  PC++;                        // Increment program counter
+  A ^= value;                  // Update register A with the result
+  setFlagZ(A == 0);            // Update zero flag if result is zero
+  setFlagN(false);             // Clear subtract flag
+  setFlagH(false);             // Clear half-carry flag
+  setFlagC(false);             // Clear carry flag
 }
 
 void LR35902::rst_28(uint32_t &cycles) {
@@ -1865,10 +2105,13 @@ void LR35902::push_bc(uint32_t &cycles) {
 void LR35902::or_a_d8(uint32_t &cycles) {
   // Perform bitwise OR between register A and the immediate 8-bit value
   uint8_t value =
-      readMemory(cycles, PC);            // Read the immediate value from memory
-  PC++;                                  // Increment program counter
-  A |= value;                            // Update register A with the result
-  F = (F & 0x10) | (A == 0 ? 0x80 : 0);  // Update flags based on the result
+      readMemory(cycles, PC);  // Read the immediate value from memory
+  PC++;                        // Increment program counter
+  A |= value;                  // Update register A with the result
+  setFlagZ(A == 0);            // Update zero flag if result is zero
+  setFlagN(false);             // Clear subtract flag
+  setFlagH(false);             // Clear half-carry flag
+  setFlagC(false);             // Clear carry flag
 }
 
 void LR35902::rst_30(uint32_t &cycles) {
@@ -1887,6 +2130,12 @@ void LR35902::ld_hl_sp_plus_r8(uint32_t &cycles) {
   ++cycles;                       // Increment cycles for the addition operation
   H = (result >> 8) & 0xFF;       // Store the high byte in register H
   L = result & 0xFF;              // Store the low byte in register L
+  setFlagZ(false);                // Clear zero flag (result is not stored in A)
+  setFlagN(false);                // Clear subtract flag
+  setFlagH(((SP & 0x0F) + (offset & 0x0F)) >
+           0x0F);  // Update half-carry flag if needed
+  setFlagC(((SP & 0xFF) + (offset & 0xFF)) >
+           0xFF);  // Update carry flag if needed
 }
 
 void LR35902::ld_sp_hl(uint32_t &cycles) {
@@ -1916,11 +2165,13 @@ void LR35902::ei() {
 void LR35902::cp_a_d8(uint32_t &cycles) {
   // Compare register A with the immediate 8-bit value (A - d8)
   uint8_t value =
-      readMemory(cycles, PC);   // Read the immediate value from memory
-  PC++;                         // Increment program counter
-  uint16_t result = A - value;  // Perform subtraction
-  F = (F & 0x10) | (result > 0xFF ? 0x10 : 0) |
-      (result == 0 ? 0x80 : 0);  // Update flags based on the result
+      readMemory(cycles, PC);      // Read the immediate value from memory
+  PC++;                            // Increment program counter
+  uint16_t result = A - value;     // Perform subtraction
+  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
+  setFlagN(true);                  // Set subtract flag
+  setFlagH((A & 0x0F) < (value & 0x0F));  // Update half-carry flag if needed
 }
 
 void LR35902::rst_38(uint32_t &cycles) {

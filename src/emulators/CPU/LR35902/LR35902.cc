@@ -38,6 +38,34 @@ void LR35902::reset() {
   IME = false;  // Interrupt Master Enable flag initialized to false
 }
 
+void LR35902::setFlagZ(bool value) {
+  if (value)
+    F |= 0x80;
+  else
+    F &= ~0x80;
+}
+
+void LR35902::setFlagN(bool value) {
+  if (value)
+    F |= 0x40;
+  else
+    F &= ~0x40;
+}
+
+void LR35902::setFlagH(bool value) {
+  if (value)
+    F |= 0x20;
+  else
+    F &= ~0x20;
+}
+
+void LR35902::setFlagC(bool value) {
+  if (value)
+    F |= 0x10;
+  else
+    F &= ~0x10;
+}
+
 uint8_t LR35902::readMemory(uint32_t &cycles, uint16_t address) {
   // Read a byte from memory through the bus
   ++cycles;  // Increment cycles for the memory read operation

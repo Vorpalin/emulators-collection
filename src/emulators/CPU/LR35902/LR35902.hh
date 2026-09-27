@@ -29,6 +29,11 @@ class LR35902 : CPU {
 
   Bus *bus;
 
+  void setFlagZ(bool value);
+  void setFlagN(bool value);
+  void setFlagH(bool value);
+  void setFlagC(bool value);
+
   uint8_t flagZ() const { return (F & 0x80) != 0; }
   uint8_t flagN() const { return (F & 0x40) != 0; }
   uint8_t flagH() const { return (F & 0x20) != 0; }
