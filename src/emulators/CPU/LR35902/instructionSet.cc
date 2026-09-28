@@ -39,7 +39,7 @@ void LR35902::dec_b() {
   // Update flags based on the result of the decrement operation
   setFlagZ(B == 0);
   setFlagN(true);
-  setFlagH((oldB & 0x0F) == 0x0F);
+  setFlagH((oldB & 0x0F) == 0x00);
 }
 
 void LR35902::ld_b_d8(uint32_t &cycles) {
@@ -115,7 +115,7 @@ void LR35902::dec_c() {
   // Update flags based on the result of the decrement operation
   setFlagZ(C == 0);
   setFlagN(true);
-  setFlagH((oldC & 0x0F) == 0x0F);
+  setFlagH((oldC & 0x0F) == 0x00);
 }
 
 void LR35902::ld_c_d8(uint32_t &cycles) {
@@ -136,10 +136,9 @@ void LR35902::rrca() {
 }
 
 void LR35902::stop() {
-  // Stop the CPU until an interrupt occurs
-  // This is a placeholder implementation; actual behavior may vary based on the
-  // emulator design In a real implementation, you would set a flag to indicate
-  // the CPU is stopped
+  PC++;  // Increment program counter to skip the STOP instruction
+  // The STOP instruction halts the CPU until a button is pressed or an
+  // interrupt occurs.
 }
 
 void LR35902::ld_de_d16(uint32_t &cycles) {
@@ -181,7 +180,7 @@ void LR35902::dec_d() {
   // Update flags based on the result of the decrement operation
   setFlagZ(D == 0);
   setFlagN(true);
-  setFlagH((oldD & 0x0F) == 0x0F);
+  setFlagH((oldD & 0x0F) == 0x00);
 }
 
 void LR35902::ld_d_d8(uint32_t &cycles) {
@@ -256,7 +255,7 @@ void LR35902::dec_e() {
   // Update flags based on the result of the decrement operation
   setFlagZ(E == 0);
   setFlagN(true);
-  setFlagH((oldE & 0x0F) == 0x0F);
+  setFlagH((oldE & 0x0F) == 0x00);
 }
 
 void LR35902::ld_e_d8(uint32_t &cycles) {
@@ -334,7 +333,7 @@ void LR35902::dec_h() {
   // Update flags based on the result of the decrement operation
   setFlagZ(H == 0);
   setFlagN(true);
-  setFlagH((oldH & 0x0F) == 0x0F);
+  setFlagH((oldH & 0x0F) == 0x00);
 }
 
 void LR35902::ld_h_d8(uint32_t &cycles) {
@@ -345,32 +344,22 @@ void LR35902::ld_h_d8(uint32_t &cycles) {
 
 void LR35902::daa() {
   // Decimal Adjust Accumulator
-  uint8_t correction = 0;
-  bool carry = (F & 0x10) != 0;      // Check if carry flag is set
-  bool halfCarry = (F & 0x20) != 0;  // Check if half-carry flag is set
+  bool carry = (F & 0x10) != 0;
 
-  if ((F & 0x40) == 0) {  // If the last operation was an addition
-    if (halfCarry || (A & 0x0F) > 9) {
-      correction |= 0x06;  // Add 6 to the lower nibble
-    }
+  if ((F & 0x40) == 0) {  // after an addition
     if (carry || A > 0x99) {
-      correction |= 0x60;  // Add 6 to the upper nibble
-      F |= 0x10;           // Set carry flag
+      A += 0x60;
+      carry = true;
     }
-  } else {  // If the last operation was a subtraction
-    if (halfCarry) {
-      correction |= 0x06;  // Subtract 6 from the lower nibble
-    }
-    if (carry) {
-      correction |= 0x60;  // Subtract 6 from the upper nibble
-    }
+    if ((F & 0x20) || (A & 0x0F) > 0x09) A += 0x06;
+  } else {  // after a subtraction
+    if (carry) A -= 0x60;
+    if (F & 0x20) A -= 0x06;
   }
 
-  A += correction;   // Adjust the accumulator
-  setFlagZ(A == 0);  // Set zero flag if A is zero
-  setFlagH(false);   // Clear half-carry flag
-  setFlagC(carry ||
-           (A > 0x99));  // Set carry flag if there was a carry or A > 0x99
+  setFlagZ(A == 0);
+  setFlagH(false);
+  setFlagC(carry);
 }
 
 void LR35902::jr_z_r8(uint32_t &cycles) {
@@ -423,7 +412,7 @@ void LR35902::inc_l() {
   // Update flags based on the result of the increment operation
   setFlagZ(L == 0);
   setFlagN(false);
-  setFlagH((oldL & 0x0F) == 0x0F);
+  setFlagH((oldL & 0x0F) == 0x00);
 }
 
 void LR35902::dec_l() {
@@ -432,7 +421,7 @@ void LR35902::dec_l() {
   // Update flags based on the result of the decrement operation
   setFlagZ(L == 0);
   setFlagN(true);
-  setFlagH((oldL & 0x0F) == 0x0F);
+  setFlagH((oldL & 0x0F) == 0x00);
 }
 
 void LR35902::ld_l_d8(uint32_t &cycles) {
@@ -490,9 +479,11 @@ void LR35902::inc_hl_ptr(uint32_t &cycles) {
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
   value++;                                      // Increment the value
   writeMemory(cycles, address,
-              value);  // Write the incremented value back to memory
-  F = (F & 0x10) | (value == 0 ? 0x80 : 0) |
-      ((value & 0x0F) == 0 ? 0x20 : 0);  // Update flags based on the result
+              value);    // Write the incremented value back to memory
+  setFlagZ(value == 0);  // Update zero flag based on the result
+  setFlagN(false);       // Clear subtract flag
+  setFlagH((value & 0x0F) ==
+           0x00);  // Set half-carry flag if the lower nibble is 0x00
 }
 
 void LR35902::dec_hl_ptr(uint32_t &cycles) {
@@ -500,9 +491,11 @@ void LR35902::dec_hl_ptr(uint32_t &cycles) {
   uint8_t value = readMemory(cycles, address);  // Read the value from memory
   value--;                                      // Decrement the value
   writeMemory(cycles, address,
-              value);  // Write the decremented value back to memory
-  F = (F & 0x10) | (value == 0 ? 0x80 : 0) |
-      ((value & 0x0F) == 0x0F ? 0x20 : 0);  // Update flags based on the result
+              value);    // Write the decremented value back to memory
+  setFlagZ(value == 0);  // Update zero flag based on the result
+  setFlagN(true);        // Set subtract flag
+  setFlagH((value & 0x0F) ==
+           0x0F);  // Set half-carry flag if the lower nibble is 0x0F
 }
 
 void LR35902::ld_hl_d8(uint32_t &cycles) {
@@ -578,7 +571,7 @@ void LR35902::dec_a() {
   // Update flags based on the result of the decrement operation
   setFlagZ(A == 0);
   setFlagN(true);
-  setFlagH((oldA & 0x0F) == 0x0F);
+  setFlagH((oldA & 0x0F) == 0x00);
 }
 
 void LR35902::ld_a_d8(uint32_t &cycles) {
@@ -591,7 +584,7 @@ void LR35902::ccf() {
   // Complement carry flag
   setFlagN(false);            // Clear subtract flag
   setFlagH(false);            // Clear half-carry flag
-  setFlagC((F & 0x10) != 0);  // Update carry flag based on the new value
+  setFlagC((F & 0x10) == 0);  // Update carry flag based on the new value
 }
 
 void LR35902::ld_b_b() {
@@ -1675,7 +1668,6 @@ void LR35902::call_nz_a16(uint32_t &cycles) {
     PC++;                                      // Increment program counter
     pushStack(cycles, PC);  // Push the current program counter onto the stack
     PC = address;           // Set the program counter to the new address
-    ++cycles;               // Increment cycles for the call operation
   } else {
     PC += 2;      // Skip over the two bytes of the address if not calling
     cycles += 1;  // Increment cycles for reading the two bytes
@@ -1758,7 +1750,6 @@ void LR35902::call_z_a16(uint32_t &cycles) {
     PC++;                                      // Increment program counter
     pushStack(cycles, PC);  // Push the current program counter onto the stack
     PC = address;           // Set the program counter to the new address
-    ++cycles;               // Increment cycles for the call operation
   } else {
     PC += 2;      // Skip over the two bytes of the address if not calling
     cycles += 1;  // Increment cycles for reading the two bytes
@@ -1847,7 +1838,6 @@ void LR35902::call_nc_a16(uint32_t &cycles) {
     PC++;                                      // Increment program counter
     pushStack(cycles, PC);  // Push the current program counter onto the stack
     PC = address;           // Set the program counter to the new address
-    ++cycles;               // Increment cycles for the call operation
   } else {
     PC += 2;      // Skip over the two bytes of the address if not calling
     cycles += 1;  // Increment cycles for reading the two bytes
@@ -1931,7 +1921,6 @@ void LR35902::call_c_a16(uint32_t &cycles) {
     PC++;                                      // Increment program counter
     pushStack(cycles, PC);  // Push the current program counter onto the stack
     PC = address;           // Set the program counter to the new address
-    ++cycles;               // Increment cycles for the call operation
   } else {
     PC += 2;      // Skip over the two bytes of the address if not calling
     cycles += 1;  // Increment cycles for reading the two bytes
@@ -2018,6 +2007,7 @@ void LR35902::add_sp_r8(uint32_t &cycles) {
   int8_t value = static_cast<int8_t>(
       readMemory(cycles, PC));   // Read the immediate signed value from memory
   PC++;                          // Increment program counter
+  cycles += 2;                   // Increment cycles for the addition operation
   uint16_t result = SP + value;  // Perform addition
   setFlagZ(false);               // Clear zero flag (result is not stored in A)
   setFlagN(false);               // Clear subtract flag
@@ -2068,10 +2058,10 @@ void LR35902::rst_28(uint32_t &cycles) {
 
 void LR35902::pop_af(uint32_t &cycles) {
   // Pop two bytes from the stack into registers A and F
-  F = readMemory(cycles, SP);  // Pop the low byte into register F
-  SP++;                        // Increment stack pointer
-  A = readMemory(cycles, SP);  // Pop the high byte into register A
-  SP++;                        // Increment stack pointer
+  F = readMemory(cycles, SP) & 0xF0;  // Pop the low byte into register F
+  SP++;                               // Increment stack pointer
+  A = readMemory(cycles, SP);         // Pop the high byte into register A
+  SP++;                               // Increment stack pointer
 }
 
 void LR35902::ld_a_c(uint32_t &cycles) {
@@ -2084,7 +2074,8 @@ void LR35902::ld_a_c(uint32_t &cycles) {
 
 void LR35902::di() {
   // Disable interrupts
-  IME = false;  // Clear the interrupt master enable flag
+  IME = false;
+  imeDelay = 0;
 }
 
 void LR35902::push_af(uint32_t &cycles) {
@@ -2160,7 +2151,7 @@ void LR35902::ld_a_a16_ptr(uint32_t &cycles) {
 
 void LR35902::ei() {
   // Enable interrupts
-  IME = true;  // Set the interrupt master enable flag
+  imeDelay = 2;
 }
 
 void LR35902::cp_a_d8(uint32_t &cycles) {

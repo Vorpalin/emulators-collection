@@ -27,8 +27,9 @@ class LR35902 : CPU {
   uint8_t A, B, C, D, E, H, L;
   uint16_t PC, SP;
   uint8_t F;
-  bool IME;     // Interrupt Master Enable flag
-  bool halted;  // Flag to indicate if the CPU is in a halted state
+  bool IME;              // Interrupt Master Enable flag
+  uint8_t imeDelay = 0;  // Delay for enabling IME after EI instruction
+  bool halted;           // Flag to indicate if the CPU is in a halted state
 
   GameBoyBus *bus;
 

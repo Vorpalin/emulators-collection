@@ -24,6 +24,8 @@ class UI {
    */
   UI();
 
+  ~UI();
+
   /**
    * @brief Run the main application loop (input handling + rendering)
    *        until the user quits or a launched game signals exit.

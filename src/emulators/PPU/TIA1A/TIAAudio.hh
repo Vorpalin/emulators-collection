@@ -101,7 +101,6 @@ class TIAAudio {
    */
   void close() {
     if (dev_ != 0) {
-      std::cerr << "Closing audio device\n";
       SDL_PauseAudioDevice(dev_, 1);  // make sure the callback is idle
       SDL_CloseAudioDevice(dev_);     // waits for the audio thread to exit
       dev_ = 0;

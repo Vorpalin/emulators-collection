@@ -69,14 +69,7 @@ target_compile_options(emulators-collection
         -pedantic
         -Wold-style-cast
         -std=c++20
-        #-fsanitize=address,undefined
-        #-fno-omit-frame-pointer
 )
-
-#target_link_options(emulators-collection
-    #PRIVATE
-        #-fsanitize=address,undefined
-#)
 
 target_link_libraries(emulators-collection
     PRIVATE

@@ -107,7 +107,8 @@ uint32_t LR35902::execute() {
   // Fetch the next instruction from memory
 
   uint32_t cycles = 0;
-  // Dispatch d'interruption (avant le fetch normal)
+  // std::cout << "PC: " << std::hex << PC << std::dec << std::endl;
+  //  Dispatch d'interruption (avant le fetch normal)
   if (IME) {
     uint8_t pending = bus->interrupts.pending();  // adapte à ton accesseur réel
     if (pending) {
@@ -133,8 +134,6 @@ uint32_t LR35902::execute() {
         bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x10);
       }
 
-      cycles +=
-          2;  // 2 M-cycles de délai avant de reprendre l'exécution normale
       return cycles;  // ne fetch pas d'instruction normale ce tick-ci
     }
   }
@@ -881,9 +880,17 @@ uint32_t LR35902::execute() {
     case RST_38H:  // RST 38H
       rst_38(cycles);
       break;
+    case RST_00H:  // RST 00H
+      rst_00(cycles);
+      break;
+    case DI:
+      di();
+      break;
     default:
       break;
   }
+
+  if (imeDelay > 0 && --imeDelay == 0) IME = true;
 
   return cycles;  // Return the number of cycles taken for this instruction
 }
