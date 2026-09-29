@@ -73,13 +73,6 @@ class GameBoyBus : public Bus {
    */
   void tick() override;
 
-  /**
-   * @brief Returns a copy of the PPU.
-   * @warning This returns by value, so a full copy (VRAM, OAM, framebuffer)
-   *          is made on each call. Prefer exposing a const reference.
-   */
-  GameBoyPPU getPPU() const { return ppu; }
-
   /** @brief Gives access to the joypad, to feed it host input. */
   GameBoyController& getJoypad() { return joypad; }
 
