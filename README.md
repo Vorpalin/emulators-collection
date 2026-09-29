@@ -76,7 +76,7 @@ sudo apt-get install build-essential cmake ninja-build libsdl2-dev libsdl2-ttf-d
 Build the Docker image from the project root:
 
 ```bash
-docker build -t emulator-collection .
+docker image build -t emulator-collection .
 ```
 
 The image uses Ubuntu and builds the project with CMake.
@@ -585,41 +585,6 @@ fix(atari2600): correct TIA sprite positioning
 refactor: reorganize emulator architecture
 docs: update README
 ```
-
-## 🗺️ Roadmap
-
-Current development focuses on:
-
-* Improving emulator accuracy
-* Implementing missing CPU instructions
-* Improving graphics and input systems
-* Completing the Game Boy emulator
-* Improving PPU accuracy
-* Improving cartridge and mapper support
-* Expanding ROM/game support
-* Improving the emulator architecture
-* Adding additional console and computer emulators
-* Improving testing and validation
-
-## 🤝 Contributing
-
-Contributions are welcome.
-
-1. Fork the repository and create a feature branch.
-
-2. Make your changes while following the project architecture and coding style.
-
-3. Run:
-
-   ```bash
-   pre-commit run --all-files
-   ```
-
-4. Make sure the Docker build succeeds.
-
-5. Open a pull request targeting `main`.
-
-When adding hardware, prefer creating a dedicated reusable component rather than putting the implementation directly into a console class.
 
 ## 📄 License
 
