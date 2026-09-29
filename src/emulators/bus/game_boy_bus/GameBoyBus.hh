@@ -8,9 +8,9 @@
 #include "emulators/cartridge/game_boy_cartridge/GameBoyCartridge.hh"
 #include "emulators/controller/game_boy_controller/GameBoyController.hh"
 #include "emulators/cpu/LR35902/LR35902.hh"
+#include "emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.hh"
 #include "emulators/ppu/game_boy_ppu/GameBoyPPU.hh"
 #include "emulators/timer/game_boy_timer/GameBoyTimer.hh"
-#include "emulators/timer/game_boy_timer/InterruptController.hh"
 
 /**
  * @file GameBoyBus.hh
@@ -94,7 +94,7 @@ class GameBoyBus : public Bus {
 
   /// Interrupt controller (IF at 0xFF0F, IE at 0xFFFF). Public so that the
   /// CPU and peripherals can request/query interrupts.
-  InterruptController interrupts;
+  GameBoyInterruptController interrupts;
 
  private:
   /**

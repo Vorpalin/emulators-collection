@@ -42,7 +42,7 @@ void GameBoyTimer::tick(uint8_t cycles) {
     if (timerCounter == 0) {       // Overflow occurred
       timerCounter = timerModulo;  // Reset to modulo value
       interrupts->request(
-          InterruptController::Timer);  // Request timer interrupt
+          GameBoyInterruptController::Timer);  // Request timer interrupt
     }
   }
 }

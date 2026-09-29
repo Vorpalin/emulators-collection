@@ -2,11 +2,11 @@
 
 #include <cstdint>
 
-#include "emulators/timer/game_boy_timer/InterruptController.hh"
+#include "emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.hh"
 
 class GameBoyTimer {
  public:
-  explicit GameBoyTimer(InterruptController* interrupts)
+  explicit GameBoyTimer(GameBoyInterruptController* interrupts)
       : interrupts(interrupts) {
     divider = 0;
     timerCounter = 0;
@@ -24,11 +24,11 @@ class GameBoyTimer {
 
  private:
   uint32_t timerThreshold() const;
-  uint16_t divider;                 // Divider register (0xFF04)
-  uint8_t timerCounter;             // Timer counter (0xFF05)
-  uint8_t timerModulo;              // Timer modulo (0xFF06)
-  uint8_t timerControl;             // Timer control (0xFF07)
-  uint16_t timerCycles;             // Internal counter for timer ticks
-  uint32_t dividerCounter;          // Internal counter for divider ticks
-  InterruptController* interrupts;  // Handles timer interrupts
+  uint16_t divider;                        // Divider register (0xFF04)
+  uint8_t timerCounter;                    // Timer counter (0xFF05)
+  uint8_t timerModulo;                     // Timer modulo (0xFF06)
+  uint8_t timerControl;                    // Timer control (0xFF07)
+  uint16_t timerCycles;                    // Internal counter for timer ticks
+  uint32_t dividerCounter;                 // Internal counter for divider ticks
+  GameBoyInterruptController* interrupts;  // Handles timer interrupts
 };

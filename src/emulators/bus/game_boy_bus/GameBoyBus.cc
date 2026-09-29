@@ -11,9 +11,9 @@ GameBoyBus::GameBoyBus()
     byte = 0;
   }
   ppu.onVBlankInterrupt(
-      [this]() { interrupts.request(InterruptController::VBlank); });
+      [this]() { interrupts.request(GameBoyInterruptController::VBlank); });
   ppu.onStatInterrupt(
-      [this]() { interrupts.request(InterruptController::LCDStat); });
+      [this]() { interrupts.request(GameBoyInterruptController::LCDStat); });
   ppu.onFrameReady([this]() { frameReady = true; });
 }
 

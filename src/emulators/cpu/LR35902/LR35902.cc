@@ -117,19 +117,19 @@ uint32_t LR35902::execute() {
       pushStack(cycles, PC);
       cycles += 3;  // 2 push + 1 délai interne, en plus du fetch normal
 
-      if (pending & InterruptController::VBlank) {
+      if (pending & GameBoyInterruptController::VBlank) {
         PC = 0x40;
         bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x01);
-      } else if (pending & InterruptController::LCDStat) {
+      } else if (pending & GameBoyInterruptController::LCDStat) {
         PC = 0x48;
         bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x02);
-      } else if (pending & InterruptController::Timer) {
+      } else if (pending & GameBoyInterruptController::Timer) {
         PC = 0x50;
         bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x04);
-      } else if (pending & InterruptController::Serial) {
+      } else if (pending & GameBoyInterruptController::Serial) {
         PC = 0x58;
         bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x08);
-      } else if (pending & InterruptController::Joypad) {
+      } else if (pending & GameBoyInterruptController::Joypad) {
         PC = 0x60;
         bus->interrupts.writeIF(bus->interrupts.readIF() & ~0x10);
       }

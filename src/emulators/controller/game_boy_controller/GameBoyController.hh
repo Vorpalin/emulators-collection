@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "emulators/timer/game_boy_timer/InterruptController.hh"
+#include "emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.hh"
 
 /**
  * @file GameBoyController.hh
@@ -43,14 +43,11 @@ class GameBoyController {
    * @param interrupts Interrupt controller used to raise the Joypad
    *        interrupt. Not owned; must outlive this object.
    */
-  explicit GameBoyController(InterruptController* interrupts)
+  explicit GameBoyController(GameBoyInterruptController* interrupts)
       : interrupts(interrupts) {}
 
   /** @brief Releases all buttons and deselects both button groups. */
-  void reset() {
-    buttons = 0x00;
-    selectBits = 0x30;
-  }
+  void reset();
 
   /**
    * @brief Presses or releases a button.
@@ -62,22 +59,7 @@ class GameBoyController {
    * @param button  The button to update.
    * @param pressed `true` if pressed, `false` if released.
    */
-  void setButton(Button button, bool pressed) {
-    bool wasUnset = !(buttons & (1 << button));
-    if (pressed)
-      buttons |= (1 << button);
-    else
-      buttons &= ~(1 << button);
-
-    if (!pressed || !wasUnset) return;
-
-    bool isDirection = button <= Down;  // Right, Left, Up, Down = 0-3
-    bool selectDirections = !(selectBits & 0x10);
-    bool selectActions = !(selectBits & 0x20);
-    bool groupSelected = isDirection ? selectDirections : selectActions;
-
-    if (groupSelected) interrupts->request(InterruptController::Joypad);
-  }
+  void setButton(Button button, bool pressed);
 
   /**
    * @brief Reads the joypad register (0xFF00).
@@ -87,15 +69,7 @@ class GameBoyController {
    *
    * @return Value of the register.
    */
-  uint8_t read() const {
-    uint8_t result = 0xC0 | selectBits;
-    bool selectDirections = !(selectBits & 0x10);
-    bool selectActions = !(selectBits & 0x20);
-    uint8_t lowNibble = 0x0F;
-    if (selectDirections) lowNibble &= ~(buttons & 0x0F);
-    if (selectActions) lowNibble &= ~((buttons >> 4) & 0x0F);
-    return result | lowNibble;
-  }
+  uint8_t read() const;
 
   /**
    * @brief Writes the joypad register (0xFF00).
@@ -105,10 +79,11 @@ class GameBoyController {
    *
    * @param value Value written by the CPU.
    */
-  void write(uint8_t value) { selectBits = value & 0x30; }
+  void write(uint8_t value);
 
  private:
-  InterruptController* interrupts;  ///< Interrupt controller (not owned).
+  GameBoyInterruptController*
+      interrupts;  ///< Interrupt controller (not owned).
   /// Pressed-button bitmask: bit set = pressed; bits 0-3 D-pad, 4-7
   /// A/B/Select/Start.
   uint8_t buttons = 0x00;

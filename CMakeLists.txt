@@ -86,8 +86,10 @@ add_library(gameboy STATIC
     src/emulators/ppu/game_boy_ppu/GameBoyPPU.cc
     src/emulators/bus/game_boy_bus/GameBoyBus.cc
     src/emulators/timer/game_boy_timer/GameBoyTimer.cc
+    src/emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.cc
     src/emulators/cartridge/Cartridge.cc
     src/emulators/cartridge/game_boy_cartridge/GameBoyCartridge.cc
+    src/emulators/controller/game_boy_controller/GameBoyController.cc
 )
 
 target_link_libraries(gameboy
