@@ -64,6 +64,7 @@ add_library(atari2600 STATIC
     src/emulators/cpu/CPU65/setFlags.cc
     src/emulators/ppu/TIA1A/TIA1A.cc
     src/emulators/bus/atari2600_bus/Atari2600Bus.cc
+    src/emulators/cartridge/atari2600_cartridge/Atari2600Cartridge.cc
     src/emulators/processor/MOS6532/MOS6532.cc
 )
 
@@ -87,7 +88,6 @@ add_library(gameboy STATIC
     src/emulators/bus/game_boy_bus/GameBoyBus.cc
     src/emulators/timer/game_boy_timer/GameBoyTimer.cc
     src/emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.cc
-    src/emulators/cartridge/Cartridge.cc
     src/emulators/cartridge/game_boy_cartridge/GameBoyCartridge.cc
     src/emulators/controller/game_boy_controller/GameBoyController.cc
 )

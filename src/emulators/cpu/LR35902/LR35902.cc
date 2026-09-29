@@ -71,25 +71,25 @@ void LR35902::setFlagC(bool value) {
     F &= ~0x10;
 }
 
-uint8_t LR35902::readMemory(uint32_t &cycles, uint16_t address) {
+uint8_t LR35902::read(uint32_t &cycles, uint16_t address) {
   // Read a byte from memory through the bus
   ++cycles;  // Increment cycles for the memory read operation
-  return bus->readMemory(address);
+  return bus->read(address);
 }
 
-void LR35902::writeMemory(uint32_t &cycles, uint16_t address, uint8_t value) {
+void LR35902::write(uint32_t &cycles, uint16_t address, uint8_t value) {
   // Write a byte to memory through the bus
   ++cycles;  // Increment cycles for the memory write operation
-  bus->writeMemory(address, value);
+  bus->write(address, value);
 }
 
 uint16_t LR35902::popStack(uint32_t &cycles) {
   // Pop a 16-bit value from the stack
-  uint8_t lowByte = readMemory(cycles, SP);   // Read low byte from stack
-  SP++;                                       // Increment stack pointer
-  uint8_t highByte = readMemory(cycles, SP);  // Read high byte from stack
-  SP++;                                       // Increment stack pointer
-  return (highByte << 8) | lowByte;  // Combine bytes into a 16-bit value
+  uint8_t lowByte = read(cycles, SP);   // Read low byte from stack
+  SP++;                                 // Increment stack pointer
+  uint8_t highByte = read(cycles, SP);  // Read high byte from stack
+  SP++;                                 // Increment stack pointer
+  return (highByte << 8) | lowByte;     // Combine bytes into a 16-bit value
 }
 
 uint16_t LR35902::pushStack(uint32_t &cycles, uint16_t value) {
@@ -97,9 +97,9 @@ uint16_t LR35902::pushStack(uint32_t &cycles, uint16_t value) {
   uint8_t highByte = (value >> 8) & 0xFF;  // Extract high byte
   uint8_t lowByte = value & 0xFF;          // Extract low byte
   SP--;                                    // Decrement stack pointer
-  writeMemory(cycles, SP, highByte);       // Write high byte to stack
+  write(cycles, SP, highByte);             // Write high byte to stack
   SP--;                                    // Decrement stack pointer
-  writeMemory(cycles, SP, lowByte);        // Write low byte to stack
+  write(cycles, SP, lowByte);              // Write low byte to stack
   return value;                            // Return the pushed value
 }
 
@@ -146,7 +146,7 @@ uint32_t LR35902::execute() {
       return 1;  // reste en HALT, consomme un minimum de cycles
     }
   }
-  uint8_t opcode = readMemory(cycles, PC);
+  uint8_t opcode = read(cycles, PC);
   PC++;  // Increment program counter
 
   switch (opcode) {

@@ -65,7 +65,7 @@ class LR35902 : public CPU {
    * @param address 16-bit address.
    * @return Byte read.
    */
-  uint8_t readMemory(uint32_t &cycles, uint16_t address) override;
+  uint8_t read(uint32_t &cycles, uint16_t address) override;
 
   /**
    * @brief Writes a byte to the bus.
@@ -73,7 +73,7 @@ class LR35902 : public CPU {
    * @param address 16-bit address.
    * @param value   Byte to write.
    */
-  void writeMemory(uint32_t &cycles, uint16_t address, uint8_t value) override;
+  void write(uint32_t &cycles, uint16_t address, uint8_t value) override;
 
   /**
    * @brief Pops a 16-bit value from the stack (SP += 2).

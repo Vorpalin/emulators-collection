@@ -129,14 +129,14 @@ class GameBoyPPU {
    * @param address Bus address.
    * @return Byte read.
    */
-  uint8_t readMemory(uint16_t address);
+  uint8_t read(uint16_t address);
 
   /**
    * @brief Writes to the PPU-owned address space (VRAM, OAM, registers).
    * @param address Bus address.
    * @param value   Byte to write.
    */
-  void writeMemory(uint16_t address, uint8_t value);
+  void write(uint16_t address, uint8_t value);
 
   /** @brief Reads VRAM. @param addr Bus address in 0x8000-0x9FFF. */
   uint8_t readVRAM(uint16_t addr) const;

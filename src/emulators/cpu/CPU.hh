@@ -32,7 +32,7 @@ class CPU {
    * @param address Address to read from.
    * @return The byte value at that address.
    */
-  virtual uint8_t readMemory(uint32_t &cycles, uint16_t address) = 0;
+  virtual uint8_t read(uint32_t &cycles, uint16_t address) = 0;
 
   /**
    * @brief Write a byte to memory via the bus, accounting for elapsed
@@ -41,6 +41,5 @@ class CPU {
    * @param address Address to write to.
    * @param value   Byte value to write.
    */
-  virtual void writeMemory(uint32_t &cycles, uint16_t address,
-                           uint8_t value) = 0;
+  virtual void write(uint32_t &cycles, uint16_t address, uint8_t value) = 0;
 };

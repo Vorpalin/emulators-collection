@@ -11,7 +11,7 @@ void Atari2600Bus::loadROM(std::string &filename) {
   cartridge.loadROM(filename);
 }
 
-uint8_t Atari2600Bus::readMemory(uint16_t address) {
+uint8_t Atari2600Bus::read(uint16_t address) {
   address &= 0x1FFF;
 
   if (address & 0x1000)  // A12 set -> cartridge
@@ -25,7 +25,7 @@ uint8_t Atari2600Bus::readMemory(uint16_t address) {
                       (address & 0x1F));  // RIOT I/O + timer (0x280-0x29F)
 }
 
-void Atari2600Bus::writeMemory(uint16_t address, uint8_t value) {
+void Atari2600Bus::write(uint16_t address, uint8_t value) {
   address &= 0x1FFF;
 
   if (address & 0x1000)

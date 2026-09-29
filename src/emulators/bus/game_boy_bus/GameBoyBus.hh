@@ -57,14 +57,14 @@ class GameBoyBus : public Bus {
    * @param address 16-bit bus address.
    * @return Byte at that address.
    */
-  uint8_t readMemory(uint16_t address) override;
+  uint8_t read(uint16_t address) override;
 
   /**
    * @brief Writes a byte to the memory map.
    * @param address 16-bit bus address.
    * @param value   Byte to write.
    */
-  void writeMemory(uint16_t address, uint8_t value) override;
+  void write(uint16_t address, uint8_t value) override;
 
   /**
    * @brief Advances the whole system (timer, PPU, DMA, ...) by one step.

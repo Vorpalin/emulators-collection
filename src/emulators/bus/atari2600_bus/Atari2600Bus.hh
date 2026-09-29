@@ -5,7 +5,7 @@
 #include <string>
 
 #include "emulators/bus/Bus.hh"
-#include "emulators/cartridge/Cartridge.hh"
+#include "emulators/cartridge/atari2600_cartridge/Atari2600Cartridge.hh"
 #include "emulators/cpu/CPU65/CPU65.hh"
 #include "emulators/ppu/TIA1A/TIA1A.hh"
 #include "emulators/processor/MOS6532/MOS6532.hh"
@@ -46,7 +46,7 @@ class Atari2600Bus : public Bus {
    * @param address Full 16-bit CPU address.
    * @return The byte value read.
    */
-  uint8_t readMemory(uint16_t address) override;
+  uint8_t read(uint16_t address) override;
 
   /**
    * @brief Write a byte to the address decoded to cartridge, RIOT or TIA.
@@ -54,7 +54,7 @@ class Atari2600Bus : public Bus {
    * @param address Full 16-bit CPU address.
    * @param value   Byte value to write.
    */
-  void writeMemory(uint16_t address, uint8_t value) override;
+  void write(uint16_t address, uint8_t value) override;
 
   /**
    * @brief Advance the bus (and the TIA) by one clock cycle.
@@ -97,10 +97,10 @@ class Atari2600Bus : public Bus {
   }
 
  private:
-  CPU65 cpu;            ///< CPU core driving the Atari 2600.
-  Cartridge cartridge;  ///< Loaded ROM and bank-switching state.
-  MOS6532 mos6532;      ///< RAM, I/O ports and timer.
-  TIA1A tia1a;          ///< Video generation and CPU-halt (WSYNC) signaling.
+  CPU65 cpu;                     ///< CPU core driving the Atari 2600.
+  Atari2600Cartridge cartridge;  ///< Loaded ROM and bank-switching state.
+  MOS6532 mos6532;               ///< RAM, I/O ports and timer.
+  TIA1A tia1a;  ///< Video generation and CPU-halt (WSYNC) signaling.
   std::function<void(uint16_t, uint8_t)>
       onAudioWrite;  ///< Optional hook fired on TIA audio-register writes.
 };

@@ -12,8 +12,8 @@ void CPU65::resetCPU() {
   Y = 0;
   SP = 0xFD;  // Stack Pointer starts at 0xFD after reset
   halted = false;
-  const uint8_t lowByte = bus->readMemory(0xFFFC);
-  const uint8_t highByte = bus->readMemory(0xFFFD);
+  const uint8_t lowByte = bus->read(0xFFFC);
+  const uint8_t highByte = bus->read(0xFFFD);
   PC = static_cast<uint16_t>(lowByte) | (static_cast<uint16_t>(highByte) << 8);
   C = 0;
   Z = 0;
@@ -27,7 +27,7 @@ void CPU65::resetCPU() {
 void CPU65::reset() { resetCPU(); }
 
 uint8_t CPU65::fetch(uint32_t &cycles) {
-  uint8_t instruction = bus->readMemory(PC);
+  uint8_t instruction = bus->read(PC);
   PC++;
   cycles++;
   return instruction;
@@ -39,24 +39,24 @@ uint16_t CPU65::fetch16(uint32_t &cycles) {
   return (highByte << 8) | lowByte;
 }
 
-uint8_t CPU65::readMemory(uint32_t &cycles, uint16_t address) {
-  uint8_t data = bus->readMemory(address);
+uint8_t CPU65::read(uint32_t &cycles, uint16_t address) {
+  uint8_t data = bus->read(address);
   cycles++;
   return data;
 }
 
-void CPU65::writeMemory(uint32_t &cycles, uint16_t address, uint8_t value) {
-  bus->writeMemory(address, value);
+void CPU65::write(uint32_t &cycles, uint16_t address, uint8_t value) {
+  bus->write(address, value);
   cycles++;
 }
 void CPU65::push(uint32_t &cycles, uint8_t v) {
-  writeMemory(cycles, 0x0100 | SP, v);
+  write(cycles, 0x0100 | SP, v);
   --SP;
 }
 
 uint8_t CPU65::pull(uint32_t &cycles) {
   ++SP;
-  return readMemory(cycles, 0x0100 | SP);
+  return read(cycles, 0x0100 | SP);
 }
 
 void CPU65::zeroPageAddX(uint32_t &cycles, uint16_t &address) {
@@ -174,21 +174,21 @@ uint8_t CPU65::getStatus(bool breakFlag) const {
 
 void CPU65::isb(uint16_t addr, uint32_t &cycles) {
   // INC memory
-  uint8_t value = readMemory(cycles, addr);
+  uint8_t value = read(cycles, addr);
   ++value;
-  writeMemory(cycles, addr, value);
+  write(cycles, addr, value);
 
   // SBC memory
   sbc(value);
 }
 
 void CPU65::slo(uint16_t addr, uint32_t &cycles) {
-  uint8_t value = readMemory(cycles, addr);
+  uint8_t value = read(cycles, addr);
 
   // ASL memory
   value = asl(value);
 
-  writeMemory(cycles, addr, value);
+  write(cycles, addr, value);
 
   // ORA
   A |= value;
@@ -198,11 +198,11 @@ void CPU65::slo(uint16_t addr, uint32_t &cycles) {
 }
 
 void CPU65::rla(uint16_t addr, uint32_t &cycles) {
-  uint8_t value = readMemory(cycles, addr);
+  uint8_t value = read(cycles, addr);
 
   value = rol(value);
 
-  writeMemory(cycles, addr, value);
+  write(cycles, addr, value);
 
   // AND
   A &= value;
@@ -212,12 +212,12 @@ void CPU65::rla(uint16_t addr, uint32_t &cycles) {
 }
 
 void CPU65::sre(uint16_t addr, uint32_t &cycles) {
-  uint8_t value = readMemory(cycles, addr);
+  uint8_t value = read(cycles, addr);
 
   // LSR M
   value = lsr(value);
 
-  writeMemory(cycles, addr, value);
+  write(cycles, addr, value);
 
   // EOR M
   A ^= value;
@@ -229,12 +229,12 @@ void CPU65::sre(uint16_t addr, uint32_t &cycles) {
 }
 
 void CPU65::rra(uint16_t addr, uint32_t &cycles) {
-  uint8_t value = readMemory(cycles, addr);
+  uint8_t value = read(cycles, addr);
 
   // ROR M
   value = ror(value);
 
-  writeMemory(cycles, addr, value);
+  write(cycles, addr, value);
 
   // ADC M
   adc(value);
@@ -243,7 +243,7 @@ void CPU65::rra(uint16_t addr, uint32_t &cycles) {
 void CPU65::ahx(uint16_t addr, uint8_t high) {
   uint8_t value = A & X & static_cast<uint8_t>(high + 1);
 
-  bus->writeMemory(addr, value);
+  bus->write(addr, value);
 }
 
 void CPU65::shy(uint16_t addr) {
@@ -251,7 +251,7 @@ void CPU65::shy(uint16_t addr) {
 
   uint8_t value = Y & static_cast<uint8_t>(high + 1);
 
-  bus->writeMemory(addr, value);
+  bus->write(addr, value);
 }
 
 void CPU65::shx(uint16_t addr) {
@@ -259,7 +259,7 @@ void CPU65::shx(uint16_t addr) {
 
   uint8_t value = X & static_cast<uint8_t>(high + 1);
 
-  bus->writeMemory(addr, value);
+  bus->write(addr, value);
 }
 
 void CPU65::tas(uint16_t addr) {
@@ -269,7 +269,7 @@ void CPU65::tas(uint16_t addr) {
 
   uint8_t value = SP & static_cast<uint8_t>(high + 1);
 
-  bus->writeMemory(addr, value);
+  bus->write(addr, value);
 }
 
 void CPU65::xaa(uint8_t value) {
@@ -282,11 +282,11 @@ void CPU65::xaa(uint8_t value) {
 }
 
 void CPU65::dcp(uint16_t addr, uint32_t &cycles) {
-  uint8_t value = readMemory(cycles, addr);
+  uint8_t value = read(cycles, addr);
 
   --value;
 
-  writeMemory(cycles, addr, value);
+  write(cycles, addr, value);
 
   cmpSetFlags(value);
 }
@@ -333,7 +333,7 @@ void CPU65::axs(uint8_t value) {
 }
 
 void CPU65::las(uint16_t addr, uint32_t &cycles) {
-  uint8_t value = readMemory(cycles, addr);
+  uint8_t value = read(cycles, addr);
 
   value &= SP;
 
@@ -370,7 +370,7 @@ uint32_t CPU65::execute() {
     case INS_LDA_ZP:  // LDA Zero Page
     {
       uint8_t addr = fetch(cycles);
-      A = this->readMemory(cycles, addr);
+      A = this->read(cycles, addr);
       ldaSetFlags();
       break;
     }
@@ -379,28 +379,28 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      A = this->readMemory(cycles, addr);
+      A = this->read(cycles, addr);
       ldaSetFlags();
       break;
     }
     case INS_LDA_ABS:  // LDA Absolute
     {
       uint16_t addr = fetch16(cycles);
-      A = this->readMemory(cycles, addr);
+      A = this->read(cycles, addr);
       ldaSetFlags();
       break;
     }
     case INS_LDA_ABSX:  // LDA Absolute,X
     {
       uint16_t addr = absIndexed(cycles, X, false);
-      A = this->readMemory(cycles, addr);
+      A = this->read(cycles, addr);
       ldaSetFlags();
       break;
     }
     case INS_LDA_ABSY:  // LDA Absolute,Y
     {
       uint16_t addr = absIndexed(cycles, Y, false);
-      A = this->readMemory(cycles, addr);
+      A = this->read(cycles, addr);
       ldaSetFlags();
       break;
     }
@@ -409,23 +409,23 @@ uint32_t CPU65::execute() {
       uint16_t zpAddr = fetch(cycles);
       this->zeroPageAddX(cycles, zpAddr);
       zpAddr &= 0xFF;  // Wrap around for zero page
-      uint16_t addr = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
-      A = this->readMemory(cycles, addr);
+      uint16_t addr = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
+      A = this->read(cycles, addr);
       ldaSetFlags();
       break;
     }
     case INS_LDA_INDY:  // LDA (Indirect),Y
     {
       uint8_t zpAddr = fetch(cycles);
-      uint16_t base = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint16_t base = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
 
       uint16_t addr = base + Y;
 
       if ((base & 0xFF00) != (addr & 0xFF00)) ++cycles;
 
-      A = this->readMemory(cycles, addr);
+      A = this->read(cycles, addr);
       ldaSetFlags();
       break;
     }
@@ -438,7 +438,7 @@ uint32_t CPU65::execute() {
     case INS_ADC_ZP:  // ADC Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       adc(value);
       break;
     }
@@ -447,14 +447,14 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       adc(value);
       break;
     }
     case INS_ADC_ABS:  // ADC Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       adc(value);
       break;
     }
@@ -462,7 +462,7 @@ uint32_t CPU65::execute() {
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddX(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       adc(value);
       break;
     }
@@ -470,7 +470,7 @@ uint32_t CPU65::execute() {
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddY(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       adc(value);
       break;
     }
@@ -479,23 +479,23 @@ uint32_t CPU65::execute() {
       uint16_t zpAddr = fetch(cycles);
       this->zeroPageAddX(cycles, zpAddr);
       zpAddr &= 0xFF;  // Wrap around for zero page
-      uint16_t addr = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint16_t addr = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint8_t value = this->read(cycles, addr);
       adc(value);
       break;
     }
     case INS_ADC_INDY:  // ADC (Indirect),Y
     {
       uint8_t zpAddr = fetch(cycles);
-      uint16_t base = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint16_t base = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
 
       uint16_t addr = base + Y;
 
       if ((base & 0xFF00) != (addr & 0xFF00)) ++cycles;
 
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       adc(value);
       break;
     }
@@ -509,7 +509,7 @@ uint32_t CPU65::execute() {
     case INS_AND_ZP:  // AND Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A &= value;
       andSetFlags();
       break;
@@ -519,7 +519,7 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A &= value;
       andSetFlags();
       break;
@@ -527,7 +527,7 @@ uint32_t CPU65::execute() {
     case INS_AND_ABS:  // AND Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A &= value;
       andSetFlags();
       break;
@@ -536,7 +536,7 @@ uint32_t CPU65::execute() {
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddX(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A &= value;
       andSetFlags();
       break;
@@ -545,7 +545,7 @@ uint32_t CPU65::execute() {
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddY(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A &= value;
       andSetFlags();
       break;
@@ -555,9 +555,9 @@ uint32_t CPU65::execute() {
       uint16_t zpAddr = fetch(cycles);
       this->zeroPageAddX(cycles, zpAddr);
       zpAddr &= 0xFF;  // Wrap around for zero page
-      uint16_t addr = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint16_t addr = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint8_t value = this->read(cycles, addr);
       A &= value;
       andSetFlags();
       break;
@@ -565,13 +565,13 @@ uint32_t CPU65::execute() {
     case INS_AND_INDY:  // AND (Indirect),Y
     {
       uint8_t zpAddr = fetch(cycles);
-      uint16_t base = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint16_t base = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
       uint16_t addr = base + Y;
 
       if ((base & 0xFF00) != (addr & 0xFF00)) ++cycles;
 
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A &= value;
       andSetFlags();
       break;
@@ -585,9 +585,9 @@ uint32_t CPU65::execute() {
     case INS_ASL_ZP:  // ASL Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
-      ++cycles;  // Increment cycles for the operation
-      writeMemory(cycles, addr, asl(value));  // Write back to memory
+      uint8_t value = this->read(cycles, addr);
+      ++cycles;                         // Increment cycles for the operation
+      write(cycles, addr, asl(value));  // Write back to memory
       break;
     }
     case INS_ASL_ZPX:  // ASL Zero Page,X
@@ -595,29 +595,29 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A = value;
       aslSetFlags(cycles);
-      writeMemory(cycles, addr, A);  // Write back to memory
+      write(cycles, addr, A);  // Write back to memory
       break;
     }
     case INS_ASL_ABS:  // ASL Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A = value;
       aslSetFlags(cycles);
-      writeMemory(cycles, addr, A);  // Write back to memory
+      write(cycles, addr, A);  // Write back to memory
       break;
     }
     case INS_ASL_ABSX:  // ASL Absolute,X
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddX(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A = value;
       aslSetFlags(cycles);
-      writeMemory(cycles, addr, A);  // Write back to memory
+      write(cycles, addr, A);  // Write back to memory
       break;
     }
     case INS_BCC:  // BCC (Branch if Carry Clear)
@@ -650,14 +650,14 @@ uint32_t CPU65::execute() {
     case INS_BIT_ZP:  // BIT Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       bitSetFlags(value);
       break;
     }
     case INS_BIT_ABS:  // BIT Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       bitSetFlags(value);
       break;
     }
@@ -699,8 +699,8 @@ uint32_t CPU65::execute() {
 
       I = 1;
 
-      uint8_t low = readMemory(cycles, 0xFFFE);
-      uint8_t high = readMemory(cycles, 0xFFFF);
+      uint8_t low = read(cycles, 0xFFFE);
+      uint8_t high = read(cycles, 0xFFFF);
 
       PC = static_cast<uint16_t>(low) | (static_cast<uint16_t>(high) << 8);
 
@@ -757,7 +757,7 @@ uint32_t CPU65::execute() {
     case INS_CMP_ZP:  // CMP Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cmpSetFlags(value);
       break;
     }
@@ -766,28 +766,28 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cmpSetFlags(value);
       break;
     }
     case INS_CMP_ABS:  // CMP Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cmpSetFlags(value);
       break;
     }
     case INS_CMP_ABSX:  // CMP Absolute,X
     {
       uint16_t addr = absIndexed(cycles, X, false);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cmpSetFlags(value);
       break;
     }
     case INS_CMP_ABSY:  // CMP Absolute,Y
     {
       uint16_t addr = absIndexed(cycles, Y, false);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cmpSetFlags(value);
       break;
     }
@@ -796,23 +796,23 @@ uint32_t CPU65::execute() {
       uint16_t zpAddr = fetch(cycles);
       this->zeroPageAddX(cycles, zpAddr);
       zpAddr &= 0xFF;  // Wrap around for zero page
-      uint16_t addr = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint16_t addr = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint8_t value = this->read(cycles, addr);
       cmpSetFlags(value);
       break;
     }
     case INS_CMP_INDY:  // CMP (Indirect),Y
     {
       uint8_t zpAddr = fetch(cycles);
-      uint16_t base = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint16_t base = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
 
       uint16_t addr = base + Y;
 
       if ((base & 0xFF00) != (addr & 0xFF00)) ++cycles;
 
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cmpSetFlags(value);
       break;
     }
@@ -825,14 +825,14 @@ uint32_t CPU65::execute() {
     case INS_CPX_ZP:  // CPX Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cpxSetFlags(value);
       break;
     }
     case INS_CPX_ABS:  // CPX Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cpxSetFlags(value);
       break;
     }
@@ -845,25 +845,25 @@ uint32_t CPU65::execute() {
     case INS_CPY_ZP:  // CPY Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cpySetFlags(value);
       break;
     }
     case INS_CPY_ABS:  // CPY Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       cpySetFlags(value);
       break;
     }
     case INS_DEC_ZP:  // DEC Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value--;
       cycles++;  // Increment cycles for the operation
       decSetFlags(value);
-      writeMemory(cycles, addr, value);
+      write(cycles, addr, value);
       break;
     }
     case INS_DEC_ZPX:  // DEC Zero Page,X
@@ -871,32 +871,32 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value--;
       cycles++;  // Increment cycles for the operation
       decSetFlags(value);
-      writeMemory(cycles, addr, value);
+      write(cycles, addr, value);
       break;
     }
     case INS_DEC_ABS:  // DEC Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value--;
       cycles++;  // Increment cycles for the operation
       decSetFlags(value);
-      writeMemory(cycles, addr, value);
+      write(cycles, addr, value);
       break;
     }
     case INS_DEC_ABSX:  // DEC Absolute,X
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddX(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value--;
       cycles++;  // Increment cycles for the operation
       decSetFlags(value);
-      writeMemory(cycles, addr, value);
+      write(cycles, addr, value);
       break;
     }
     case INS_DEX:  // DEX (Decrement X Register)
@@ -923,7 +923,7 @@ uint32_t CPU65::execute() {
     case INS_EOR_ZP:  // EOR Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A ^= value;
       eorSetFlags();
       break;
@@ -933,7 +933,7 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A ^= value;
       eorSetFlags();
       break;
@@ -941,7 +941,7 @@ uint32_t CPU65::execute() {
     case INS_EOR_ABS:  // EOR Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A ^= value;
       eorSetFlags();
       break;
@@ -949,7 +949,7 @@ uint32_t CPU65::execute() {
     case INS_EOR_ABSX:  // EOR Absolute,X
     {
       uint16_t addr = absIndexed(cycles, X, false);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A ^= value;
       eorSetFlags();
       break;
@@ -957,7 +957,7 @@ uint32_t CPU65::execute() {
     case INS_EOR_ABSY:  // EOR Absolute,Y
     {
       uint16_t addr = absIndexed(cycles, Y, false);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A ^= value;
       eorSetFlags();
       break;
@@ -967,9 +967,9 @@ uint32_t CPU65::execute() {
       uint16_t zpAddr = fetch(cycles);
       this->zeroPageAddX(cycles, zpAddr);
       zpAddr &= 0xFF;  // Wrap around for zero page
-      uint16_t addr = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint16_t addr = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint8_t value = this->read(cycles, addr);
       A ^= value;
       eorSetFlags();
       break;
@@ -977,14 +977,14 @@ uint32_t CPU65::execute() {
     case INS_EOR_INDY:  // EOR (Indirect),Y
     {
       uint8_t zpAddr = fetch(cycles);
-      uint16_t base = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint16_t base = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
 
       uint16_t addr = base + Y;
 
       if ((base & 0xFF00) != (addr & 0xFF00)) ++cycles;
 
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A ^= value;
       eorSetFlags();
       break;
@@ -992,11 +992,11 @@ uint32_t CPU65::execute() {
     case INS_INC_ZP:  // INC Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value++;
       ++cycles;  // Increment cycles for the operation
       incSetFlags(value);
-      writeMemory(cycles, addr, value);
+      write(cycles, addr, value);
       break;
     }
     case INS_INC_ZPX:  // INC Zero Page,X
@@ -1004,32 +1004,32 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value++;
       ++cycles;  // Increment cycles for the operation
       incSetFlags(value);
-      writeMemory(cycles, addr, value);
+      write(cycles, addr, value);
       break;
     }
     case INS_INC_ABS:  // INC Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value++;
       ++cycles;  // Increment cycles for the operation
       incSetFlags(value);
-      writeMemory(cycles, addr, value);
+      write(cycles, addr, value);
       break;
     }
     case INS_INC_ABSX:  // INC Absolute,X
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddX(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value++;
       ++cycles;  // Increment cycles for the operation
       incSetFlags(value);
-      writeMemory(cycles, addr, value);
+      write(cycles, addr, value);
       break;
     }
     case INS_INX:  // INX (Increment X Register)
@@ -1059,8 +1059,8 @@ uint32_t CPU65::execute() {
       uint16_t highAddr = (addr & 0xFF00) | ((addr + 1) & 0x00FF);
 
       uint16_t targetAddr =
-          readMemory(cycles, addr) |
-          (static_cast<uint16_t>(readMemory(cycles, highAddr)) << 8);
+          read(cycles, addr) |
+          (static_cast<uint16_t>(read(cycles, highAddr)) << 8);
 
       PC = targetAddr;
 
@@ -1087,7 +1087,7 @@ uint32_t CPU65::execute() {
     case INS_LDX_ZP:  // LDX Zero Page
     {
       uint8_t addr = fetch(cycles);
-      X = this->readMemory(cycles, addr);
+      X = this->read(cycles, addr);
       ldxSetFlags();
       break;
     }
@@ -1096,21 +1096,21 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddY(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      X = this->readMemory(cycles, addr);
+      X = this->read(cycles, addr);
       ldxSetFlags();
       break;
     }
     case INS_LDX_ABS:  // LDX Absolute
     {
       uint16_t addr = fetch16(cycles);
-      X = this->readMemory(cycles, addr);
+      X = this->read(cycles, addr);
       ldxSetFlags();
       break;
     }
     case INS_LDX_ABSY:  // LDX Absolute,Y
     {
       uint16_t addr = absIndexed(cycles, Y, false);
-      X = this->readMemory(cycles, addr);
+      X = this->read(cycles, addr);
       ldxSetFlags();
       break;
     }
@@ -1124,7 +1124,7 @@ uint32_t CPU65::execute() {
     case INS_LDY_ZP:  // LDY Zero Page
     {
       uint8_t addr = fetch(cycles);
-      Y = this->readMemory(cycles, addr);
+      Y = this->read(cycles, addr);
       ldySetFlags();
       break;
     }
@@ -1133,21 +1133,21 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      Y = this->readMemory(cycles, addr);
+      Y = this->read(cycles, addr);
       ldySetFlags();
       break;
     }
     case INS_LDY_ABS:  // LDY Absolute
     {
       uint16_t addr = fetch16(cycles);
-      Y = this->readMemory(cycles, addr);
+      Y = this->read(cycles, addr);
       ldySetFlags();
       break;
     }
     case INS_LDY_ABSX:  // LDY Absolute,X
     {
       uint16_t addr = absIndexed(cycles, X, false);
-      Y = this->readMemory(cycles, addr);
+      Y = this->read(cycles, addr);
       ldySetFlags();
       break;
     }
@@ -1160,11 +1160,11 @@ uint32_t CPU65::execute() {
     case INS_LSR_ZP:  // LSR Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
 
       value = lsr(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_LSR_ZPX:  // LSR Zero Page,X
@@ -1173,29 +1173,29 @@ uint32_t CPU65::execute() {
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
 
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value = lsr(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_LSR_ABS:  // LSR Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value = lsr(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_LSR_ABSX:  // LSR Absolute,X
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddX(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value = lsr(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_NOP:  // NOP (No Operation)
@@ -1214,7 +1214,7 @@ uint32_t CPU65::execute() {
     case INS_ORA_ZP:  // ORA Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A |= value;
       oraSetFlags();
       break;
@@ -1224,7 +1224,7 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A |= value;
       oraSetFlags();
       break;
@@ -1232,7 +1232,7 @@ uint32_t CPU65::execute() {
     case INS_ORA_ABS:  // ORA Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A |= value;
       oraSetFlags();
       break;
@@ -1240,7 +1240,7 @@ uint32_t CPU65::execute() {
     case INS_ORA_ABSX:  // ORA Absolute,X
     {
       uint16_t addr = absIndexed(cycles, X, false);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A |= value;
       oraSetFlags();
       break;
@@ -1248,7 +1248,7 @@ uint32_t CPU65::execute() {
     case INS_ORA_ABSY:  // ORA Absolute,Y
     {
       uint16_t addr = absIndexed(cycles, Y, false);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A |= value;
       oraSetFlags();
       break;
@@ -1258,9 +1258,9 @@ uint32_t CPU65::execute() {
       uint16_t zpAddr = fetch(cycles);
       this->zeroPageAddX(cycles, zpAddr);
       zpAddr &= 0xFF;  // Wrap around for zero page
-      uint16_t addr = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint16_t addr = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint8_t value = this->read(cycles, addr);
       A |= value;
       oraSetFlags();
       break;
@@ -1268,14 +1268,14 @@ uint32_t CPU65::execute() {
     case INS_ORA_INDY:  // ORA (Indirect),Y
     {
       uint8_t zpAddr = fetch(cycles);
-      uint16_t base = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint16_t base = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
 
       uint16_t addr = base + Y;
 
       if ((base & 0xFF00) != (addr & 0xFF00)) ++cycles;
 
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       A |= value;
       oraSetFlags();
       break;
@@ -1319,9 +1319,9 @@ uint32_t CPU65::execute() {
     case INS_ROL_ZP:  // ROL Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
-      ++cycles;  // Increment cycles for the operation
-      writeMemory(cycles, addr, rol(value));  // Write back to memory
+      uint8_t value = this->read(cycles, addr);
+      ++cycles;                         // Increment cycles for the operation
+      write(cycles, addr, rol(value));  // Write back to memory
       break;
     }
     case INS_ROL_ZPX:  // ROL Zero Page,X
@@ -1329,29 +1329,29 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value = rol(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_ROL_ABS:  // ROL Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value = rol(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_ROL_ABSX:  // ROL Absolute,X
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddX(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value = rol(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_ROR_ACC:  // ROR Accumulator
@@ -1363,9 +1363,9 @@ uint32_t CPU65::execute() {
     case INS_ROR_ZP:  // ROR Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
-      ++cycles;  // Increment cycles for the operation
-      writeMemory(cycles, addr, ror(value));  // Write back to memory
+      uint8_t value = this->read(cycles, addr);
+      ++cycles;                         // Increment cycles for the operation
+      write(cycles, addr, ror(value));  // Write back to memory
       break;
     }
     case INS_ROR_ZPX:  // ROR Zero Page,X
@@ -1373,29 +1373,29 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value = ror(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_ROR_ABS:  // ROR Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value = ror(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_ROR_ABSX:  // ROR Absolute,X
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddX(cycles, addr);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       value = ror(value);
-      ++cycles;                          // Increment cycles for the operation
-      writeMemory(cycles, addr, value);  // Write back to memory
+      ++cycles;                    // Increment cycles for the operation
+      write(cycles, addr, value);  // Write back to memory
       break;
     }
     case INS_RTI:  // RTI (Return from Interrupt)
@@ -1427,7 +1427,7 @@ uint32_t CPU65::execute() {
     case INS_SBC_ZP:  // SBC Zero Page
     {
       uint8_t addr = fetch(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       sbc(value);
       break;
     }
@@ -1436,28 +1436,28 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       sbc(value);
       break;
     }
     case INS_SBC_ABS:  // SBC Absolute
     {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       sbc(value);
       break;
     }
     case INS_SBC_ABSX:  // SBC Absolute,X
     {
       uint16_t addr = absIndexed(cycles, X, false);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       sbc(value);
       break;
     }
     case INS_SBC_ABSY:  // SBC Absolute,Y
     {
       uint16_t addr = absIndexed(cycles, Y, false);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       sbc(value);
       break;
     }
@@ -1466,23 +1466,23 @@ uint32_t CPU65::execute() {
       uint16_t zpAddr = fetch(cycles);
       this->zeroPageAddX(cycles, zpAddr);
       zpAddr &= 0xFF;  // Wrap around for zero page
-      uint16_t addr = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
-      uint8_t value = this->readMemory(cycles, addr);
+      uint16_t addr = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint8_t value = this->read(cycles, addr);
       sbc(value);
       break;
     }
     case INS_SBC_INDY:  // SBC (Indirect),Y
     {
       uint8_t zpAddr = fetch(cycles);
-      uint16_t base = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint16_t base = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
 
       uint16_t addr = base + Y;
 
       if ((base & 0xFF00) != (addr & 0xFF00)) ++cycles;
 
-      uint8_t value = this->readMemory(cycles, addr);
+      uint8_t value = this->read(cycles, addr);
       sbc(value);
       break;
     }
@@ -1507,7 +1507,7 @@ uint32_t CPU65::execute() {
     case INS_STA_ZP:  // STA Zero Page
     {
       uint8_t addr = fetch(cycles);
-      writeMemory(cycles, addr, A);
+      write(cycles, addr, A);
       break;
     }
     case INS_STA_ZPX:  // STA Zero Page,X
@@ -1515,27 +1515,27 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      writeMemory(cycles, addr, A);
+      write(cycles, addr, A);
       break;
     }
     case INS_STA_ABS:  // STA Absolute
     {
       uint16_t addr = fetch16(cycles);
-      writeMemory(cycles, addr, A);
+      write(cycles, addr, A);
       break;
     }
     case INS_STA_ABSX:  // STA Absolute,X
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddX(cycles, addr);
-      writeMemory(cycles, addr, A);
+      write(cycles, addr, A);
       break;
     }
     case INS_STA_ABSY:  // STA Absolute,Y
     {
       uint16_t addr = fetch16(cycles);
       this->zeroPageAddY(cycles, addr);
-      writeMemory(cycles, addr, A);
+      write(cycles, addr, A);
       break;
     }
     case INS_STA_INDX:  // STA (Indirect,X)
@@ -1543,24 +1543,24 @@ uint32_t CPU65::execute() {
       uint16_t zpAddr = fetch(cycles);
       this->zeroPageAddX(cycles, zpAddr);
       zpAddr &= 0xFF;  // Wrap around for zero page
-      uint16_t addr = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
-      writeMemory(cycles, addr, A);
+      uint16_t addr = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
+      write(cycles, addr, A);
       break;
     }
     case INS_STA_INDY:  // STA (Indirect),Y
     {
       uint8_t zpAddr = fetch(cycles);
-      uint16_t addr = this->readMemory(cycles, zpAddr) |
-                      (this->readMemory(cycles, (zpAddr + 1) & 0xFF) << 8);
+      uint16_t addr = this->read(cycles, zpAddr) |
+                      (this->read(cycles, (zpAddr + 1) & 0xFF) << 8);
       this->zeroPageAddY(cycles, addr);
-      writeMemory(cycles, addr, A);
+      write(cycles, addr, A);
       break;
     }
     case INS_STX_ZP:  // STX Zero Page
     {
       uint8_t addr = fetch(cycles);
-      writeMemory(cycles, addr, X);
+      write(cycles, addr, X);
       break;
     }
     case INS_STX_ZPY:  // STX Zero Page,Y
@@ -1568,19 +1568,19 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddY(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      writeMemory(cycles, addr, X);
+      write(cycles, addr, X);
       break;
     }
     case INS_STX_ABS:  // STX Absolute
     {
       uint16_t addr = fetch16(cycles);
-      writeMemory(cycles, addr, X);
+      write(cycles, addr, X);
       break;
     }
     case INS_STY_ZP:  // STY Zero Page
     {
       uint8_t addr = fetch(cycles);
-      writeMemory(cycles, addr, Y);
+      write(cycles, addr, Y);
       break;
     }
     case INS_STY_ZPX:  // STY Zero Page,X
@@ -1588,13 +1588,13 @@ uint32_t CPU65::execute() {
       uint16_t addr = fetch(cycles);
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
-      writeMemory(cycles, addr, Y);
+      write(cycles, addr, Y);
       break;
     }
     case INS_STY_ABS:  // STY Absolute
     {
       uint16_t addr = fetch16(cycles);
-      writeMemory(cycles, addr, Y);
+      write(cycles, addr, Y);
       break;
     }
     case INS_TAX:  // TAX (Transfer Accumulator to X)
@@ -1640,7 +1640,7 @@ uint32_t CPU65::execute() {
     }
     case INS_LAX_ZP: {
       uint8_t addr = fetch(cycles);
-      uint8_t value = readMemory(cycles, addr);
+      uint8_t value = read(cycles, addr);
 
       A = value;
       X = value;
@@ -1654,7 +1654,7 @@ uint32_t CPU65::execute() {
       uint8_t addr = fetch(cycles);
       addr += Y;
 
-      uint8_t value = readMemory(cycles, addr);
+      uint8_t value = read(cycles, addr);
 
       A = value;
       X = value;
@@ -1666,7 +1666,7 @@ uint32_t CPU65::execute() {
     }
     case INS_LAX_ABS: {
       uint16_t addr = fetch16(cycles);
-      uint8_t value = readMemory(cycles, addr);
+      uint8_t value = read(cycles, addr);
 
       A = value;
       X = value;
@@ -1678,7 +1678,7 @@ uint32_t CPU65::execute() {
     }
     case INS_LAX_ABSY: {
       uint16_t addr = absIndexed(cycles, Y, false);
-      uint8_t value = readMemory(cycles, addr);
+      uint8_t value = read(cycles, addr);
 
       A = value;
       X = value;
@@ -1694,11 +1694,11 @@ uint32_t CPU65::execute() {
       uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
 
       uint16_t addr =
-          readMemory(cycles, ptr) | (static_cast<uint16_t>(readMemory(
-                                         cycles, static_cast<uint8_t>(ptr + 1)))
-                                     << 8);
+          read(cycles, ptr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(ptr + 1)))
+           << 8);
 
-      uint8_t value = readMemory(cycles, addr);
+      uint8_t value = read(cycles, addr);
 
       A = value;
       X = value;
@@ -1711,16 +1711,16 @@ uint32_t CPU65::execute() {
     case INS_LAX_INDY: {
       uint8_t zpAddr = fetch(cycles);
 
-      uint16_t base = readMemory(cycles, zpAddr) |
-                      (static_cast<uint16_t>(
-                           readMemory(cycles, static_cast<uint8_t>(zpAddr + 1)))
-                       << 8);
+      uint16_t base =
+          read(cycles, zpAddr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(zpAddr + 1)))
+           << 8);
 
       uint16_t addr = base + Y;
 
       if ((base & 0xFF00) != (addr & 0xFF00)) ++cycles;
 
-      uint8_t value = readMemory(cycles, addr);
+      uint8_t value = read(cycles, addr);
 
       A = value;
       X = value;
@@ -1732,7 +1732,7 @@ uint32_t CPU65::execute() {
     }
     case INS_SAX_ZP: {
       uint8_t addr = fetch(cycles);
-      writeMemory(cycles, addr, A & X);
+      write(cycles, addr, A & X);
       break;
     }
     case INS_SAX_ZPY: {
@@ -1740,12 +1740,12 @@ uint32_t CPU65::execute() {
       addr = static_cast<uint8_t>(addr + Y);
       ++cycles;  // Increment cycles for the operation
 
-      writeMemory(cycles, addr, A & X);
+      write(cycles, addr, A & X);
       break;
     }
     case INS_SAX_ABS: {
       uint16_t addr = fetch16(cycles);
-      writeMemory(cycles, addr, A & X);
+      write(cycles, addr, A & X);
       break;
     }
     case INS_ISB_ZP: {
@@ -1785,9 +1785,9 @@ uint32_t CPU65::execute() {
       uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
 
       uint16_t addr =
-          readMemory(cycles, ptr) | (static_cast<uint16_t>(readMemory(
-                                         cycles, static_cast<uint8_t>(ptr + 1)))
-                                     << 8);
+          read(cycles, ptr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(ptr + 1)))
+           << 8);
 
       isb(addr, cycles);
       cycles = 8;
@@ -1796,10 +1796,10 @@ uint32_t CPU65::execute() {
     case INS_ISB_INDY: {
       uint8_t zpAddr = fetch(cycles);
 
-      uint16_t base = readMemory(cycles, zpAddr) |
-                      (static_cast<uint16_t>(
-                           readMemory(cycles, static_cast<uint8_t>(zpAddr + 1)))
-                       << 8);
+      uint16_t base =
+          read(cycles, zpAddr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(zpAddr + 1)))
+           << 8);
 
       uint16_t addr = base + Y;
 
@@ -1848,9 +1848,9 @@ uint32_t CPU65::execute() {
       uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
 
       uint16_t addr =
-          readMemory(cycles, ptr) | (static_cast<uint16_t>(readMemory(
-                                         cycles, static_cast<uint8_t>(ptr + 1)))
-                                     << 8);
+          read(cycles, ptr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(ptr + 1)))
+           << 8);
 
       slo(addr, cycles);
       cycles = 8;  // Increment cycles for the operation
@@ -1859,10 +1859,10 @@ uint32_t CPU65::execute() {
     case INS_SLO_INDY: {
       uint8_t zpAddr = fetch(cycles);
 
-      uint16_t base = readMemory(cycles, zpAddr) |
-                      (static_cast<uint16_t>(
-                           readMemory(cycles, static_cast<uint8_t>(zpAddr + 1)))
-                       << 8);
+      uint16_t base =
+          read(cycles, zpAddr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(zpAddr + 1)))
+           << 8);
 
       uint16_t addr = base + Y;
 
@@ -1909,9 +1909,9 @@ uint32_t CPU65::execute() {
       uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
 
       uint16_t addr =
-          readMemory(cycles, ptr) | (static_cast<uint16_t>(readMemory(
-                                         cycles, static_cast<uint8_t>(ptr + 1)))
-                                     << 8);
+          read(cycles, ptr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(ptr + 1)))
+           << 8);
 
       rla(addr, cycles);
       cycles = 8;  // Increment cycles for the operation
@@ -1920,10 +1920,10 @@ uint32_t CPU65::execute() {
     case INS_RLA_INDY: {
       uint8_t zpAddr = fetch(cycles);
 
-      uint16_t base = readMemory(cycles, zpAddr) |
-                      (static_cast<uint16_t>(
-                           readMemory(cycles, static_cast<uint8_t>(zpAddr + 1)))
-                       << 8);
+      uint16_t base =
+          read(cycles, zpAddr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(zpAddr + 1)))
+           << 8);
 
       uint16_t addr = base + Y;
 
@@ -1970,9 +1970,9 @@ uint32_t CPU65::execute() {
       uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
 
       uint16_t addr =
-          readMemory(cycles, ptr) | (static_cast<uint16_t>(readMemory(
-                                         cycles, static_cast<uint8_t>(ptr + 1)))
-                                     << 8);
+          read(cycles, ptr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(ptr + 1)))
+           << 8);
 
       sre(addr, cycles);
       cycles = 8;  // Increment cycles for the operation
@@ -1981,10 +1981,10 @@ uint32_t CPU65::execute() {
     case INS_SRE_INDY: {
       uint8_t zpAddr = fetch(cycles);
 
-      uint16_t base = readMemory(cycles, zpAddr) |
-                      (static_cast<uint16_t>(
-                           readMemory(cycles, static_cast<uint8_t>(zpAddr + 1)))
-                       << 8);
+      uint16_t base =
+          read(cycles, zpAddr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(zpAddr + 1)))
+           << 8);
 
       uint16_t addr = base + Y;
 
@@ -2032,9 +2032,9 @@ uint32_t CPU65::execute() {
       uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
 
       uint16_t addr =
-          readMemory(cycles, ptr) | (static_cast<uint16_t>(readMemory(
-                                         cycles, static_cast<uint8_t>(ptr + 1)))
-                                     << 8);
+          read(cycles, ptr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(ptr + 1)))
+           << 8);
 
       rra(addr, cycles);
       cycles = 8;  // Increment cycles for the operation
@@ -2043,10 +2043,10 @@ uint32_t CPU65::execute() {
     case INS_RRA_INDY: {
       uint8_t zpAddr = fetch(cycles);
 
-      uint16_t base = readMemory(cycles, zpAddr) |
-                      (static_cast<uint16_t>(
-                           readMemory(cycles, static_cast<uint8_t>(zpAddr + 1)))
-                       << 8);
+      uint16_t base =
+          read(cycles, zpAddr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(zpAddr + 1)))
+           << 8);
 
       uint16_t addr = base + Y;
 
@@ -2072,9 +2072,9 @@ uint32_t CPU65::execute() {
       uint8_t zp = fetch(cycles);
 
       uint16_t base =
-          readMemory(cycles, zp) | (static_cast<uint16_t>(readMemory(
-                                        cycles, static_cast<uint8_t>(zp + 1)))
-                                    << 8);
+          read(cycles, zp) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(zp + 1)))
+           << 8);
 
       uint16_t addr = base + Y;
 
@@ -2163,9 +2163,9 @@ uint32_t CPU65::execute() {
       uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
 
       uint16_t addr =
-          readMemory(cycles, ptr) | (static_cast<uint16_t>(readMemory(
-                                         cycles, static_cast<uint8_t>(ptr + 1)))
-                                     << 8);
+          read(cycles, ptr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(ptr + 1)))
+           << 8);
 
       dcp(addr, cycles);
       cycles = 8;  // Increment cycles for the operation
@@ -2174,10 +2174,10 @@ uint32_t CPU65::execute() {
     case INS_DCP_INDY: {
       uint8_t zpAddr = fetch(cycles);
 
-      uint16_t base = readMemory(cycles, zpAddr) |
-                      (static_cast<uint16_t>(
-                           readMemory(cycles, static_cast<uint8_t>(zpAddr + 1)))
-                       << 8);
+      uint16_t base =
+          read(cycles, zpAddr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(zpAddr + 1)))
+           << 8);
 
       uint16_t addr = base + Y;
 
@@ -2263,7 +2263,7 @@ uint32_t CPU65::execute() {
     case INS_NOP_ZP_44:
     case INS_NOP_ZP_64: {
       uint8_t addr = fetch(cycles);
-      readMemory(cycles, addr);
+      read(cycles, addr);
       break;
     }
     case INS_NOP_ZPX_14:
@@ -2275,14 +2275,14 @@ uint32_t CPU65::execute() {
       uint8_t addr = fetch(cycles);
       addr = static_cast<uint8_t>(addr + X);
 
-      readMemory(cycles, addr);
+      read(cycles, addr);
 
       break;
     }
     case INS_NOP_ABS_0C: {
       uint16_t addr = fetch16(cycles);
 
-      readMemory(cycles, addr);
+      read(cycles, addr);
 
       break;
     }
@@ -2294,7 +2294,7 @@ uint32_t CPU65::execute() {
     case INS_NOP_ABSX_FC: {
       uint16_t addr = absIndexed(cycles, X, false);
 
-      readMemory(cycles, addr);
+      read(cycles, addr);
 
       break;
     }

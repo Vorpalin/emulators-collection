@@ -2,9 +2,9 @@
 
 void LR35902::ld_bc_d16(uint32_t &cycles) {
   // Load 16-bit immediate value into BC register pair
-  uint8_t lowByte = readMemory(cycles, PC);
+  uint8_t lowByte = read(cycles, PC);
   PC++;
-  uint8_t highByte = readMemory(cycles, PC);
+  uint8_t highByte = read(cycles, PC);
   PC++;
 
   B = highByte;
@@ -13,7 +13,7 @@ void LR35902::ld_bc_d16(uint32_t &cycles) {
 
 void LR35902::ld_bc_a(uint32_t &cycles) {
   uint16_t address = (B << 8) | C;  // Combine B and C to form the address
-  writeMemory(cycles, address, A);
+  write(cycles, address, A);
 }
 
 void LR35902::inc_bc(uint32_t &cycles) {
@@ -44,7 +44,7 @@ void LR35902::dec_b() {
 
 void LR35902::ld_b_d8(uint32_t &cycles) {
   // Load 8-bit immediate value into register B
-  B = readMemory(cycles, PC);
+  B = read(cycles, PC);
   PC++;
 }
 
@@ -61,15 +61,15 @@ void LR35902::rlca() {
 
 void LR35902::ld_a16_sp(uint32_t &cycles) {
   // Load 16-bit immediate value into SP register
-  uint8_t lowByte = readMemory(cycles, PC);
+  uint8_t lowByte = read(cycles, PC);
   PC++;
-  uint8_t highByte = readMemory(cycles, PC);
+  uint8_t highByte = read(cycles, PC);
   PC++;
 
   uint16_t address = (highByte << 8) |
                      lowByte;  // Combine high and low bytes to form the address
-  writeMemory(cycles, address, SP & 0xFF);
-  writeMemory(cycles, address + 1, (SP >> 8) & 0xFF);
+  write(cycles, address, SP & 0xFF);
+  write(cycles, address + 1, (SP >> 8) & 0xFF);
 }
 
 void LR35902::add_hl_bc(uint32_t &cycles) {
@@ -88,8 +88,8 @@ void LR35902::add_hl_bc(uint32_t &cycles) {
 
 void LR35902::ld_a_bc(uint32_t &cycles) {
   uint16_t address = (B << 8) | C;  // Combine B and C to form the address
-  A = readMemory(cycles,
-                 address);  // Load the value from memory into register A
+  A = read(cycles,
+           address);  // Load the value from memory into register A
 }
 
 void LR35902::dec_bc(uint32_t &cycles) {
@@ -120,7 +120,7 @@ void LR35902::dec_c() {
 
 void LR35902::ld_c_d8(uint32_t &cycles) {
   // Load 8-bit immediate value into register C
-  C = readMemory(cycles, PC);
+  C = read(cycles, PC);
   PC++;
 }
 
@@ -143,9 +143,9 @@ void LR35902::stop() {
 
 void LR35902::ld_de_d16(uint32_t &cycles) {
   // Load 16-bit immediate value into DE register pair
-  uint8_t lowByte = readMemory(cycles, PC);
+  uint8_t lowByte = read(cycles, PC);
   PC++;
-  uint8_t highByte = readMemory(cycles, PC);
+  uint8_t highByte = read(cycles, PC);
   PC++;
 
   D = highByte;
@@ -154,7 +154,7 @@ void LR35902::ld_de_d16(uint32_t &cycles) {
 
 void LR35902::ld_de_a(uint32_t &cycles) {
   uint16_t address = (D << 8) | E;  // Combine D and E to form the address
-  writeMemory(cycles, address, A);
+  write(cycles, address, A);
 }
 
 void LR35902::inc_de(uint32_t &cycles) {
@@ -185,7 +185,7 @@ void LR35902::dec_d() {
 
 void LR35902::ld_d_d8(uint32_t &cycles) {
   // Load 8-bit immediate value into register D
-  D = readMemory(cycles, PC);
+  D = read(cycles, PC);
   PC++;
 }
 
@@ -205,8 +205,8 @@ void LR35902::rla() {
 void LR35902::jr_r8(uint32_t &cycles) {
   // Jump relative by signed 8-bit immediate value
   int8_t offset =
-      static_cast<int8_t>(readMemory(cycles, PC));  // Read the signed offset
-  PC++;                                             // Increment program counter
+      static_cast<int8_t>(read(cycles, PC));  // Read the signed offset
+  PC++;                                       // Increment program counter
   PC += offset;  // Apply the offset to the program counter
   ++cycles;      // Increment cycles for the operation
 }
@@ -228,8 +228,8 @@ void LR35902::add_hl_de(uint32_t &cycles) {
 
 void LR35902::ld_a_de(uint32_t &cycles) {
   uint16_t address = (D << 8) | E;  // Combine D and E to form the address
-  A = readMemory(cycles,
-                 address);  // Load the value from memory into register A
+  A = read(cycles,
+           address);  // Load the value from memory into register A
 }
 
 void LR35902::dec_de(uint32_t &cycles) {
@@ -260,7 +260,7 @@ void LR35902::dec_e() {
 
 void LR35902::ld_e_d8(uint32_t &cycles) {
   // Load 8-bit immediate value into register E
-  E = readMemory(cycles, PC);
+  E = read(cycles, PC);
   PC++;
 }
 
@@ -281,8 +281,8 @@ void LR35902::jr_nz_r8(uint32_t &cycles) {
   ++cycles;               // Increment cycles for the comparison operation
   if ((F & 0x80) == 0) {  // Check if Z flag is not set
     int8_t offset =
-        static_cast<int8_t>(readMemory(cycles, PC));  // Read the signed offset
-    PC++;          // Increment program counter
+        static_cast<int8_t>(read(cycles, PC));  // Read the signed offset
+    PC++;                                       // Increment program counter
     PC += offset;  // Apply the offset to the program counter
   } else {
     PC++;  // If Z flag is set, just increment PC to skip the offset byte
@@ -291,9 +291,9 @@ void LR35902::jr_nz_r8(uint32_t &cycles) {
 
 void LR35902::ld_hl_d16(uint32_t &cycles) {
   // Load 16-bit immediate value into HL register pair
-  uint8_t lowByte = readMemory(cycles, PC);
+  uint8_t lowByte = read(cycles, PC);
   PC++;
-  uint8_t highByte = readMemory(cycles, PC);
+  uint8_t highByte = read(cycles, PC);
   PC++;
 
   H = highByte;
@@ -302,8 +302,8 @@ void LR35902::ld_hl_d16(uint32_t &cycles) {
 
 void LR35902::ld_hli_a(uint32_t &cycles) {
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  writeMemory(cycles, address,
-              A);              // Write the value of A to memory at the address
+  write(cycles, address,
+        A);                    // Write the value of A to memory at the address
   uint16_t hl = (H << 8) | L;  // Combine H and L to form the HL register pair
   hl++;                        // Increment HL
   H = (hl >> 8) & 0xFF;        // Update H with the high byte
@@ -338,7 +338,7 @@ void LR35902::dec_h() {
 
 void LR35902::ld_h_d8(uint32_t &cycles) {
   // Load 8-bit immediate value into register H
-  H = readMemory(cycles, PC);
+  H = read(cycles, PC);
   PC++;
 }
 
@@ -367,8 +367,8 @@ void LR35902::jr_z_r8(uint32_t &cycles) {
   ++cycles;               // Increment cycles for the comparison operation
   if ((F & 0x80) != 0) {  // Check if Z flag is set
     int8_t offset =
-        static_cast<int8_t>(readMemory(cycles, PC));  // Read the signed offset
-    PC++;          // Increment program counter
+        static_cast<int8_t>(read(cycles, PC));  // Read the signed offset
+    PC++;                                       // Increment program counter
     PC += offset;  // Apply the offset to the program counter
   } else {
     PC++;  // If Z flag is not set, just increment PC to skip the offset byte
@@ -390,8 +390,8 @@ void LR35902::add_hl_hl(uint32_t &cycles) {
 
 void LR35902::ld_a_hli(uint32_t &cycles) {
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  A = readMemory(cycles,
-                 address);     // Load the value from memory into register A
+  A = read(cycles,
+           address);           // Load the value from memory into register A
   uint16_t hl = (H << 8) | L;  // Combine H and L to form the HL register pair
   hl++;                        // Increment HL
   H = (hl >> 8) & 0xFF;        // Update H with the high byte
@@ -426,7 +426,7 @@ void LR35902::dec_l() {
 
 void LR35902::ld_l_d8(uint32_t &cycles) {
   // Load 8-bit immediate value into register L
-  L = readMemory(cycles, PC);
+  L = read(cycles, PC);
   PC++;
 }
 
@@ -442,8 +442,8 @@ void LR35902::jr_nc_r8(uint32_t &cycles) {
   ++cycles;               // Increment cycles for the comparison operation
   if ((F & 0x10) == 0) {  // Check if C flag is not set
     int8_t offset =
-        static_cast<int8_t>(readMemory(cycles, PC));  // Read the signed offset
-    PC++;          // Increment program counter
+        static_cast<int8_t>(read(cycles, PC));  // Read the signed offset
+    PC++;                                       // Increment program counter
     PC += offset;  // Apply the offset to the program counter
   } else {
     PC++;  // If C flag is set, just increment PC to skip the offset byte
@@ -452,9 +452,9 @@ void LR35902::jr_nc_r8(uint32_t &cycles) {
 
 void LR35902::ld_sp_d16(uint32_t &cycles) {
   // Load 16-bit immediate value into SP register
-  uint8_t lowByte = readMemory(cycles, PC);
+  uint8_t lowByte = read(cycles, PC);
   PC++;
-  uint8_t highByte = readMemory(cycles, PC);
+  uint8_t highByte = read(cycles, PC);
   PC++;
 
   SP = (highByte << 8) |
@@ -463,7 +463,7 @@ void LR35902::ld_sp_d16(uint32_t &cycles) {
 
 void LR35902::ld_hl_ptr_minus_a(uint32_t &cycles) {
   uint16_t hl = (H << 8) | L;  // Combine H and L to form the address
-  writeMemory(cycles, hl, A);  // Write the value of A to memory at the address
+  write(cycles, hl, A);        // Write the value of A to memory at the address
   hl--;                        // Decrement HL
   H = (hl >> 8) & 0xFF;        // Update H with the high byte
   L = hl & 0xFF;               // Update L with the low byte
@@ -475,11 +475,11 @@ void LR35902::inc_sp(uint32_t &cycles) {
 }
 
 void LR35902::inc_hl_ptr(uint32_t &cycles) {
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  value++;                                      // Increment the value
-  writeMemory(cycles, address,
-              value);    // Write the incremented value back to memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  value++;                                // Increment the value
+  write(cycles, address,
+        value);          // Write the incremented value back to memory
   setFlagZ(value == 0);  // Update zero flag based on the result
   setFlagN(false);       // Clear subtract flag
   setFlagH((value & 0x0F) ==
@@ -487,11 +487,11 @@ void LR35902::inc_hl_ptr(uint32_t &cycles) {
 }
 
 void LR35902::dec_hl_ptr(uint32_t &cycles) {
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  value--;                                      // Decrement the value
-  writeMemory(cycles, address,
-              value);    // Write the decremented value back to memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  value--;                                // Decrement the value
+  write(cycles, address,
+        value);          // Write the decremented value back to memory
   setFlagZ(value == 0);  // Update zero flag based on the result
   setFlagN(true);        // Set subtract flag
   setFlagH((value & 0x0F) ==
@@ -500,12 +500,11 @@ void LR35902::dec_hl_ptr(uint32_t &cycles) {
 
 void LR35902::ld_hl_d8(uint32_t &cycles) {
   // Load 8-bit immediate value into memory at address HL
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value =
-      readMemory(cycles, PC);  // Read the immediate value from memory
-  PC++;                        // Increment program counter
-  writeMemory(cycles, address,
-              value);  // Write the value to memory at address HL
+  uint16_t address = (H << 8) | L;   // Combine H and L to form the address
+  uint8_t value = read(cycles, PC);  // Read the immediate value from memory
+  PC++;                              // Increment program counter
+  write(cycles, address,
+        value);  // Write the value to memory at address HL
 }
 
 void LR35902::scf() {
@@ -520,8 +519,8 @@ void LR35902::jr_c_r8(uint32_t &cycles) {
   ++cycles;               // Increment cycles for the comparison operation
   if ((F & 0x10) != 0) {  // Check if C flag is set
     int8_t offset =
-        static_cast<int8_t>(readMemory(cycles, PC));  // Read the signed offset
-    PC++;          // Increment program counter
+        static_cast<int8_t>(read(cycles, PC));  // Read the signed offset
+    PC++;                                       // Increment program counter
     PC += offset;  // Apply the offset to the program counter
   } else {
     PC++;  // If C flag is not set, just increment PC to skip the offset byte
@@ -543,8 +542,8 @@ void LR35902::add_hl_sp(uint32_t &cycles) {
 
 void LR35902::ld_a_hld(uint32_t &cycles) {
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  A = readMemory(cycles,
-                 address);     // Load the value from memory into register A
+  A = read(cycles,
+           address);           // Load the value from memory into register A
   uint16_t hl = (H << 8) | L;  // Combine H and L to form the HL register pair
   hl--;                        // Decrement HL
   H = (hl >> 8) & 0xFF;        // Update H with the high byte
@@ -576,7 +575,7 @@ void LR35902::dec_a() {
 
 void LR35902::ld_a_d8(uint32_t &cycles) {
   // Load 8-bit immediate value into register A
-  A = readMemory(cycles, PC);
+  A = read(cycles, PC);
   PC++;
 }
 
@@ -626,7 +625,7 @@ void LR35902::ld_b_a() {
 void LR35902::ld_b_hl_ptr(uint32_t &cycles) {
   // Load the value from memory at address HL into register B
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  B = readMemory(cycles, address);  // Read the value from memory into B
+  B = read(cycles, address);        // Read the value from memory into B
 }
 
 void LR35902::ld_c_b() {
@@ -668,7 +667,7 @@ void LR35902::ld_c_a() {
 void LR35902::ld_c_hl_ptr(uint32_t &cycles) {
   // Load the value from memory at address HL into register C
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  C = readMemory(cycles, address);  // Read the value from memory into C
+  C = read(cycles, address);        // Read the value from memory into C
 }
 
 void LR35902::ld_d_b() {
@@ -710,7 +709,7 @@ void LR35902::ld_d_a() {
 void LR35902::ld_d_hl_ptr(uint32_t &cycles) {
   // Load the value from memory at address HL into register D
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  D = readMemory(cycles, address);  // Read the value from memory into D
+  D = read(cycles, address);        // Read the value from memory into D
 }
 
 void LR35902::ld_e_b() {
@@ -752,7 +751,7 @@ void LR35902::ld_e_a() {
 void LR35902::ld_e_hl_ptr(uint32_t &cycles) {
   // Load the value from memory at address HL into register E
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  E = readMemory(cycles, address);  // Read the value from memory into E
+  E = read(cycles, address);        // Read the value from memory into E
 }
 
 void LR35902::ld_h_b() {
@@ -794,7 +793,7 @@ void LR35902::ld_h_a() {
 void LR35902::ld_h_hl_ptr(uint32_t &cycles) {
   // Load the value from memory at address HL into register H
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  H = readMemory(cycles, address);  // Read the value from memory into H
+  H = read(cycles, address);        // Read the value from memory into H
 }
 
 void LR35902::ld_l_b() {
@@ -836,56 +835,56 @@ void LR35902::ld_l_a() {
 void LR35902::ld_l_hl_ptr(uint32_t &cycles) {
   // Load the value from memory at address HL into register L
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  L = readMemory(cycles, address);  // Read the value from memory into L
+  L = read(cycles, address);        // Read the value from memory into L
 }
 
 void LR35902::ld_hl_b(uint32_t &cycles) {
   // Load the value of register B into memory at address HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  writeMemory(cycles, address,
-              B);  // Write the value of B to memory at the address
+  write(cycles, address,
+        B);  // Write the value of B to memory at the address
 }
 
 void LR35902::ld_hl_c(uint32_t &cycles) {
   // Load the value of register C into memory at address HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  writeMemory(cycles, address,
-              C);  // Write the value of C to memory at the address
+  write(cycles, address,
+        C);  // Write the value of C to memory at the address
 }
 
 void LR35902::ld_hl_d(uint32_t &cycles) {
   // Load the value of register D into memory at address HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  writeMemory(cycles, address,
-              D);  // Write the value of D to memory at the address
+  write(cycles, address,
+        D);  // Write the value of D to memory at the address
 }
 
 void LR35902::ld_hl_e(uint32_t &cycles) {
   // Load the value of register E into memory at address HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  writeMemory(cycles, address,
-              E);  // Write the value of E to memory at the address
+  write(cycles, address,
+        E);  // Write the value of E to memory at the address
 }
 
 void LR35902::ld_hl_h(uint32_t &cycles) {
   // Load the value of register H into memory at address HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  writeMemory(cycles, address,
-              H);  // Write the value of H to memory at the address
+  write(cycles, address,
+        H);  // Write the value of H to memory at the address
 }
 
 void LR35902::ld_hl_l(uint32_t &cycles) {
   // Load the value of register L into memory at address HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  writeMemory(cycles, address,
-              L);  // Write the value of L to memory at the address
+  write(cycles, address,
+        L);  // Write the value of L to memory at the address
 }
 
 void LR35902::ld_hl_a(uint32_t &cycles) {
   // Load the value of register A into memory at address HL
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  writeMemory(cycles, address,
-              A);  // Write the value of A to memory at the address
+  write(cycles, address,
+        A);  // Write the value of A to memory at the address
 }
 
 void LR35902::halt() {
@@ -935,7 +934,7 @@ void LR35902::ld_a_a() {
 void LR35902::ld_a_hl_ptr(uint32_t &cycles) {
   // Load the value from memory at address HL into register A
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  A = readMemory(cycles, address);  // Read the value from memory into A
+  A = read(cycles, address);        // Read the value from memory into A
 }
 
 void LR35902::add_a_b() {
@@ -1017,9 +1016,9 @@ void LR35902::add_a_a() {
 
 void LR35902::add_a_hl_ptr(uint32_t &cycles) {
   // Add the value from memory at address HL to register A
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint16_t result = A + value;                  // Perform addition
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint16_t result = A + value;            // Perform addition
   setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
   setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
   setFlagN(false);                 // Clear subtract flag
@@ -1114,10 +1113,10 @@ void LR35902::adc_a_a() {
 
 void LR35902::adc_a_hl_ptr(uint32_t &cycles) {
   // Add the value from memory at address HL and the carry flag to register A
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint16_t carry = (F & 0x10) ? 1 : 0;          // Get the current carry flag
-  uint16_t result = A + value + carry;          // Perform addition with carry
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint16_t carry = (F & 0x10) ? 1 : 0;    // Get the current carry flag
+  uint16_t result = A + value + carry;    // Perform addition with carry
   setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
   setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
   setFlagN(false);                 // Clear subtract flag
@@ -1201,9 +1200,9 @@ void LR35902::sub_a_a() {
 
 void LR35902::sub_a_hl_ptr(uint32_t &cycles) {
   // Subtract the value from memory at address HL from register A
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint16_t result = A - value;                  // Perform subtraction
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint16_t result = A - value;            // Perform subtraction
   setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
   setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
   setFlagN(true);                  // Set subtract flag
@@ -1297,10 +1296,10 @@ void LR35902::sbc_a_a() {
 void LR35902::sbc_a_hl_ptr(uint32_t &cycles) {
   // Subtract the value from memory at address HL and the carry flag from
   // register A
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint16_t carry = (F & 0x10) ? 1 : 0;          // Get the current carry flag
-  uint16_t result = A - value - carry;  // Perform subtraction with carry
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint16_t carry = (F & 0x10) ? 1 : 0;    // Get the current carry flag
+  uint16_t result = A - value - carry;    // Perform subtraction with carry
   setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
   setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
   setFlagN(true);                  // Set subtract flag
@@ -1375,13 +1374,13 @@ void LR35902::and_a_a() {
 void LR35902::and_a_hl_ptr(uint32_t &cycles) {
   // Perform bitwise AND between register A and the value from memory at address
   // HL
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  A &= value;        // Update register A with the result
-  setFlagZ(A == 0);  // Update zero flag if result is zero
-  setFlagN(false);   // Clear subtract flag
-  setFlagH(true);    // Set half-carry flag
-  setFlagC(false);   // Clear carry flag
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  A &= value;                             // Update register A with the result
+  setFlagZ(A == 0);                       // Update zero flag if result is zero
+  setFlagN(false);                        // Clear subtract flag
+  setFlagH(true);                         // Set half-carry flag
+  setFlagC(false);                        // Clear carry flag
 }
 
 void LR35902::or_a_b() {
@@ -1450,13 +1449,13 @@ void LR35902::or_a_a() {
 void LR35902::or_a_hl_ptr(uint32_t &cycles) {
   // Perform bitwise OR between register A and the value from memory at address
   // HL
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  A |= value;        // Update register A with the result
-  setFlagZ(A == 0);  // Update zero flag if result is zero
-  setFlagN(false);   // Clear subtract flag
-  setFlagH(false);   // Clear half-carry flag
-  setFlagC(false);   // Clear carry flag
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  A |= value;                             // Update register A with the result
+  setFlagZ(A == 0);                       // Update zero flag if result is zero
+  setFlagN(false);                        // Clear subtract flag
+  setFlagH(false);                        // Clear half-carry flag
+  setFlagC(false);                        // Clear carry flag
 }
 
 void LR35902::xor_a_b() {
@@ -1525,13 +1524,13 @@ void LR35902::xor_a_a() {
 void LR35902::xor_a_hl_ptr(uint32_t &cycles) {
   // Perform bitwise XOR between register A and the value from memory at address
   // HL
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  A ^= value;        // Update register A with the result
-  setFlagZ(A == 0);  // Update zero flag if result is zero
-  setFlagN(false);   // Clear subtract flag
-  setFlagH(false);   // Clear half-carry flag
-  setFlagC(false);   // Clear carry flag
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  A ^= value;                             // Update register A with the result
+  setFlagZ(A == 0);                       // Update zero flag if result is zero
+  setFlagN(false);                        // Clear subtract flag
+  setFlagH(false);                        // Clear half-carry flag
+  setFlagC(false);                        // Clear carry flag
 }
 
 void LR35902::cp_a_b() {
@@ -1600,9 +1599,9 @@ void LR35902::cp_a_a() {
 
 void LR35902::cp_a_hl_ptr(uint32_t &cycles) {
   // Compare register A with the value from memory at address HL (A - [HL])
-  uint16_t address = (H << 8) | L;  // Combine H and L to form the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint16_t result = A - value;                  // Perform subtraction
+  uint16_t address = (H << 8) | L;        // Combine H and L to form the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint16_t result = A - value;            // Perform subtraction
   setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
   setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
   setFlagN(true);                  // Set subtract flag
@@ -1622,10 +1621,10 @@ void LR35902::ret_nz(uint32_t &cycles) {
 
 void LR35902::pop_bc(uint32_t &cycles) {
   // Pop two bytes from the stack into registers B and C
-  C = readMemory(cycles, SP);  // Pop the low byte into register C
-  SP++;                        // Increment stack pointer
-  B = readMemory(cycles, SP);  // Pop the high byte into register B
-  SP++;                        // Increment stack pointer
+  C = read(cycles, SP);  // Pop the low byte into register C
+  SP++;                  // Increment stack pointer
+  B = read(cycles, SP);  // Pop the high byte into register B
+  SP++;                  // Increment stack pointer
 }
 
 void LR35902::jp_nz_a16(uint32_t &cycles) {
@@ -1633,11 +1632,10 @@ void LR35902::jp_nz_a16(uint32_t &cycles) {
   // set
   ++cycles;               // Increment cycles for the conditional check
   if ((F & 0x80) == 0) {  // Check if the zero flag is not set
-    uint16_t address =
-        readMemory(cycles, PC);  // Read the low byte of the address
-    PC++;                        // Increment program counter
-    address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-    PC++;                                      // Increment program counter
+    uint16_t address = read(cycles, PC);  // Read the low byte of the address
+    PC++;                                 // Increment program counter
+    address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+    PC++;                                 // Increment program counter
     PC = address;  // Set the program counter to the new address
   } else {
     PC += 2;      // Skip over the two bytes of the address if not jumping
@@ -1647,11 +1645,10 @@ void LR35902::jp_nz_a16(uint32_t &cycles) {
 
 void LR35902::jp_a16(uint32_t &cycles) {
   // Jump to the address specified by the next two bytes
-  uint16_t address =
-      readMemory(cycles, PC);                // Read the low byte of the address
-  PC++;                                      // Increment program counter
-  address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-  PC++;                                      // Increment program counter
+  uint16_t address = read(cycles, PC);  // Read the low byte of the address
+  PC++;                                 // Increment program counter
+  address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+  PC++;                                 // Increment program counter
   PC = address;  // Set the program counter to the new address
   cycles += 1;   // Increment cycles for the jump operation
 }
@@ -1661,11 +1658,10 @@ void LR35902::call_nz_a16(uint32_t &cycles) {
   // zero flag is not set
   ++cycles;               // Increment cycles for the conditional check
   if ((F & 0x80) == 0) {  // Check if the zero flag is not set
-    uint16_t address =
-        readMemory(cycles, PC);  // Read the low byte of the address
-    PC++;                        // Increment program counter
-    address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-    PC++;                                      // Increment program counter
+    uint16_t address = read(cycles, PC);  // Read the low byte of the address
+    PC++;                                 // Increment program counter
+    address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+    PC++;                                 // Increment program counter
     pushStack(cycles, PC);  // Push the current program counter onto the stack
     PC = address;           // Set the program counter to the new address
   } else {
@@ -1676,13 +1672,12 @@ void LR35902::call_nz_a16(uint32_t &cycles) {
 
 void LR35902::add_a_d8(uint32_t &cycles) {
   // Add the immediate 8-bit value to register A
-  uint8_t value =
-      readMemory(cycles, PC);      // Read the immediate value from memory
-  PC++;                            // Increment program counter
-  uint16_t result = A + value;     // Perform addition
-  setFlagC(result > 0xFF);         // Update carry flag if overflow occurred
-  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
-  setFlagN(false);                 // Clear subtract flag
+  uint8_t value = read(cycles, PC);  // Read the immediate value from memory
+  PC++;                              // Increment program counter
+  uint16_t result = A + value;       // Perform addition
+  setFlagC(result > 0xFF);           // Update carry flag if overflow occurred
+  setFlagZ((result & 0xFF) == 0);    // Update zero flag if result is zero
+  setFlagN(false);                   // Clear subtract flag
   setFlagH(((A & 0x0F) + (value & 0x0F)) >
            0x0F);     // Update half-carry flag if needed
   A = result & 0xFF;  // Store the result in register A
@@ -1717,11 +1712,10 @@ void LR35902::jp_z_a16(uint32_t &cycles) {
   // Jump to the address specified by the next two bytes if the zero flag is set
   ++cycles;               // Increment cycles for the conditional check
   if ((F & 0x80) != 0) {  // Check if the zero flag is set
-    uint16_t address =
-        readMemory(cycles, PC);  // Read the low byte of the address
-    PC++;                        // Increment program counter
-    address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-    PC++;                                      // Increment program counter
+    uint16_t address = read(cycles, PC);  // Read the low byte of the address
+    PC++;                                 // Increment program counter
+    address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+    PC++;                                 // Increment program counter
     PC = address;  // Set the program counter to the new address
   } else {
     PC += 2;      // Skip over the two bytes of the address if not jumping
@@ -1732,8 +1726,8 @@ void LR35902::jp_z_a16(uint32_t &cycles) {
 void LR35902::prefix_bc(uint32_t &cycles) {
   // Handle the CB prefix instruction set
   uint8_t opcode =
-      readMemory(cycles, PC);  // Read the next opcode after the CB prefix
-  PC++;                        // Increment program counter
+      read(cycles, PC);  // Read the next opcode after the CB prefix
+  PC++;                  // Increment program counter
   executeCBInstruction(
       opcode, cycles);  // Execute the CB instruction based on the opcode
 }
@@ -1743,11 +1737,10 @@ void LR35902::call_z_a16(uint32_t &cycles) {
   // zero flag is set
   ++cycles;               // Increment cycles for the conditional check
   if ((F & 0x80) != 0) {  // Check if the zero flag is set
-    uint16_t address =
-        readMemory(cycles, PC);  // Read the low byte of the address
-    PC++;                        // Increment program counter
-    address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-    PC++;                                      // Increment program counter
+    uint16_t address = read(cycles, PC);  // Read the low byte of the address
+    PC++;                                 // Increment program counter
+    address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+    PC++;                                 // Increment program counter
     pushStack(cycles, PC);  // Push the current program counter onto the stack
     PC = address;           // Set the program counter to the new address
   } else {
@@ -1759,11 +1752,10 @@ void LR35902::call_z_a16(uint32_t &cycles) {
 void LR35902::call_a16(uint32_t &cycles) {
   // Call the subroutine at the address specified by the next two bytes
   // unconditionally
-  uint16_t address =
-      readMemory(cycles, PC);                // Read the low byte of the address
-  PC++;                                      // Increment program counter
-  address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-  PC++;                                      // Increment program counter
+  uint16_t address = read(cycles, PC);  // Read the low byte of the address
+  PC++;                                 // Increment program counter
+  address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+  PC++;                                 // Increment program counter
   pushStack(cycles, PC);  // Push the current program counter onto the stack
   PC = address;           // Set the program counter to the new address
   ++cycles;               // Increment cycles for the call operation
@@ -1771,8 +1763,7 @@ void LR35902::call_a16(uint32_t &cycles) {
 
 void LR35902::adc_a_d8(uint32_t &cycles) {
   // Add the immediate 8-bit value and the carry flag to register A
-  uint8_t value =
-      readMemory(cycles, PC);           // Read the immediate value from memory
+  uint8_t value = read(cycles, PC);     // Read the immediate value from memory
   PC++;                                 // Increment program counter
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A + value + carry;  // Perform addition with carry
@@ -1803,10 +1794,10 @@ void LR35902::ret_nc(uint32_t &cycles) {
 
 void LR35902::pop_de(uint32_t &cycles) {
   // Pop two bytes from the stack into registers D and E
-  E = readMemory(cycles, SP);  // Pop the low byte into register E
-  SP++;                        // Increment stack pointer
-  D = readMemory(cycles, SP);  // Pop the high byte into register D
-  SP++;                        // Increment stack pointer
+  E = read(cycles, SP);  // Pop the low byte into register E
+  SP++;                  // Increment stack pointer
+  D = read(cycles, SP);  // Pop the high byte into register D
+  SP++;                  // Increment stack pointer
 }
 
 void LR35902::jp_nc_a16(uint32_t &cycles) {
@@ -1814,11 +1805,10 @@ void LR35902::jp_nc_a16(uint32_t &cycles) {
   // not set
   ++cycles;               // Increment cycles for the conditional check
   if ((F & 0x10) == 0) {  // Check if the carry flag is not set
-    uint16_t address =
-        readMemory(cycles, PC);  // Read the low byte of the address
-    PC++;                        // Increment program counter
-    address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-    PC++;                                      // Increment program counter
+    uint16_t address = read(cycles, PC);  // Read the low byte of the address
+    PC++;                                 // Increment program counter
+    address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+    PC++;                                 // Increment program counter
     PC = address;  // Set the program counter to the new address
   } else {
     PC += 2;      // Skip over the two bytes of the address if not jumping
@@ -1831,11 +1821,10 @@ void LR35902::call_nc_a16(uint32_t &cycles) {
   // carry flag is not set
   ++cycles;               // Increment cycles for the conditional check
   if ((F & 0x10) == 0) {  // Check if the carry flag is not set
-    uint16_t address =
-        readMemory(cycles, PC);  // Read the low byte of the address
-    PC++;                        // Increment program counter
-    address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-    PC++;                                      // Increment program counter
+    uint16_t address = read(cycles, PC);  // Read the low byte of the address
+    PC++;                                 // Increment program counter
+    address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+    PC++;                                 // Increment program counter
     pushStack(cycles, PC);  // Push the current program counter onto the stack
     PC = address;           // Set the program counter to the new address
   } else {
@@ -1846,21 +1835,20 @@ void LR35902::call_nc_a16(uint32_t &cycles) {
 
 void LR35902::push_de(uint32_t &cycles) {
   // Push the values of registers D and E onto the stack
-  writeMemory(cycles, SP - 1, D);  // Write the high byte (D) to the stack
-  writeMemory(cycles, SP - 2, E);  // Write the low byte (E) to the stack
-  SP -= 2;                         // Decrement stack pointer by 2
-  ++cycles;                        // Increment cycles for the push operation
+  write(cycles, SP - 1, D);  // Write the high byte (D) to the stack
+  write(cycles, SP - 2, E);  // Write the low byte (E) to the stack
+  SP -= 2;                   // Decrement stack pointer by 2
+  ++cycles;                  // Increment cycles for the push operation
 }
 
 void LR35902::sub_a_d8(uint32_t &cycles) {
   // Subtract the immediate 8-bit value from register A
-  uint8_t value =
-      readMemory(cycles, PC);      // Read the immediate value from memory
-  PC++;                            // Increment program counter
-  uint16_t result = A - value;     // Perform subtraction
-  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
-  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
-  setFlagN(true);                  // Set subtract flag
+  uint8_t value = read(cycles, PC);  // Read the immediate value from memory
+  PC++;                              // Increment program counter
+  uint16_t result = A - value;       // Perform subtraction
+  setFlagC(result > 0xFF);           // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);    // Update zero flag if result is zero
+  setFlagN(true);                    // Set subtract flag
   setFlagH((A & 0x0F) < (value & 0x0F));  // Update half-carry flag if needed
   A = result & 0xFF;                      // Store the result in register A
 }
@@ -1897,11 +1885,10 @@ void LR35902::jp_c_a16(uint32_t &cycles) {
   // set
   ++cycles;               // Increment cycles for the conditional check
   if ((F & 0x10) != 0) {  // Check if the carry flag is set
-    uint16_t address =
-        readMemory(cycles, PC);  // Read the low byte of the address
-    PC++;                        // Increment program counter
-    address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-    PC++;                                      // Increment program counter
+    uint16_t address = read(cycles, PC);  // Read the low byte of the address
+    PC++;                                 // Increment program counter
+    address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+    PC++;                                 // Increment program counter
     PC = address;  // Set the program counter to the new address
   } else {
     PC += 2;      // Skip over the two bytes of the address if not jumping
@@ -1914,11 +1901,10 @@ void LR35902::call_c_a16(uint32_t &cycles) {
   // carry flag is set
   ++cycles;               // Increment cycles for the conditional check
   if ((F & 0x10) != 0) {  // Check if the carry flag is set
-    uint16_t address =
-        readMemory(cycles, PC);  // Read the low byte of the address
-    PC++;                        // Increment program counter
-    address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-    PC++;                                      // Increment program counter
+    uint16_t address = read(cycles, PC);  // Read the low byte of the address
+    PC++;                                 // Increment program counter
+    address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+    PC++;                                 // Increment program counter
     pushStack(cycles, PC);  // Push the current program counter onto the stack
     PC = address;           // Set the program counter to the new address
   } else {
@@ -1929,8 +1915,7 @@ void LR35902::call_c_a16(uint32_t &cycles) {
 
 void LR35902::sbc_a_d8(uint32_t &cycles) {
   // Subtract the immediate 8-bit value and the carry flag from register A
-  uint8_t value =
-      readMemory(cycles, PC);           // Read the immediate value from memory
+  uint8_t value = read(cycles, PC);     // Read the immediate value from memory
   PC++;                                 // Increment program counter
   uint16_t carry = (F & 0x10) ? 1 : 0;  // Get the current carry flag
   uint16_t result = A - value - carry;  // Perform subtraction with carry
@@ -1952,47 +1937,45 @@ void LR35902::rst_18(uint32_t &cycles) {
 void LR35902::ldh_a8_a(uint32_t &cycles) {
   // Load the value of register A into memory at address 0xFF00 + immediate
   // 8-bit value
-  uint8_t offset =
-      readMemory(cycles, PC);          // Read the immediate offset from memory
+  uint8_t offset = read(cycles, PC);   // Read the immediate offset from memory
   PC++;                                // Increment program counter
   uint16_t address = 0xFF00 + offset;  // Calculate the target address
-  writeMemory(cycles, address,
-              A);  // Write the value of register A to the target address
+  write(cycles, address,
+        A);  // Write the value of register A to the target address
 }
 
 void LR35902::pop_hl(uint32_t &cycles) {
   // Pop two bytes from the stack into registers H and L
-  L = readMemory(cycles, SP);  // Pop the low byte into register L
-  SP++;                        // Increment stack pointer
-  H = readMemory(cycles, SP);  // Pop the high byte into register H
-  SP++;                        // Increment stack pointer
+  L = read(cycles, SP);  // Pop the low byte into register L
+  SP++;                  // Increment stack pointer
+  H = read(cycles, SP);  // Pop the high byte into register H
+  SP++;                  // Increment stack pointer
 }
 
 void LR35902::ldh_c_a(uint32_t &cycles) {
   // Load the value of register A into memory at address 0xFF00 + register C
   uint16_t address = 0xFF00 + C;  // Calculate the target address
-  writeMemory(cycles, address,
-              A);  // Write the value of register A to the target address
+  write(cycles, address,
+        A);  // Write the value of register A to the target address
 }
 
 void LR35902::push_hl(uint32_t &cycles) {
   // Push the values of registers H and L onto the stack
-  writeMemory(cycles, SP - 1, H);  // Write the high byte (H) to the stack
-  writeMemory(cycles, SP - 2, L);  // Write the low byte (L) to the stack
-  SP -= 2;                         // Decrement stack pointer by 2
-  ++cycles;                        // Increment cycles for the push operation
+  write(cycles, SP - 1, H);  // Write the high byte (H) to the stack
+  write(cycles, SP - 2, L);  // Write the low byte (L) to the stack
+  SP -= 2;                   // Decrement stack pointer by 2
+  ++cycles;                  // Increment cycles for the push operation
 }
 
 void LR35902::and_a_d8(uint32_t &cycles) {
   // Perform bitwise AND between register A and the immediate 8-bit value
-  uint8_t value =
-      readMemory(cycles, PC);  // Read the immediate value from memory
-  PC++;                        // Increment program counter
-  A &= value;                  // Update register A with the result
-  setFlagZ(A == 0);            // Update zero flag if result is zero
-  setFlagN(false);             // Clear subtract flag
-  setFlagH(true);              // Set half-carry flag
-  setFlagC(false);             // Clear carry flag
+  uint8_t value = read(cycles, PC);  // Read the immediate value from memory
+  PC++;                              // Increment program counter
+  A &= value;                        // Update register A with the result
+  setFlagZ(A == 0);                  // Update zero flag if result is zero
+  setFlagN(false);                   // Clear subtract flag
+  setFlagH(true);                    // Set half-carry flag
+  setFlagC(false);                   // Clear carry flag
 }
 
 void LR35902::rst_20(uint32_t &cycles) {
@@ -2005,7 +1988,7 @@ void LR35902::rst_20(uint32_t &cycles) {
 void LR35902::add_sp_r8(uint32_t &cycles) {
   // Add the signed 8-bit value to the stack pointer (SP)
   int8_t value = static_cast<int8_t>(
-      readMemory(cycles, PC));   // Read the immediate signed value from memory
+      read(cycles, PC));         // Read the immediate signed value from memory
   PC++;                          // Increment program counter
   cycles += 2;                   // Increment cycles for the addition operation
   uint16_t result = SP + value;  // Perform addition
@@ -2028,25 +2011,23 @@ void LR35902::jp_hl(uint32_t &cycles) {
 void LR35902::ld_a16_a(uint32_t &cycles) {
   // Load the value of register A into memory at the address specified by the
   // next two bytes
-  uint16_t address =
-      readMemory(cycles, PC);                // Read the low byte of the address
-  PC++;                                      // Increment program counter
-  address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-  PC++;                                      // Increment program counter
-  writeMemory(cycles, address,
-              A);  // Write the value of register A to the target address
+  uint16_t address = read(cycles, PC);  // Read the low byte of the address
+  PC++;                                 // Increment program counter
+  address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+  PC++;                                 // Increment program counter
+  write(cycles, address,
+        A);  // Write the value of register A to the target address
 }
 
 void LR35902::xor_a_d8(uint32_t &cycles) {
   // Perform bitwise XOR between register A and the immediate 8-bit value
-  uint8_t value =
-      readMemory(cycles, PC);  // Read the immediate value from memory
-  PC++;                        // Increment program counter
-  A ^= value;                  // Update register A with the result
-  setFlagZ(A == 0);            // Update zero flag if result is zero
-  setFlagN(false);             // Clear subtract flag
-  setFlagH(false);             // Clear half-carry flag
-  setFlagC(false);             // Clear carry flag
+  uint8_t value = read(cycles, PC);  // Read the immediate value from memory
+  PC++;                              // Increment program counter
+  A ^= value;                        // Update register A with the result
+  setFlagZ(A == 0);                  // Update zero flag if result is zero
+  setFlagN(false);                   // Clear subtract flag
+  setFlagH(false);                   // Clear half-carry flag
+  setFlagC(false);                   // Clear carry flag
 }
 
 void LR35902::rst_28(uint32_t &cycles) {
@@ -2058,18 +2039,17 @@ void LR35902::rst_28(uint32_t &cycles) {
 
 void LR35902::pop_af(uint32_t &cycles) {
   // Pop two bytes from the stack into registers A and F
-  F = readMemory(cycles, SP) & 0xF0;  // Pop the low byte into register F
-  SP++;                               // Increment stack pointer
-  A = readMemory(cycles, SP);         // Pop the high byte into register A
-  SP++;                               // Increment stack pointer
+  F = read(cycles, SP) & 0xF0;  // Pop the low byte into register F
+  SP++;                         // Increment stack pointer
+  A = read(cycles, SP);         // Pop the high byte into register A
+  SP++;                         // Increment stack pointer
 }
 
 void LR35902::ld_a_c(uint32_t &cycles) {
   // Load the value from memory at address 0xFF00 + register C into register A
   uint16_t address = 0xFF00 + C;  // Calculate the target address
-  A = readMemory(
-      cycles,
-      address);  // Read the value from memory and store it in register A
+  A = read(cycles,
+           address);  // Read the value from memory and store it in register A
 }
 
 void LR35902::di() {
@@ -2080,30 +2060,29 @@ void LR35902::di() {
 
 void LR35902::push_af(uint32_t &cycles) {
   // Push the values of registers A and F onto the stack
-  writeMemory(cycles, SP - 1, A);  // Write the high byte (A) to the stack
-  writeMemory(cycles, SP - 2, F);  // Write the low byte (F) to the stack
-  SP -= 2;                         // Decrement stack pointer by 2
-  ++cycles;                        // Increment cycles for the push operation
+  write(cycles, SP - 1, A);  // Write the high byte (A) to the stack
+  write(cycles, SP - 2, F);  // Write the low byte (F) to the stack
+  SP -= 2;                   // Decrement stack pointer by 2
+  ++cycles;                  // Increment cycles for the push operation
 }
 
 void LR35902::push_bc(uint32_t &cycles) {
   // Push the values of registers B and C onto the stack
-  writeMemory(cycles, SP - 1, B);  // Write the high byte (B) to the stack
-  writeMemory(cycles, SP - 2, C);  // Write the low byte (C) to the stack
-  SP -= 2;                         // Decrement stack pointer by 2
-  ++cycles;                        // Increment cycles for the push operation
+  write(cycles, SP - 1, B);  // Write the high byte (B) to the stack
+  write(cycles, SP - 2, C);  // Write the low byte (C) to the stack
+  SP -= 2;                   // Decrement stack pointer by 2
+  ++cycles;                  // Increment cycles for the push operation
 }
 
 void LR35902::or_a_d8(uint32_t &cycles) {
   // Perform bitwise OR between register A and the immediate 8-bit value
-  uint8_t value =
-      readMemory(cycles, PC);  // Read the immediate value from memory
-  PC++;                        // Increment program counter
-  A |= value;                  // Update register A with the result
-  setFlagZ(A == 0);            // Update zero flag if result is zero
-  setFlagN(false);             // Clear subtract flag
-  setFlagH(false);             // Clear half-carry flag
-  setFlagC(false);             // Clear carry flag
+  uint8_t value = read(cycles, PC);  // Read the immediate value from memory
+  PC++;                              // Increment program counter
+  A |= value;                        // Update register A with the result
+  setFlagZ(A == 0);                  // Update zero flag if result is zero
+  setFlagN(false);                   // Clear subtract flag
+  setFlagH(false);                   // Clear half-carry flag
+  setFlagC(false);                   // Clear carry flag
 }
 
 void LR35902::rst_30(uint32_t &cycles) {
@@ -2116,7 +2095,7 @@ void LR35902::rst_30(uint32_t &cycles) {
 void LR35902::ld_hl_sp_plus_r8(uint32_t &cycles) {
   // Load the value of SP + signed 8-bit value into registers H and L
   int8_t offset = static_cast<int8_t>(
-      readMemory(cycles, PC));    // Read the immediate signed value from memory
+      read(cycles, PC));          // Read the immediate signed value from memory
   PC++;                           // Increment program counter
   uint16_t result = SP + offset;  // Perform addition
   ++cycles;                       // Increment cycles for the addition operation
@@ -2139,14 +2118,12 @@ void LR35902::ld_sp_hl(uint32_t &cycles) {
 void LR35902::ld_a_a16_ptr(uint32_t &cycles) {
   // Load the value from memory at the address specified by the next two bytes
   // into register A
-  uint16_t address =
-      readMemory(cycles, PC);                // Read the low byte of the address
-  PC++;                                      // Increment program counter
-  address |= (readMemory(cycles, PC) << 8);  // Read the high byte and combine
-  PC++;                                      // Increment program counter
-  A = readMemory(
-      cycles,
-      address);  // Read the value from memory and store it in register A
+  uint16_t address = read(cycles, PC);  // Read the low byte of the address
+  PC++;                                 // Increment program counter
+  address |= (read(cycles, PC) << 8);   // Read the high byte and combine
+  PC++;                                 // Increment program counter
+  A = read(cycles,
+           address);  // Read the value from memory and store it in register A
 }
 
 void LR35902::ei() {
@@ -2156,13 +2133,12 @@ void LR35902::ei() {
 
 void LR35902::cp_a_d8(uint32_t &cycles) {
   // Compare register A with the immediate 8-bit value (A - d8)
-  uint8_t value =
-      readMemory(cycles, PC);      // Read the immediate value from memory
-  PC++;                            // Increment program counter
-  uint16_t result = A - value;     // Perform subtraction
-  setFlagC(result > 0xFF);         // Update carry flag if underflow occurred
-  setFlagZ((result & 0xFF) == 0);  // Update zero flag if result is zero
-  setFlagN(true);                  // Set subtract flag
+  uint8_t value = read(cycles, PC);  // Read the immediate value from memory
+  PC++;                              // Increment program counter
+  uint16_t result = A - value;       // Perform subtraction
+  setFlagC(result > 0xFF);           // Update carry flag if underflow occurred
+  setFlagZ((result & 0xFF) == 0);    // Update zero flag if result is zero
+  setFlagN(true);                    // Set subtract flag
   setFlagH((A & 0x0F) < (value & 0x0F));  // Update half-carry flag if needed
 }
 
@@ -2176,11 +2152,9 @@ void LR35902::rst_38(uint32_t &cycles) {
 void LR35902::ldh_a_a8(uint32_t &cycles) {
   // Load the value from memory at address 0xFF00 + immediate 8-bit value into
   // register A
-  uint8_t offset =
-      readMemory(cycles, PC);          // Read the immediate offset from memory
+  uint8_t offset = read(cycles, PC);   // Read the immediate offset from memory
   PC++;                                // Increment program counter
   uint16_t address = 0xFF00 + offset;  // Calculate the target address
-  A = readMemory(
-      cycles,
-      address);  // Read the value from memory and store it in register A
+  A = read(cycles,
+           address);  // Read the value from memory and store it in register A
 }

@@ -72,12 +72,12 @@ void LR35902::rlc_a() {
 
 void LR35902::rlc_hl_ptr(uint32_t &cycles) {
   // Rotate the value at memory address HL left through carry
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint8_t carry = (value & 0x80) >> 7;          // Get the carry bit (bit 7)
-  value = (value << 1) | carry;  // Rotate left and set the new carry
-  writeMemory(cycles, address,
-              value);    // Write the rotated value back to memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint8_t carry = (value & 0x80) >> 7;    // Get the carry bit (bit 7)
+  value = (value << 1) | carry;           // Rotate left and set the new carry
+  write(cycles, address,
+        value);          // Write the rotated value back to memory
   setFlagZ(value == 0);  // Update zero flag if result is zero
   setFlagN(false);       // Clear subtract flag
   setFlagH(false);       // Clear half-carry flag
@@ -156,12 +156,12 @@ void LR35902::rrc_a() {
 
 void LR35902::rrc_hl_ptr(uint32_t &cycles) {
   // Rotate the value at memory address HL right through carry
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint8_t carry = value & 0x01;                 // Get the carry bit (bit 0)
-  value = (value >> 1) | (carry << 7);  // Rotate right and set the new carry
-  writeMemory(cycles, address,
-              value);    // Write the rotated value back to memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint8_t carry = value & 0x01;           // Get the carry bit (bit 0)
+  value = (value >> 1) | (carry << 7);    // Rotate right and set the new carry
+  write(cycles, address,
+        value);          // Write the rotated value back to memory
   setFlagZ(value == 0);  // Update zero flag if result is zero
   setFlagN(false);       // Clear subtract flag
   setFlagH(false);       // Clear half-carry flag
@@ -238,13 +238,13 @@ void LR35902::rl_a() {
 
 void LR35902::rl_hl_ptr(uint32_t &cycles) {
   // Rotate the value at memory address HL left through carry
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
   uint8_t carryOut = (value & 0x80) >> 7;
   value =
       (value << 1) | ((F & 0x10) ? 1 : 0);  // Rotate left and set the new carry
-  writeMemory(cycles, address,
-              value);    // Write the rotated value back to memory
+  write(cycles, address,
+        value);          // Write the rotated value back to memory
   setFlagZ(value == 0);  // Update zero flag if result is zero
   setFlagN(false);       // Clear subtract flag
   setFlagH(false);       // Clear half-carry flag
@@ -330,14 +330,14 @@ void LR35902::rr_a() {
 
 void LR35902::rr_hl_ptr(uint32_t &cycles) {
   // Rotate the value at memory address HL right through carry
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
 
   uint8_t carryOut = value & 0x01;
   uint8_t carry = (F & 0x10) ? 1 : 0;   // Get the carry bit (bit 0)
   value = (value >> 1) | (carry << 7);  // Rotate right and set the new carry
-  writeMemory(cycles, address,
-              value);    // Write the rotated value back to memory
+  write(cycles, address,
+        value);          // Write the rotated value back to memory
   setFlagZ(value == 0);  // Update zero flag if result is zero
   setFlagN(false);       // Clear subtract flag
   setFlagH(false);       // Clear half-carry flag
@@ -424,12 +424,12 @@ void LR35902::sla_a() {
 void LR35902::sla_hl_ptr(uint32_t &cycles) {
   // Shift the value at memory address HL left, filling bit 0 with 0 and storing
   // the old bit 7 in the carry flag
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint8_t carry = (value & 0x80) >> 7;          // Get the carry bit (bit 7)
-  value <<= 1;                                  // Shift left
-  writeMemory(cycles, address,
-              value);    // Write the shifted value back to memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint8_t carry = (value & 0x80) >> 7;    // Get the carry bit (bit 7)
+  value <<= 1;                            // Shift left
+  write(cycles, address,
+        value);          // Write the shifted value back to memory
   setFlagZ(value == 0);  // Update zero flag if result is zero
   setFlagN(false);       // Clear subtract flag
   setFlagH(false);       // Clear half-carry flag
@@ -516,13 +516,13 @@ void LR35902::sra_a() {
 void LR35902::sra_hl_ptr(uint32_t &cycles) {
   // Shift the value at memory address HL right, preserving the sign bit (bit 7)
   // and storing the old bit 0 in the carry flag
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint8_t carry = value & 0x01;                 // Get the carry bit (bit 0)
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint8_t carry = value & 0x01;           // Get the carry bit (bit 0)
   value =
       (value >> 1) | (value & 0x80);  // Shift right and preserve the sign bit
-  writeMemory(cycles, address,
-              value);    // Write the shifted value back to memory
+  write(cycles, address,
+        value);          // Write the shifted value back to memory
   setFlagZ(value == 0);  // Update zero flag if result is zero
   setFlagN(false);       // Clear subtract flag
   setFlagH(false);       // Clear half-carry flag
@@ -594,11 +594,11 @@ void LR35902::swap_a() {
 
 void LR35902::swap_hl_ptr(uint32_t &cycles) {
   // Swap the upper and lower nibbles of the value at memory address HL
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  value = (value << 4) | (value >> 4);          // Swap nibbles
-  writeMemory(cycles, address,
-              value);    // Write the swapped value back to memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  value = (value << 4) | (value >> 4);    // Swap nibbles
+  write(cycles, address,
+        value);          // Write the swapped value back to memory
   setFlagZ(value == 0);  // Set Z flag if result is zero
   setFlagN(false);       // Clear N flag
   setFlagH(false);       // Clear H flag
@@ -685,12 +685,12 @@ void LR35902::srl_a() {
 void LR35902::srl_hl_ptr(uint32_t &cycles) {
   // Shift the value at memory address HL right, filling bit 7 with 0 and
   // storing the old bit 0 in the carry flag
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  uint8_t carry = value & 0x01;                 // Get the carry bit (bit 0)
-  value >>= 1;                                  // Shift right
-  writeMemory(cycles, address,
-              value);    // Write the shifted value back to memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  uint8_t carry = value & 0x01;           // Get the carry bit (bit 0)
+  value >>= 1;                            // Shift right
+  write(cycles, address,
+        value);          // Write the shifted value back to memory
   setFlagC(carry);       // Set the carry flag if needed
   setFlagZ(value == 0);  // Set Z flag if result is zero
   setFlagN(false);       // Clear N flag
@@ -748,11 +748,11 @@ void LR35902::bit_a_r(uint8_t bit) {
 
 void LR35902::bit_hl_ptr(uint8_t bit, uint32_t &cycles) {
   // Test bit 'bit' of the value at memory address HL
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  setFlagZ((value & (1 << bit)) == 0);          // Set Z flag if bit is 0
-  setFlagN(false);                              // Clear N flag
-  setFlagH(true);                               // Set H flag
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  setFlagZ((value & (1 << bit)) == 0);    // Set Z flag if bit is 0
+  setFlagN(false);                        // Clear N flag
+  setFlagH(true);                         // Set H flag
 }
 
 void LR35902::set_b_r(uint8_t bit) {
@@ -792,11 +792,11 @@ void LR35902::set_a_r(uint8_t bit) {
 
 void LR35902::set_hl_ptr(uint8_t bit, uint32_t &cycles) {
   // Set bit 'bit' of the value at memory address HL
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  value |= (1 << bit);                          // Set the specified bit
-  writeMemory(cycles, address,
-              value);  // Write the modified value back to memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  value |= (1 << bit);                    // Set the specified bit
+  write(cycles, address,
+        value);  // Write the modified value back to memory
 }
 
 void LR35902::res_b_r(uint8_t bit) {
@@ -836,9 +836,9 @@ void LR35902::res_a_r(uint8_t bit) {
 
 void LR35902::res_hl_ptr(uint8_t bit, uint32_t &cycles) {
   // Reset bit 'bit' of the value at memory address HL
-  uint16_t address = (H << 8) | L;  // Combine H and L to get the address
-  uint8_t value = readMemory(cycles, address);  // Read the value from memory
-  value &= ~(1 << bit);                         // Reset the specified bit
-  writeMemory(cycles, address,
-              value);  // Write the modified value back to memory
+  uint16_t address = (H << 8) | L;        // Combine H and L to get the address
+  uint8_t value = read(cycles, address);  // Read the value from memory
+  value &= ~(1 << bit);                   // Reset the specified bit
+  write(cycles, address,
+        value);  // Write the modified value back to memory
 }

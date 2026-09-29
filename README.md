@@ -175,8 +175,7 @@ The project is organized around the application, game management and emulator ha
 ```text
 emulators-collection/
 ├── .github/
-│   └── workflows/
-│       └── checks.yml                 # GitHub Actions CI
+│   └── workflows/                     # GitHub Actions CI
 ├── assets/
 │   └── fonts/                         # UI fonts
 ├── scripts/                           # Helper scripts
@@ -184,47 +183,27 @@ emulators-collection/
 │   ├── main.cc                        # Application entry point
 │   │
 │   ├── ui/                            # SDL2 graphical interface
-│   │   ├── UI.cc
-│   │   └── UI.hh
 │   │
 │   ├── game/                          # ROM/game representation
-│   │   ├── Game.cc
-│   │   └── Game.hh
 │   │
 │   ├── game_selector/                 # ROM discovery and selection
-│   │   ├── GameSelector.cc
-│   │   └── GameSelector.hh
 │   │
 │   └── emulators/
 │       ├── console/                   # Complete emulator systems
-│       │   ├── chip8/
-│       │   ├── atari2600/
-│       │   └── game_boy/
 │       │
 │       ├── cpu/                       # CPU implementations
-│       │   ├── CPU65/
-│       │   └── LR35902/
 │       │
 │       ├── bus/                       # System memory buses
-│       │   ├── atari2600_bus/
-│       │   └── game_boy_bus/
 │       │
 │       ├── ppu/                       # Video hardware
-│       │   ├── TIA1A/
-│       │   └── game_boy_ppu/
 │       │
 │       ├── processor/                 # Additional processors/chips
-│       │   └── MOS6532/
 │       │
 │       ├── timer/                     # Hardware timers
-│       │   └── game_boy_timer/
 |       |
 |       ├── audio/                     # Audio hardware
-│       │   └── TIAIA/
 │       │
 │       └── cartridge/                 # Cartridge and ROM handling
-│           ├── Cartridge.cc
-│           └── game_boy_cartridge/
 │
 ├── games/                             # Local ROM collection
 ├── .clang-format                      # C/C++ formatting rules
@@ -375,6 +354,8 @@ To add a new system:
    src/emulators/timer/
    src/emulators/cartridge/
    src/emulators/processor/
+   src/emulators/controller/
+   src/emulators/interrupt_controller/
    ```
 
 4. Add the corresponding source files to `CMakeLists.txt`.

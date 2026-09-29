@@ -167,7 +167,6 @@ void Chip8::loadProgram(const std::string& filename) {
 
   file.read(reinterpret_cast<char*>(&this->memory[0x200]), size);
 
-  std::cout << "Loaded ROM: " << size << " bytes\n";
   file.close();
 
   SDL_RenderSetLogicalSize(this->renderer, 64, 32);

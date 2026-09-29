@@ -5,21 +5,21 @@
 #include <vector>
 
 /**
- * @file Cartridge.hh
+ * @file Atari2600Cartridge.hh
  * @brief Atari 2600 cartridge (ROM) emulation, including bank switching.
  */
 
 /**
- * @class Cartbridge
+ * @class Atari2600Cartridge
  * @brief Holds a loaded ROM image and services CPU reads/writes into the
  *        cartridge address space, including bank-switching writes.
  */
-class Cartridge {
+class Atari2600Cartridge {
  public:
   /**
    * @brief Construct an empty cartridge (no ROM loaded).
    */
-  Cartridge();
+  Atari2600Cartridge();
 
   /**
    * @brief Load a ROM image from disk into memory.

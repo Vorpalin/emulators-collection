@@ -312,7 +312,7 @@ void GameBoyPPU::writeRegister(uint16_t addr, uint8_t value) {
   }
 }
 
-void GameBoyPPU::writeMemory(uint16_t address, uint8_t value) {
+void GameBoyPPU::write(uint16_t address, uint8_t value) {
   if (address >= 0x8000 && address <= 0x9FFF) {
     writeVRAM(address - 0x8000, value);
   } else if (address >= 0xFE00 && address <= 0xFE9F) {
@@ -336,7 +336,7 @@ uint8_t GameBoyPPU::readOAM(uint16_t addr) const {
   return 0xFF;  // Invalid read
 }
 
-uint8_t GameBoyPPU::readMemory(uint16_t address) {
+uint8_t GameBoyPPU::read(uint16_t address) {
   if (address >= 0x8000 && address <= 0x9FFF) {
     return readVRAM(address - 0x8000);
   } else if (address >= 0xFE00 && address <= 0xFE9F) {

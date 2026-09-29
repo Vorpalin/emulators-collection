@@ -44,11 +44,11 @@ void GameBoyBus::tick() {
   timer.tick(cycles * 4);
 }
 
-void GameBoyBus::writeMemory(uint16_t address, uint8_t value) {
+void GameBoyBus::write(uint16_t address, uint8_t value) {
   if (address < 0x8000) {
     cartridge.write(address, value);
   } else if (address < 0xA000) {
-    ppu.writeMemory(address, value);  // VRAM
+    ppu.write(address, value);  // VRAM
   } else if (address < 0xC000) {
     cartridge.write(address, value);  // external/save RAM
   } else if (address < 0xE000) {
@@ -57,7 +57,7 @@ void GameBoyBus::writeMemory(uint16_t address, uint8_t value) {
     wram[(address - 0x2000) & 0x1FFF] =
         value;  // echo RAM mirrors 0xC000-0xDDFF
   } else if (address < 0xFEA0) {
-    ppu.writeMemory(address, value);  // OAM
+    ppu.write(address, value);  // OAM
   } else if (address < 0xFF00) {
     // Unusable region; real hardware mostly ignores writes here.
   } else if (address < 0xFF80) {
@@ -84,7 +84,7 @@ void GameBoyBus::writeMemory(uint16_t address, uint8_t value) {
         startOamDma(value);
         break;
       default:
-        ppu.writeMemory(address, value);
+        ppu.write(address, value);
         break;  // APU/PPU registers
     }
   } else if (address < 0xFFFF) {
@@ -94,11 +94,11 @@ void GameBoyBus::writeMemory(uint16_t address, uint8_t value) {
   }
 }
 
-uint8_t GameBoyBus::readMemory(uint16_t address) {
+uint8_t GameBoyBus::read(uint16_t address) {
   if (address < 0x8000) {
     return cartridge.read(address);
   } else if (address < 0xA000) {
-    return ppu.readMemory(address);  // VRAM
+    return ppu.read(address);  // VRAM
   } else if (address < 0xC000) {
     return cartridge.read(address);  // external/save RAM
   } else if (address < 0xE000) {
@@ -106,7 +106,7 @@ uint8_t GameBoyBus::readMemory(uint16_t address) {
   } else if (address < 0xFE00) {
     return wram[(address - 0x2000) & 0x1FFF];  // echo RAM
   } else if (address < 0xFEA0) {
-    return ppu.readMemory(address);  // OAM
+    return ppu.read(address);  // OAM
   } else if (address < 0xFF00) {
     return 0xFF;  // unusable region
   } else if (address < 0xFF80) {
@@ -125,7 +125,7 @@ uint8_t GameBoyBus::readMemory(uint16_t address) {
       case 0xFF0F:
         return interrupts.readIF();
       default:
-        return ppu.readMemory(address);  // APU/PPU registers
+        return ppu.read(address);  // APU/PPU registers
     }
   } else if (address < 0xFFFF) {
     return hram[address - 0xFF80];
@@ -137,6 +137,6 @@ uint8_t GameBoyBus::readMemory(uint16_t address) {
 void GameBoyBus::startOamDma(uint8_t sourceHigh) {
   uint16_t base = static_cast<uint16_t>(sourceHigh) << 8;
   for (uint16_t i = 0; i < 0xA0; ++i) {
-    ppu.writeMemory(0xFE00 + i, readMemory(base + i));
+    ppu.write(0xFE00 + i, read(base + i));
   }
 }
