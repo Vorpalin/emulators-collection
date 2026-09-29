@@ -24,6 +24,8 @@ class Emulator {
    */
   virtual void loadProgram(const std::string& filename) = 0;
 
+  virtual ~Emulator() = default;  // <-- à ajouter
+
   /**
    * @brief Run the emulator's main execution loop.
    * @return Implementation-defined exit code. By convention, returning 1

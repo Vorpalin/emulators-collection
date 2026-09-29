@@ -32,6 +32,15 @@ UI::UI() : gameSelector("games") {
   }
 }
 
+UI::~UI() {
+  if (this->font) TTF_CloseFont(this->font);
+  TTF_Quit();
+
+  if (this->renderer) SDL_DestroyRenderer(this->renderer);
+  if (this->window) SDL_DestroyWindow(this->window);
+  SDL_Quit();
+}
+
 void UI::handleInput() {
   SDL_Event event;
 

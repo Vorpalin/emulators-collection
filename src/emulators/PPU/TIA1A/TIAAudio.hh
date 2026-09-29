@@ -38,8 +38,6 @@ class TIAAudio {
    *        call open() for that) and zero all registers.
    */
   TIAAudio() {
-    std::cerr << "TIA audio: " << kTiaAudioHz << " Hz, "
-              << (kTiaAudioHz / 44100.0) << " samples per 44.1 kHz sample\n";
     for (auto& r : regs_) r.store(0);
   }
 
@@ -85,9 +83,6 @@ class TIAAudio {
     }
 
     sampleRate_ = have.freq;
-    std::cerr << "Audio: driver=" << SDL_GetCurrentAudioDriver() << ", "
-              << have.freq << " Hz, buffer " << have.samples << " samples (~"
-              << (1000.0 * have.samples / have.freq) << " ms)\n";
 
     // Start corked; the first non-zero AUDV write starts the stream.
     SDL_PauseAudioDevice(dev_, 1);
@@ -106,7 +101,6 @@ class TIAAudio {
    */
   void close() {
     if (dev_ != 0) {
-      std::cerr << "Closing audio device\n";
       SDL_PauseAudioDevice(dev_, 1);  // make sure the callback is idle
       SDL_CloseAudioDevice(dev_);     // waits for the audio thread to exit
       dev_ = 0;

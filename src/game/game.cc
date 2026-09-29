@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Atari2600.hh"
+#include "GameBoy.hh"
 #include "chip8.hh"
 
 Game::Game(const std::string& file, const std::string& dir)
@@ -18,6 +19,8 @@ Game::Game(const std::string& file, const std::string& dir)
     emulator = std::unique_ptr<Chip8>(new Chip8());
   } else if (extension == "a26") {
     emulator = std::unique_ptr<Atari2600>(new Atari2600());
+  } else if (extension == "gb") {
+    emulator = std::unique_ptr<GameBoy>(new GameBoy());
   } else {
     std::cerr << "Unsupported file extension: " << extension << std::endl;
     emulator = nullptr;
