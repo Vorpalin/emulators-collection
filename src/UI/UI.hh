@@ -24,6 +24,9 @@ class UI {
    */
   UI();
 
+  /**
+   * @brief Destroy the UI, including the SDL2 window, renderer, and font.
+   */
   ~UI();
 
   /**
