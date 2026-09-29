@@ -218,6 +218,9 @@ emulators-collection/
 │       │
 │       ├── timer/                     # Hardware timers
 │       │   └── game_boy_timer/
+|       |
+|       ├── audio/                     # Audio hardware
+│       │   └── TIAIA/
 │       │
 │       └── cartridge/                 # Cartridge and ROM handling
 │           ├── Cartridge.cc
@@ -357,7 +360,7 @@ To add a new system:
 1. Create the console implementation under:
 
    ```text
-   src/emulators/console/<name>/
+   src/emulators/emulator/<name>/
    ```
 
 2. Implement the common `Emulator` interface.
@@ -365,6 +368,7 @@ To add a new system:
 3. Add the required hardware components under the appropriate directory:
 
    ```text
+   src/emulators/audio/
    src/emulators/cpu/
    src/emulators/bus/
    src/emulators/ppu/

@@ -59,6 +59,7 @@ target_link_libraries(chip8
 
 add_library(atari2600 STATIC
     src/emulators/console/atari2600/Atari2600.cc
+    src/emulators/audio/TIA1A/TIAAudio.cc
     src/emulators/cpu/CPU65/CPU65.cc
     src/emulators/cpu/CPU65/setFlags.cc
     src/emulators/ppu/TIA1A/TIA1A.cc

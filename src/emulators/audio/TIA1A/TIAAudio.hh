@@ -37,9 +37,7 @@ class TIAAudio {
    * @brief Construct the audio engine (does not open the audio device;
    *        call open() for that) and zero all registers.
    */
-  TIAAudio() {
-    for (auto& r : regs_) r.store(0);
-  }
+  TIAAudio();
 
   /**
    * @brief Destroy the audio engine, closing the audio device if open.
@@ -58,37 +56,7 @@ class TIAAudio {
    * @param bufferSamples Desired SDL audio buffer size, in samples.
    * @return True on success, false if SDL audio init or device open failed.
    */
-  bool open(int freq = 44100, int bufferSamples = 512) {
-    if (dev_ != 0) return true;
-    if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
-      std::cerr << "Audio init failed: " << SDL_GetError() << '\n';
-      return false;
-    }
-    audioInit_ = true;
-
-    SDL_AudioSpec want{}, have{};
-    want.freq = freq;
-    want.format = AUDIO_S16SYS;
-    want.channels = 1;
-    want.samples = static_cast<Uint16>(bufferSamples);
-    want.callback = &TIAAudio::callback;
-    want.userdata = this;
-
-    dev_ = SDL_OpenAudioDevice(nullptr, 0, &want, &have,
-                               SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
-    if (dev_ == 0) {
-      std::cerr << "Could not open audio device: " << SDL_GetError() << '\n';
-      close();  // undo SDL_InitSubSystem
-      return false;
-    }
-
-    sampleRate_ = have.freq;
-
-    // Start corked; the first non-zero AUDV write starts the stream.
-    SDL_PauseAudioDevice(dev_, 1);
-    paused_ = true;
-    return true;
-  }
+  bool open(int freq = 44100, int bufferSamples = 512);
 
   /**
    * @brief Close the audio device and shut down the SDL audio subsystem
@@ -99,18 +67,7 @@ class TIAAudio {
    * the destructor, which may run after the program has already shut SDL
    * down.
    */
-  void close() {
-    if (dev_ != 0) {
-      SDL_PauseAudioDevice(dev_, 1);  // make sure the callback is idle
-      SDL_CloseAudioDevice(dev_);     // waits for the audio thread to exit
-      dev_ = 0;
-    }
-    paused_ = true;
-    if (audioInit_) {
-      if (SDL_WasInit(SDL_INIT_AUDIO)) SDL_QuitSubSystem(SDL_INIT_AUDIO);
-      audioInit_ = false;
-    }
-  }
+  void close();
 
   /**
    * @brief Handle a CPU write to a TIA audio register.
@@ -123,21 +80,7 @@ class TIAAudio {
    *              0x15..0x1A are audio registers.
    * @param value Byte value written; masked to the register's valid bits.
    */
-  void write(uint16_t addr, uint8_t value) {
-    addr &= 0x3F;
-    if (addr < 0x15 || addr > 0x1A) return;
-
-    static constexpr uint8_t kMask[6] = {0x0F, 0x0F, 0x1F, 0x1F, 0x0F, 0x0F};
-    const int i = addr - 0x15;
-    regs_[i].store(value & kMask[i], std::memory_order_relaxed);
-
-    // Wake the device as soon as something audible is requested.
-    if ((i == 4 || i == 5) && (value & 0x0F) && paused_ && dev_ != 0) {
-      SDL_PauseAudioDevice(dev_, 0);
-      paused_ = false;
-    }
-    if (i == 4 || i == 5) idleFrames_ = 0;
-  }
+  void write(uint16_t addr, uint8_t value);
 
   /**
    * @brief Per-frame housekeeping: corks the audio stream after ~0.5 s of
@@ -145,26 +88,14 @@ class TIAAudio {
    *        latency the audio server has accumulated. Call once per
    *        emulated frame.
    */
-  void update() {
-    if (dev_ == 0 || paused_) return;
-    const bool silent = (regs_[4].load(std::memory_order_relaxed) == 0) &&
-                        (regs_[5].load(std::memory_order_relaxed) == 0);
-    if (!silent) {
-      idleFrames_ = 0;
-      return;
-    }
-    if (++idleFrames_ > 30) {
-      SDL_PauseAudioDevice(dev_, 1);
-      paused_ = true;
-    }
-  }
+  void update();
 
   /**
    * @brief Override the sample rate used for waveform generation without
    *        reopening the device (e.g. after SDL reports a different rate).
    * @param hz New sample rate, in Hz.
    */
-  void setSampleRate(int hz) { sampleRate_ = hz; }
+  void setSampleRate(int hz);
 
   /**
    * @brief Synthesize audio samples from the current register state.
@@ -175,35 +106,7 @@ class TIAAudio {
    * @param out   Destination buffer for @p count mono 16-bit samples.
    * @param count Number of samples to generate.
    */
-  void generate(int16_t* out, int count) {
-    uint8_t audc[2], audf[2], audv[2];
-    for (int c = 0; c < 2; ++c) {
-      audc[c] = regs_[0 + c].load(std::memory_order_relaxed);
-      audf[c] = regs_[2 + c].load(std::memory_order_relaxed);
-      audv[c] = regs_[4 + c].load(std::memory_order_relaxed);
-    }
-
-    const double step = kTiaAudioHz / sampleRate_;
-
-    for (int i = 0; i < count; ++i) {
-      clockAcc_ += step;
-      while (clockAcc_ >= 1.0) {
-        clockAcc_ -= 1.0;
-        tick(ch_[0], audc[0], audf[0]);
-        tick(ch_[1], audc[1], audf[1]);
-      }
-
-      const int mix = (ch_[0].out ? audv[0] : 0) + (ch_[1].out ? audv[1] : 0);
-      const float x = static_cast<float>(mix) / 30.0f * kAmplitude;
-
-      // One-pole high-pass (~35 Hz): removes the DC offset a constant
-      // "on" channel would otherwise produce, like the TV's coupling cap.
-      const float y = x - xPrev_ + 0.995f * yPrev_;
-      xPrev_ = x;
-      yPrev_ = y;
-      out[i] = static_cast<int16_t>(y);
-    }
-  }
+  void generate(int16_t* out, int count);
 
  private:
   /// @brief Per-channel waveform generator state.
@@ -223,34 +126,25 @@ class TIAAudio {
    * @param r In/out: register state.
    * @return New output bit.
    */
-  static bool lfsr4(uint8_t& r) {
-    r = static_cast<uint8_t>(((r << 1) | (((r >> 3) ^ (r >> 2)) & 1)) & 0x0F);
-    return r & 1;
-  }
+  bool lfsr4(uint8_t& r);
   /**
    * @brief Clock a 5-bit maximal-length LFSR (x^5+x^3+1).
    * @param r In/out: register state.
    * @return New output bit.
    */
-  static bool lfsr5(uint8_t& r) {
-    r = static_cast<uint8_t>(((r << 1) | (((r >> 4) ^ (r >> 2)) & 1)) & 0x1F);
-    return r & 1;
-  }
+  bool lfsr5(uint8_t& r);
   /**
    * @brief Clock a 9-bit maximal-length LFSR (x^9+x^5+1), used for white noise.
    * @param r In/out: register state.
    * @return New output bit.
    */
-  static bool lfsr9(uint16_t& r) {
-    r = static_cast<uint16_t>(((r << 1) | (((r >> 8) ^ (r >> 4)) & 1)) & 0x1FF);
-    return r & 1;
-  }
+  bool lfsr9(uint16_t& r);
   /**
    * @brief Duty pattern for the div-31 square wave modes (18 high, 13 low).
    * @param pos Position within the 31-step cycle.
    * @return True while the pattern is "high".
    */
-  static bool pattern31(int pos) { return pos >= 13; }
+  bool pattern31(int pos);
 
   /**
    * @brief Advance one channel's waveform generator by one tick of the
@@ -259,66 +153,7 @@ class TIAAudio {
    * @param audc AUDCx register value (waveform/noise type).
    * @param audf AUDFx register value (frequency divider).
    */
-  static void tick(Channel& ch, uint8_t audc, uint8_t audf) {
-    if (ch.div < audf) {  // divide by AUDF + 1
-      ++ch.div;
-      return;
-    }
-    ch.div = 0;
-
-    switch (audc & 0x0F) {
-      case 0:
-      case 11:  // constant level
-        ch.out = true;
-        break;
-      case 1:  // 4-bit poly
-        ch.out = lfsr4(ch.p4);
-        break;
-      case 2: {  // 4-bit poly clocked on div-31 edges
-        const bool before = pattern31(ch.pos31);
-        ch.pos31 = (ch.pos31 + 1) % 31;
-        if (pattern31(ch.pos31) != before) ch.out = lfsr4(ch.p4);
-        break;
-      }
-      case 3:  // 4-bit poly gated by 5-bit poly
-        if (lfsr5(ch.p5)) ch.out = lfsr4(ch.p4);
-        break;
-      case 4:
-      case 5:  // pure tone, div 2
-        ch.out = !ch.out;
-        break;
-      case 6:
-      case 10:  // div 31 square
-        ch.pos31 = (ch.pos31 + 1) % 31;
-        ch.out = pattern31(ch.pos31);
-        break;
-      case 7:
-      case 9:  // 5-bit poly
-        ch.out = lfsr5(ch.p5);
-        break;
-      case 8:  // 9-bit poly (white noise)
-        ch.out = lfsr9(ch.p9);
-        break;
-      case 12:
-      case 13:  // div 6 square
-        ch.pos6 = (ch.pos6 + 1) % 6;
-        ch.out = ch.pos6 < 3;
-        break;
-      case 14:  // div 93 square
-        if (++ch.sub >= 3) {
-          ch.sub = 0;
-          ch.pos31 = (ch.pos31 + 1) % 31;
-        }
-        ch.out = pattern31(ch.pos31);
-        break;
-      case 15:  // 5-bit poly at a third of the rate
-        if (++ch.sub >= 3) {
-          ch.sub = 0;
-          ch.out = lfsr5(ch.p5);
-        }
-        break;
-    }
-  }
+  void tick(Channel& ch, uint8_t audc, uint8_t audf);
 
   /**
    * @brief SDL audio callback trampoline; forwards to generate().
@@ -326,11 +161,7 @@ class TIAAudio {
    * @param stream   Destination buffer, as raw bytes.
    * @param len      Length of @p stream, in bytes.
    */
-  static void callback(void* userdata, Uint8* stream, int len) {
-    static_cast<TIAAudio*>(userdata)->generate(
-        reinterpret_cast<int16_t*>(stream),
-        len / static_cast<int>(sizeof(int16_t)));
-  }
+  static void callback(void* userdata, Uint8* stream, int len);
 
   SDL_AudioDeviceID dev_ = 0;  ///< SDL audio device handle (0 if not open).
   bool audioInit_ = false;     ///< True if this instance called

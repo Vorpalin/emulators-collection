@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "emulators/bus/game_boy_bus/GameBoyBus.hh"
-#include "emulators/console/emulator.hh"
+#include "emulators/console/Console.hh"
 
 /**
  * @file GameBoy.hh
@@ -16,10 +16,10 @@
  * @brief Top-level Game Boy system.
  *
  * Owns the GameBoyBus (which in turn owns the CPU, PPU, cartridge, timer,
- * joypad...) and implements the Emulator interface: ROM loading, main loop,
+ * joypad...) and implements the Console interface: ROM loading, main loop,
  * input handling and rendering through SDL.
  */
-class GameBoy : public Emulator {
+class GameBoy : public Console {
  public:
   /** @brief Constructs the emulator and its bus. */
   GameBoy();

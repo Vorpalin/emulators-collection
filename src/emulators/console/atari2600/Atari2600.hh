@@ -1,15 +1,15 @@
 #pragma once
 
+#include "emulators/audio/TIA1A/TIAAudio.hh"
 #include "emulators/bus/atari2600_bus/Atari2600Bus.hh"
-#include "emulators/console/emulator.hh"
-#include "emulators/ppu/TIA1A/TIAAudio.hh"
+#include "emulators/console/Console.hh"
 
 struct SDL_Renderer;
 struct SDL_Window;
 
 /**
  * @file Atari2600.hh
- * @brief Top-level Atari 2600 emulator, implementing the Emulator interface
+ * @brief Top-level Atari 2600 emulator, implementing the Console interface
  *        by driving the system bus, presenting its video output via an
  *        SDL texture, and forwarding audio register writes to TIAAudio.
  */
@@ -20,7 +20,7 @@ struct SDL_Window;
  *        TIA, cartridge), an SDL texture used to display the TIA's frame
  *        buffer, and the TIA audio engine.
  */
-class Atari2600 : public Emulator {
+class Atari2600 : public Console {
  public:
   /**
    * @brief Construct the emulator and wire up the audio write hook between

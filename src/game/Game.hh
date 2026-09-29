@@ -5,7 +5,7 @@
 #include <string>
 
 #include "SDL2/SDL.h"
-#include "emulators/console/emulator.hh"
+#include "emulators/console/Console.hh"
 
 /**
  * @file game.hh
@@ -52,6 +52,6 @@ class Game {
   std::string name;  ///< Display name (file name without extension).
   std::string path;  ///< Full path to the ROM file on disk.
 
-  std::unique_ptr<Emulator>
+  std::unique_ptr<Console>
       emulator;  ///< Emulator instance used to run the game.
 };

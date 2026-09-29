@@ -6,17 +6,17 @@
 #include <string>
 
 /**
- * @file emulator.hh
+ * @file Console.hh
  * @brief Common interface implemented by all supported system emulators
  *        (e.g. Chip8, Atari2600).
  */
 
 /**
- * @class Emulator
+ * @class Console
  * @brief Abstract base class defining the interface a concrete emulator
  *        must implement so it can be loaded and driven by Game/GameSelector.
  */
-class Emulator {
+class Console {
  public:
   /**
    * @brief Load a program/ROM file into the emulator, ready to be run.
@@ -24,7 +24,10 @@ class Emulator {
    */
   virtual void loadProgram(const std::string& filename) = 0;
 
-  virtual ~Emulator() = default;  // <-- à ajouter
+  /**
+   * @brief Destructor for the Console class.
+   */
+  virtual ~Console() = default;  // <-- à ajouter
 
   /**
    * @brief Run the emulator's main execution loop.

@@ -5,14 +5,14 @@
 #include <cstdint>
 #include <string>
 
-#include "emulators/console/emulator.hh"
+#include "emulators/console/Console.hh"
 
 struct SDL_Renderer;
 struct SDL_Window;
 
 /**
- * @file chip8.hh
- * @brief CHIP-8 interpreter/emulator, implementing the Emulator interface.
+ * @file Chip8.hh
+ * @brief CHIP-8 interpreter/emulator, implementing the Console interface.
  */
 
 /**
@@ -22,7 +22,7 @@ struct SDL_Window;
  *        a simple call stack, timers and a hex keypad, plus a square-wave
  *        beep via SDL audio.
  */
-class Chip8 : public Emulator {
+class Chip8 : public Console {
  public:
   /**
    * @brief Construct a Chip8 instance with memory, registers and the font
