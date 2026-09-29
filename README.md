@@ -405,45 +405,123 @@ doxygen Doxyfile
 
 The generated HTML documentation can then be opened in a browser.
 
-## 🔄 Continuous Integration
+## 🔄 Continuous Integration & Automation
 
-The project uses **GitHub Actions** to automatically verify changes.
+The project uses **GitHub Actions** to automatically validate, secure and release the project.
 
-The CI workflow runs on:
+The workflows are located in:
+
+```text
+.github/workflows/
+├── checks.yml
+├── security.yml
+└── release.yml
+```
+
+### 🧪 CI — `checks.yml`
+
+The main CI workflow verifies that changes are correctly formatted, validated and build successfully.
+
+It runs on:
 
 * Pushes to `main`
 * Pull requests targeting `main`
 
-The workflow currently performs three main checks.
+The workflow performs the following checks:
 
-### Commit messages
+* **Pre-commit**
 
-Pull requests have their commit messages checked using the project's pre-commit configuration.
+  * C/C++ formatting with `clang-format`
+  * Static analysis with `cppcheck`
+  * Other repository checks configured in `.pre-commit-config.yaml`
+* **Commit message**
 
-### Pre-commit
+  * Validates commit messages with the `commit-msg` check
+  * Ensures commits follow the project's expected commit message format
+* **Build**
 
-The complete pre-commit configuration is executed:
+  * Builds the project using the project's `Dockerfile`
+
+The same pre-commit checks can be run locally with:
 
 ```bash
 pre-commit run --all-files
 ```
 
-This includes checks such as:
-
-* `clang-format`
-* `cppcheck`
-* Repository-wide validation
-
-### Build
-
-After the pre-commit checks succeed, GitHub Actions builds the Docker image using Docker Buildx.
-
-The workflow runs on **Ubuntu 24.04** and pins its GitHub Actions dependencies to commit SHAs.
-
-The workflow is defined in:
+Commit messages should follow the **Conventional Commits** format, for example:
 
 ```text
-.github/workflows/checks.yml
+feat(gameboy): add MBC3 support
+fix(atari2600): correct TIA timing
+refactor: reorganize emulator architecture
+docs: update README
+```
+
+### 🔐 Security — `security.yml`
+
+The security workflow performs automated security checks on the repository.
+
+It includes the project's configured security analysis and dependency checks.
+
+This workflow helps detect:
+
+* Vulnerabilities in dependencies
+* Security issues in the source code
+* Problems introduced by dependency or workflow changes
+
+Security checks are kept separate from the normal CI pipeline so that code quality, build validation and security analysis remain independently visible.
+
+### 📦 Release — `release.yml`
+
+The release workflow automatically creates releases from the `main` branch.
+
+It uses **semantic-release** to:
+
+1. Analyse commit messages
+2. Determine the appropriate version
+3. Generate release notes
+4. Create the corresponding GitHub release
+
+This relies on **Conventional Commits**.
+
+Examples:
+
+```text
+feat(gameboy): add MBC5 cartridge support
+fix(gameboy): fix interrupt handling
+docs: update architecture documentation
+```
+
+### 🔗 Workflow overview
+
+```text
+                    ┌─────────────────────┐
+                    │   GitHub Events     │
+                    └──────────┬──────────┘
+                               │
+                ┌──────────────┼──────────────┐
+                │              │              │
+                ▼              ▼              ▼
+          ┌──────────┐   ┌───────────┐  ┌───────────┐
+          │checks.yml│   │security.yml│ │release.yml│
+          └────┬─────┘   └─────┬─────┘  └─────┬─────┘
+               │               │              │
+        ┌──────┼──────┐        │              │
+        ▼      ▼      ▼        ▼              ▼
+    Pre-commit Commit  Build  Security     Semantic
+              message         checks       release
+                                             │
+                                             ▼
+                                      GitHub Release
+```
+
+| Workflow       | Purpose                                           |
+| -------------- | ------------------------------------------------- |
+| `checks.yml`   | Code quality, commit-message validation and build |
+| `security.yml` | Security and dependency analysis                  |
+| `release.yml`  | Automated versioning and GitHub releases          |
+
+```
 ```
 
 ## 🛠️ Development
