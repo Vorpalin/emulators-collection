@@ -12,67 +12,110 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 
-add_executable(emulators-collection
-    src/emulators/PPU/TIA1A/TIA1A.cc
-    src/emulators/PPU/GameBoyPPU/GameBoyPPU.cc
-    src/emulators/BUS/Atari2600Bus/Atari2600Bus.cc
-    src/emulators/BUS/GameBoyBus/GameBoyBus.cc
-    src/emulators/CPU/CPU65/CPU65.cc
-    src/emulators/Timer/GameBoyTimer/GameBoyTimer.cc
-    src/emulators/CPU/CPU65/setFlags.cc
-    src/emulators/CPU/LR35902/LR35902.cc
-    src/emulators/CPU/LR35902/instructionSet.cc
-    src/emulators/CPU/LR35902/prefixInstructionSet.cc
-    src/emulators/Cartbridge/Cartbridge.cc
-    src/emulators/Cartbridge/GameBoyCartbridge/GameBoyCartbridge.cc
-    src/emulators/Processor/MOS6532/MOS6532.cc
-    src/main.cc
-    src/emulators/console/Atari2600/Atari2600.cc
-    src/emulators/console/chip_8/chip8.cc
-    src/emulators/console/GameBoy/GameBoy.cc
-    src/game/game.cc
-    src/game_selector/game_selector.cc
-    src/UI/UI.cc
+# ============================================================
+# Common options
+# ============================================================
 
+add_library(emulator_options INTERFACE)
+
+target_compile_features(emulator_options
+    INTERFACE
+        cxx_std_20
 )
 
-target_include_directories(emulators-collection
-    PRIVATE
-        src/emulators/CPU/
-        src/emulators/CPU/CPU65
-        src/emulators/CPU/LR35902
-        src/emulators/BUS
-        src/emulators/BUS/Atari2600Bus
-        src/emulators/BUS/GameBoyBus
-        src/emulators/PPU/GameBoyPPU
-        src/emulators/PPU/TIA1A
-        src/emulators/Cartbridge
-        src/emulators/Cartbridge/GameBoyCartbridge
-        src/emulators/Processor/MOS6532
-        src/emulators/console/Atari2600
-        src/emulators/console/chip_8
-        src/emulators/console/GameBoy
-        src/emulators/Timer/GameBoyTimer/
-        src/emulators/Controller/GameBoyController
-        src/emulator_schema
-        src/game
-        src/game_selector
-        src/UI
-)
-
-target_compile_options(emulators-collection
-    PRIVATE
+target_compile_options(emulator_options
+    INTERFACE
         -O3
         -Wall
         -Wextra
         -Werror
         -pedantic
         -Wold-style-cast
-        -std=c++20
+)
+
+target_include_directories(emulator_options
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+# ============================================================
+# CHIP-8
+# ============================================================
+
+add_library(chip8 STATIC
+    src/emulators/console/chip8/Chip8.cc
+)
+
+target_link_libraries(chip8
+    PUBLIC
+        emulator_options
+        SDL2::SDL2
+        SDL2_ttf::SDL2_ttf
+)
+
+# ============================================================
+# Atari 2600
+# ============================================================
+
+add_library(atari2600 STATIC
+    src/emulators/console/atari2600/Atari2600.cc
+    src/emulators/audio/TIA1A/TIAAudio.cc
+    src/emulators/cpu/CPU65/CPU65.cc
+    src/emulators/cpu/CPU65/setFlags.cc
+    src/emulators/ppu/TIA1A/TIA1A.cc
+    src/emulators/bus/atari2600_bus/Atari2600Bus.cc
+    src/emulators/cartridge/atari2600_cartridge/Atari2600Cartridge.cc
+    src/emulators/processor/MOS6532/MOS6532.cc
+)
+
+target_link_libraries(atari2600
+    PUBLIC
+        emulator_options
+        SDL2::SDL2
+        SDL2_ttf::SDL2_ttf
+)
+
+# ============================================================
+# Game Boy
+# ============================================================
+
+add_library(gameboy STATIC
+    src/emulators/console/game_boy/GameBoy.cc
+    src/emulators/cpu/LR35902/LR35902.cc
+    src/emulators/cpu/LR35902/instructionSet.cc
+    src/emulators/cpu/LR35902/prefixInstructionSet.cc
+    src/emulators/ppu/game_boy_ppu/GameBoyPPU.cc
+    src/emulators/bus/game_boy_bus/GameBoyBus.cc
+    src/emulators/timer/game_boy_timer/GameBoyTimer.cc
+    src/emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.cc
+    src/emulators/cartridge/game_boy_cartridge/GameBoyCartridge.cc
+    src/emulators/controller/game_boy_controller/GameBoyController.cc
+)
+
+target_link_libraries(gameboy
+    PUBLIC
+        emulator_options
+        SDL2::SDL2
+        SDL2_ttf::SDL2_ttf
+)
+
+# ============================================================
+# Main application
+# ============================================================
+
+add_executable(emulators-collection
+    src/main.cc
+    src/game/Game.cc
+    src/game_selector/GameSelector.cc
+    src/ui/UI.cc
 )
 
 target_link_libraries(emulators-collection
     PRIVATE
+        emulator_options
         SDL2::SDL2
         SDL2_ttf::SDL2_ttf
+        chip8
+        atari2600
+        gameboy
 )

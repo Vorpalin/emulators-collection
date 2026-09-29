@@ -1,47 +1,65 @@
 # Emulators Collection
 
-A collection of classic video game console and computer emulators written in **C++20**, all unified behind a single SDL-based interface.
+A collection of classic video game console and computer emulators written in **C++20**, unified behind a single SDL2-based application.
 
-The project is designed with a modular architecture so that different emulators can share common components such as game management, input handling, and the user interface.
+The project is designed around a modular architecture where each emulator implements a common `Emulator` interface while reusing dedicated hardware components such as CPUs, buses, PPUs, timers, controllers and cartridges.
 
 ## 🎮 Available Emulators
 
-| Emulator           | Status            | Description                                                                                                        |
-| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **CHIP-8**         | ✅ Available      | CHIP-8 interpreter                                                                                                 |
-| **Super-CHIP 48**  | ✅ Available      | Extended CHIP-8 interpreter with 128×64 display and additional instructions                                        |
-| **Atari 2600**     | ✅ Available      | Atari 2600 emulator (MOS 6507 CPU, MOS 6532 RIOT, TIA video)                                                       |
-| **Game Boy**       | 🚧 In development | Game Boy emulator (Sharp LR35902 CPU, PPU, timer, joypad, MBC1/MBC2/MBC3/MBC5 cartridges)                          |
+| Emulator          | Status            | Description                                                                        |
+| ----------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| **CHIP-8**        | ✅ Available       | CHIP-8 interpreter                                                                 |
+| **Super-CHIP 48** | ✅ Available       | Extended CHIP-8 interpreter with 128×64 display and additional instructions        |
+| **Atari 2600**    | ✅ Available       | Atari 2600 emulator with MOS 6507, MOS 6532 RIOT and TIA                           |
+| **Game Boy**      | 🚧 In development | Game Boy emulator with Sharp LR35902 CPU, PPU, timer, joypad and cartridge support |
 
 More emulators will be added over time.
 
 ## ✨ Features
 
-* Modular emulator architecture, with reusable building blocks (CPU, bus, PPU, cartridge, timer...)
-* C++20 implementation, compiled with strict warnings (`-Wall -Wextra -Wold-style-cast -pedantic -Werror`)
+* Modular emulator architecture
+* Common `Emulator` interface for supported systems
+* Reusable hardware components:
+
+  * CPUs
+  * buses
+  * PPUs
+  * timers
+  * controllers
+  * cartridges
+* C++20 implementation
+* Strict compiler warnings with `-Werror`
 * Docker-based development and execution
 * Game/ROM selection system
-* SDL2-based graphical interface (`SDL2_ttf` for text rendering)
-* Audio output through PulseAudio (in the Docker setup)
+* SDL2-based graphical interface
+* SDL2_ttf text rendering
+* Audio support for systems that provide audio hardware
 * Support for multiple emulators within the same application
-* Designed to be easily extended with new systems
-* API documentation generated with Doxygen
+* Doxygen API documentation
 * Automated releases with semantic-release
+* GitHub Actions CI with pre-commit and Docker build checks
 
 ## 📋 Requirements
 
-### With Docker (recommended)
+### With Docker
+
+Docker is the recommended way to build and run the project.
+
+You need:
 
 * [Docker](https://www.docker.com/)
 * Linux or **WSL2 with WSLg** for graphical output
 * A compatible game/ROM collection
 
-### Without Docker (native build)
+### Without Docker
 
-* A C++20 compiler (GCC or Clang)
+For a native build, you need:
+
+* A C++20 compiler such as GCC or Clang
 * [CMake](https://cmake.org/) ≥ 3.20
-* [Ninja](https://ninja-build.org/) (optional, but used by the Dockerfile)
-* SDL2 and SDL2_ttf development packages
+* [Ninja](https://ninja-build.org/) (optional)
+* SDL2 development libraries
+* SDL2_ttf development libraries
 
 On Debian/Ubuntu:
 
@@ -51,32 +69,7 @@ sudo apt-get install build-essential cmake ninja-build libsdl2-dev libsdl2-ttf-d
 
 > **Note:** ROMs are not included in this repository. Only use ROMs that you legally own or have permission to use.
 
-## 🔄 Continuous Integration
-
-The project uses **GitHub Actions** to automatically verify changes.
-
-The CI pipeline runs on every push to the `main` branch and on pull requests targeting `main`.
-
-It performs the following checks:
-
-* **Pre-commit**
-
-  * C/C++ formatting with `clang-format`
-  * Static analysis with `cppcheck`
-  * General repository checks
-* **Build**
-
-  * Verifies that the project can be successfully built using the project's `Dockerfile`
-
-The workflow is defined in:
-
-```text
-.github/workflows/checks.yml
-```
-
-A successful CI run ensures that the code passes the configured checks and that the Docker image can be built successfully.
-
-## 🐳 Building
+## 🏗️ Building
 
 ### With Docker
 
@@ -86,11 +79,15 @@ Build the Docker image from the project root:
 docker build -t emulator-collection .
 ```
 
-You can replace `emulator-collection` with any image name you prefer.
+The image uses Ubuntu and builds the project with CMake.
 
-The image is based on Ubuntu and compiles the project with CMake and Ninja. The resulting binary is `build/emulators-collection`, which is the default command of the container.
+The resulting executable is:
 
-### Natively
+```text
+build/emulators-collection
+```
+
+### Native build
 
 ```bash
 cmake -S . -B build -G Ninja
@@ -98,7 +95,20 @@ cmake --build build
 ./build/emulators-collection
 ```
 
-> The build uses `-Werror`: any compiler warning fails the build.
+The project is compiled as C++20 with compiler extensions disabled and strict warnings enabled.
+
+The current build configuration includes:
+
+```text
+-O3
+-Wall
+-Wextra
+-Werror
+-pedantic
+-Wold-style-cast
+```
+
+Any compiler warning therefore causes the build to fail.
 
 ## 🎮 Adding Games
 
@@ -118,15 +128,17 @@ games/
 └── ...
 ```
 
-The exact supported formats depend on the emulator being used. The game selector lists the ROMs found in `games/` and launches the matching emulator.
+The game selector scans the `games` directory and creates a `Game` object for each ROM.
+
+The appropriate emulator is selected according to the ROM file type.
 
 ## ▶️ Running
 
 ### WSL2 + WSLg
 
-If you are running the project through **WSL2**, the application can use WSLg to display its graphical interface.
+When running through **WSL2**, the application can use WSLg for graphical output.
 
-Run:
+Run the Docker container with:
 
 ```bash
 docker run --rm -it \
@@ -142,204 +154,472 @@ docker run --rm -it \
   emulator-collection
 ```
 
-The `games` directory is mounted into the container so that ROMs added on the host are available to the emulator.
+The local `games` directory is mounted into the container at `/app/games`.
+
+This allows ROMs added on the host to be immediately available to the application.
 
 ### Native Linux
 
-If you built the project natively, run it from the project root so that it can find the `games` and `assets` directories:
+After a native build, run the application from the project root:
 
 ```bash
 ./build/emulators-collection
 ```
 
+The application expects the `games` and `assets` directories to be available from the current working directory.
+
 ## 🏗️ Project Structure
+
+The project is organized around the application, game management and emulator hardware layers:
 
 ```text
 emulators-collection/
 ├── .github/
-│   └── workflows/
-│       └── checks.yml                 # GitHub Actions CI
+│   └── workflows/                     # GitHub Actions CI
 ├── assets/
-│   └── fonts/                     # Fonts used by the UI (SDL2_ttf)
-├── scripts/                       # Helper scripts
+│   └── fonts/                         # UI fonts
+├── scripts/                           # Helper scripts
 ├── src/
-│   ├── main.cc                    # Application entry point
-│   ├── emulators/                 # Emulator implementations
-│   │   ├── console/               # Full systems: chip_8, Atari2600, GameBoy
-│   │   ├── CPU/                   # CPU cores: CPU65 (6502 family), LR35902 (Game Boy)
-│   │   ├── BUS/                   # Memory buses: Atari2600Bus, GameBoyBus
-│   │   ├── PPU/                   # Video chips: TIA1A (Atari), GameBoyPPU
-│   │   ├── Processor/             # Support chips: MOS6532 (RIOT)
-│   │   ├── Timer/                 # Timers: GameBoyTimer
-│   │   ├── Controller/            # Input controllers: GameBoyController
-│   │   └── Cartbridge/            # Cartridges and mappers: GameBoyCartbridge (MBC1/2/3/5)
-│   ├── emulator_schema/           # Common emulator interface
-│   ├── game/                      # Game/ROM representation
-│   ├── game_selector/             # Game selection and management
-│   └── UI/                        # Graphical user interface
-├── games/                         # Local ROM collection (not versioned)
-├── .clang-format                  # C/C++ formatting rules
-├── .pre-commit-config.yaml        # Pre-commit configuration
-├── .releaserc.json                # semantic-release configuration
+│   ├── main.cc                        # Application entry point
+│   │
+│   ├── ui/                            # SDL2 graphical interface
+│   │
+│   ├── game/                          # ROM/game representation
+│   │
+│   ├── game_selector/                 # ROM discovery and selection
+│   │
+│   └── emulators/
+│       ├── console/                   # Complete emulator systems
+│       │
+│       ├── cpu/                       # CPU implementations
+│       │
+│       ├── bus/                       # System memory buses
+│       │
+│       ├── ppu/                       # Video hardware
+│       │
+│       ├── processor/                 # Additional processors/chips
+│       │
+│       ├── timer/                     # Hardware timers
+|       |
+|       ├── audio/                     # Audio hardware
+│       │
+│       └── cartridge/                 # Cartridge and ROM handling
+│
+├── games/                             # Local ROM collection
+├── .clang-format                      # C/C++ formatting rules
+├── .pre-commit-config.yaml            # Pre-commit configuration
+├── .releaserc.json                    # semantic-release configuration
 ├── .dockerignore
 ├── .gitignore
-├── CMakeLists.txt                 # Build configuration
-├── Dockerfile                     # Docker build configuration
-├── Doxyfile                       # Doxygen configuration
-├── LICENSE                        # MIT license
+├── CMakeLists.txt                     # Build configuration
+├── Dockerfile                          # Docker build configuration
+├── Doxyfile                            # Doxygen configuration
+├── LICENSE                             # MIT license
 └── README.md
 ```
 
+The current CMake configuration reflects this organization, with separate source files for CPUs, buses, PPUs, timers, cartridges, consoles, game management and UI.
+
 ## 🧩 Architecture
 
-The project separates the emulator implementations from the rest of the application.
+The application is structured around a small number of clearly separated responsibilities.
 
 ```text
-                 ┌─────────────────┐
-                 │       UI        │
-                 └────────┬────────┘
-                          │
-                 ┌────────▼────────┐
-                 │ Game Selector   │
-                 └────────┬────────┘
-                          │
-                 ┌────────▼────────┐
-                 │    Emulator     │
-                 │    Interface    │
-                 └────────┬────────┘
-                          │
-            ┌─────────────┼─────────────┐
-            │             │             │
-       ┌────▼────┐   ┌────▼────┐   ┌────▼────┐
-       │ CHIP-8  │   │ Atari   │   │  Game   │
-       │         │   │  2600   │   │   Boy   │
-       └─────────┘   └─────────┘   └─────────┘
+                         ┌─────────────────┐
+                         │       UI        │
+                         │     SDL2        │
+                         └────────┬────────┘
+                                  │
+                                  ▼
+                         ┌─────────────────┐
+                         │  GameSelector   │
+                         │ ROM discovery   │
+                         └────────┬────────┘
+                                  │
+                                  ▼
+                         ┌─────────────────┐
+                         │      Game       │
+                         │ ROM + Emulator  │
+                         └────────┬────────┘
+                                  │
+                                  ▼
+                         ┌─────────────────┐
+                         │    Emulator     │
+                         │   Interface     │
+                         └────────┬────────┘
+                                  │
+                    ┌─────────────┼─────────────┐
+                    │             │             │
+                    ▼             ▼             ▼
+                ┌────────┐   ┌─────────┐   ┌─────────┐
+                │ CHIP-8 │   │ Atari   │   │  Game   │
+                │        │   │  2600   │   │   Boy   │
+                └────────┘   └─────────┘   └─────────┘
 ```
 
-This makes it possible to add new emulators without having to redesign the entire application.
+The application entry point is intentionally small: `main.cc` creates the `UI` and starts its main loop.
 
-### Inside a console emulator
+### Game management
 
-Emulators that model real hardware are built from small, reusable components connected through a **bus**:
+`GameSelector` is responsible for discovering ROMs in the `games` directory, maintaining the current selection and launching the selected game.
 
 ```text
-                ┌──────────────┐
-                │   Console    │  (e.g. GameBoy: main loop, SDL input/render)
-                └──────┬───────┘
-                       │
-                ┌──────▼───────┐
-                │     Bus      │  memory map + component wiring + timing
-                └──────┬───────┘
-     ┌─────────┬───────┼────────┬───────────┬──────────┐
-┌────▼───┐ ┌───▼───┐ ┌─▼──┐ ┌───▼────┐ ┌────▼────┐ ┌───▼────┐
-│  CPU   │ │  PPU  │ │RAM │ │ Timer  │ │Joypad   │ │Cartridge│
-└────────┘ └───────┘ └────┘ └────────┘ └─────────┘ └────────┘
+UI
+ │
+ ▼
+GameSelector
+ │
+ ├── Game
+ ├── Game
+ └── Game
+      │
+      ▼
+   Emulator
 ```
 
-| Console      | CPU        | Video      | Other components                                   |
-| ------------ | ---------- | ---------- | -------------------------------------------------- |
-| **Atari 2600** | `CPU65`  | `TIA1A`    | `MOS6532` (RIOT: RAM, timer, I/O), `Atari2600Bus`  |
-| **Game Boy** | `LR35902`  | `GameBoyPPU` | `GameBoyBus`, `GameBoyTimer`, `GameBoyController`, `GameBoyCartbridge` |
+Each `Game` associates a ROM file with the emulator implementation required to execute it.
 
-The Game Boy bus maps ROM, VRAM, external RAM, WRAM, OAM, I/O registers and HRAM, and handles OAM DMA and interrupts.
+### Emulator interface
+
+All complete emulator systems implement the common `Emulator` interface.
+
+The interface provides the operations required by the application:
+
+```cpp
+class Emulator {
+public:
+    virtual ~Emulator() = default;
+
+    virtual void loadProgram(const std::string& filename) = 0;
+    virtual int run() = 0;
+    virtual void setRenderer(SDL_Renderer* renderer) = 0;
+};
+```
+
+This allows `Game` and `GameSelector` to interact with different systems without depending on their concrete implementation.
+
+### Inside a hardware emulator
+
+Console emulators are composed of smaller hardware components.
+
+For example, the Game Boy is organized around a system bus:
+
+```text
+                    ┌──────────────┐
+                    │   Game Boy   │
+                    │   Emulator   │
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │  GameBoyBus  │
+                    └──────┬───────┘
+                           │
+        ┌──────────┬───────┼────────┬───────────┐
+        │          │       │        │           │
+        ▼          ▼       ▼        ▼           ▼
+      CPU         PPU     Timer    Joypad    Cartridge
+   LR35902    GameBoyPPU
+```
+
+The same principle is used for the Atari 2600, where the system bus connects the CPU, cartridge, RIOT and TIA components.
+
+### Hardware components
+
+| System         | CPU       | Video        | Other components                                    |
+| -------------- | --------- | ------------ | --------------------------------------------------- |
+| **Atari 2600** | `CPU65`   | `TIA1A`      | `MOS6532`, cartridge, `Atari2600Bus`                |
+| **Game Boy**   | `LR35902` | `GameBoyPPU` | `GameBoyTimer`, controller, cartridge, `GameBoyBus` |
+
+The Game Boy implementation therefore keeps the CPU, video, memory mapping, timing, input and cartridge logic as separate components rather than putting the complete system into a single class.
 
 ## ➕ Adding a New Emulator
 
-1. Create the emulator class in `src/emulators/console/<name>/` by implementing the common interface found in `src/emulator_schema/`.
-2. Add any reusable hardware components (CPU, bus, PPU, ...) in the matching `src/emulators/<category>/` folder.
-3. Register the new `.cc` files and include directories in `CMakeLists.txt`.
-4. Register the emulator in the game selector so that it is associated with its ROM file extensions.
-5. Document new classes with Doxygen comments and add a row to the table at the top of this README.
+To add a new system:
+
+1. Create the console implementation under:
+
+   ```text
+   src/emulators/emulator/<name>/
+   ```
+
+2. Implement the common `Emulator` interface.
+
+3. Add the required hardware components under the appropriate directory:
+
+   ```text
+   src/emulators/audio/
+   src/emulators/cpu/
+   src/emulators/bus/
+   src/emulators/ppu/
+   src/emulators/timer/
+   src/emulators/cartridge/
+   src/emulators/processor/
+   src/emulators/controller/
+   src/emulators/interrupt_controller/
+   ```
+
+4. Add the corresponding source files to `CMakeLists.txt`.
+
+5. Connect the emulator to the game-selection system so its ROM format can be recognized.
+
+6. Add Doxygen documentation for new classes.
+
+7. Add the emulator to the table in this README.
 
 ## 📚 Documentation
 
-The source code is documented with [Doxygen](https://www.doxygen.nl/). The configuration is in the `Doxyfile` at the project root.
+The source code is documented with [Doxygen](https://www.doxygen.nl/).
+
+The configuration is stored in:
+
+```text
+Doxyfile
+```
+
+Install Doxygen and Graphviz:
+
+```bash
+sudo apt-get install doxygen graphviz
+```
 
 Generate the documentation with:
 
 ```bash
-sudo apt-get install doxygen graphviz   # graphviz is optional (diagrams)
 doxygen Doxyfile
 ```
 
-The generated HTML output can then be opened in your browser (see the `OUTPUT_DIRECTORY` setting in the `Doxyfile` for its location).
+The generated HTML documentation can then be opened in a browser.
 
-## 🛠️ Development
+## 🔄 Continuous Integration & Automation
 
-### Pre-commit
+The project uses **GitHub Actions** to automatically validate, secure and release the project.
 
-The project uses **pre-commit** to automatically check and format the code before commits.
+The workflows are located in:
 
-#### Installation
-
-Install `pre-commit` using `pip`:
-
-```bash
-pip install pre-commit
+```text
+.github/workflows/
+├── checks.yml
+├── security.yml
+└── release.yml
 ```
 
-Then, from the project root, install the Git hooks:
+### 🧪 CI — `checks.yml`
 
-```bash
-pre-commit install
-```
+The main CI workflow verifies that changes are correctly formatted, validated and build successfully.
 
-To manually run all checks on the entire repository:
+It runs on:
+
+* Pushes to `main`
+* Pull requests targeting `main`
+
+The workflow performs the following checks:
+
+* **Pre-commit**
+
+  * C/C++ formatting with `clang-format`
+  * Static analysis with `cppcheck`
+  * Other repository checks configured in `.pre-commit-config.yaml`
+* **Commit message**
+
+  * Validates commit messages with the `commit-msg` check
+  * Ensures commits follow the project's expected commit message format
+* **Build**
+
+  * Builds the project using the project's `Dockerfile`
+
+The same pre-commit checks can be run locally with:
 
 ```bash
 pre-commit run --all-files
 ```
 
-The pre-commit configuration is located in:
+Commit messages should follow the **Conventional Commits** format, for example:
+
+```text
+feat(gameboy): add MBC3 support
+fix(atari2600): correct TIA timing
+refactor: reorganize emulator architecture
+docs: update README
+```
+
+### 🔐 Security — `security.yml`
+
+The security workflow performs automated security checks on the repository.
+
+It includes the project's configured security analysis and dependency checks.
+
+This workflow helps detect:
+
+* Vulnerabilities in dependencies
+* Security issues in the source code
+* Problems introduced by dependency or workflow changes
+
+Security checks are kept separate from the normal CI pipeline so that code quality, build validation and security analysis remain independently visible.
+
+### 📦 Release — `release.yml`
+
+The release workflow automatically creates releases from the `main` branch.
+
+It uses **semantic-release** to:
+
+1. Analyse commit messages
+2. Determine the appropriate version
+3. Generate release notes
+4. Create the corresponding GitHub release
+
+This relies on **Conventional Commits**.
+
+Examples:
+
+```text
+feat(gameboy): add MBC5 cartridge support
+fix(gameboy): fix interrupt handling
+docs: update architecture documentation
+```
+
+### 🔗 Workflow overview
+
+```text
+                    ┌─────────────────────┐
+                    │   GitHub Events     │
+                    └──────────┬──────────┘
+                               │
+                ┌──────────────┼──────────────┐
+                │              │              │
+                ▼              ▼              ▼
+          ┌──────────┐   ┌───────────┐  ┌───────────┐
+          │checks.yml│   │security.yml│ │release.yml│
+          └────┬─────┘   └─────┬─────┘  └─────┬─────┘
+               │               │              │
+        ┌──────┼──────┐        │              │
+        ▼      ▼      ▼        ▼              ▼
+    Pre-commit Commit  Build  Security     Semantic
+              message         checks       release
+                                             │
+                                             ▼
+                                      GitHub Release
+```
+
+| Workflow       | Purpose                                           |
+| -------------- | ------------------------------------------------- |
+| `checks.yml`   | Code quality, commit-message validation and build |
+| `security.yml` | Security and dependency analysis                  |
+| `release.yml`  | Automated versioning and GitHub releases          |
+
+```
+```
+
+## 🛠️ Development
+
+### Pre-commit
+
+The project uses **pre-commit** to automatically check the code before commits.
+
+Install it with:
+
+```bash
+pip install pre-commit
+```
+
+Install the Git hooks:
+
+```bash
+pre-commit install
+```
+
+Run all checks manually:
+
+```bash
+pre-commit run --all-files
+```
+
+The configuration is located at:
 
 ```text
 .pre-commit-config.yaml
 ```
 
-The formatting rules for C/C++ are defined in:
+C/C++ formatting rules are defined in:
 
 ```text
 .clang-format
 ```
 
-### Code style and build flags
+### Code style
 
-* C++20, no compiler extensions (`CMAKE_CXX_EXTENSIONS OFF`)
-* Compiled with `-O3 -Wall -Wextra -Werror -pedantic -Wold-style-cast`: use `static_cast<>` instead of C-style casts
-* Format your code with `clang-format` (done automatically by pre-commit)
+The project follows these main rules:
 
-### Releases
+* C++20
+* Compiler extensions disabled
+* `-Wall`
+* `-Wextra`
+* `-Werror`
+* `-pedantic`
+* `-Wold-style-cast`
+* `clang-format` for formatting
+* `cppcheck` for static analysis
 
-Releases are automated with [semantic-release](https://semantic-release.gitbook.io/) (configured in `.releaserc.json`) on the `main` branch: commit messages are analysed to generate release notes and GitHub releases. Using [Conventional Commits](https://www.conventionalcommits.org/) is recommended:
+Use C++ casts such as:
+
+```cpp
+static_cast<int>(value)
+```
+
+instead of C-style casts.
+
+## 📦 Releases
+
+Releases are automated with [semantic-release](https://semantic-release.gitbook.io/).
+
+The configuration is located in:
+
+```text
+.releaserc.json
+```
+
+Conventional Commits are recommended:
 
 ```text
 feat(gameboy): add MBC3 real-time clock
 fix(atari2600): correct TIA sprite positioning
+refactor: reorganize emulator architecture
 docs: update README
 ```
 
-### Roadmap
-
-The project is primarily developed in **C++** and uses Docker to provide a reproducible build environment.
+## 🗺️ Roadmap
 
 Current development focuses on:
 
 * Improving emulator accuracy
-* Implementing additional CPU instructions
-* Implementing graphics and input systems
-* Completing the Game Boy emulator (PPU accuracy, audio, more mappers)
+* Implementing missing CPU instructions
+* Improving graphics and input systems
+* Completing the Game Boy emulator
+* Improving PPU accuracy
+* Improving cartridge and mapper support
 * Expanding ROM/game support
-* Improving the emulator abstraction
+* Improving the emulator architecture
 * Adding additional console and computer emulators
+* Improving testing and validation
 
 ## 🤝 Contributing
 
 Contributions are welcome.
 
 1. Fork the repository and create a feature branch.
-2. Make your changes, following the code style described above.
-3. Run `pre-commit run --all-files` and make sure the Docker build passes.
-4. Open a pull request targeting `main`.
+
+2. Make your changes while following the project architecture and coding style.
+
+3. Run:
+
+   ```bash
+   pre-commit run --all-files
+   ```
+
+4. Make sure the Docker build succeeds.
+
+5. Open a pull request targeting `main`.
+
+When adding hardware, prefer creating a dedicated reusable component rather than putting the implementation directly into a console class.
 
 ## 📄 License
 

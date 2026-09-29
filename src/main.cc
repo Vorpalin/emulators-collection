@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include "UI.hh"
+#include "ui/UI.hh"
 
 /**
  * @brief Program entry point.
