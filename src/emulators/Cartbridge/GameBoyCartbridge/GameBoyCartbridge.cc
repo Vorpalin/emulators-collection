@@ -122,7 +122,7 @@ void GameBoyCartbridge::detectMBC() {
 int GameBoyCartbridge::currentRomBank() const {
   switch (mbcType) {
     case MBCType::MBC1: {
-      int bank = mbc1RomBankLow;
+      int bank = mbc1RomBankLow | (mbc1BankHigh << 5);
       if ((bank & 0x1F) == 0) bank |= 1;  // bank 0/0x20/0x40/0x60 read as +1
       return bank % romBankCount;
     }

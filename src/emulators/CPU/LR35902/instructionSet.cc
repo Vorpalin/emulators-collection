@@ -412,7 +412,7 @@ void LR35902::inc_l() {
   // Update flags based on the result of the increment operation
   setFlagZ(L == 0);
   setFlagN(false);
-  setFlagH((oldL & 0x0F) == 0x00);
+  setFlagH((oldL & 0x0F) == 0x0F);
 }
 
 void LR35902::dec_l() {
