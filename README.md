@@ -212,9 +212,9 @@ emulators-collection/
 ├── .dockerignore
 ├── .gitignore
 ├── CMakeLists.txt                     # Build configuration
-├── Dockerfile                          # Docker build configuration
-├── Doxyfile                            # Doxygen configuration
-├── LICENSE                             # MIT license
+├── Dockerfile                         # Docker build configuration
+├── Doxyfile                           # Doxygen configuration
+├── LICENSE                            # MIT license
 └── README.md
 ```
 
