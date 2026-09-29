@@ -123,12 +123,12 @@ def parameter_descriptions(member: ET.Element) -> list[tuple[str, str]]:
 
     for parameter in detailed.findall(".//parameterlist[@kind='param']/parameteritem"):
         name = element_text(parameter.find("parameternamelist/parametername"))
-        description = element_text(
+        desc = element_text(
             parameter.find("parameterdescription")
         )
 
         if name:
-            result.append((name, description))
+            result.append((name, desc))
 
     return result
 
@@ -333,7 +333,7 @@ def write_compound(compound: ET.Element) -> Path | None:
         ]
 
         for enum in enums:
-            name = enum.get("name", "anonymous")
+            name = member_name(enum) or "anonymous"
             brief, detailed = description(enum)
 
             lines += [
@@ -348,10 +348,15 @@ def write_compound(compound: ET.Element) -> Path | None:
                 lines += [detailed, ""]
 
             for value in enum.findall("enumvalue"):
-                value_name = value.get("name")
+                value_name = element_text(value.find("name")) or value.get("name", "")
+                val_brief, val_detailed = description(value)
+                val_desc = val_brief or val_detailed
 
                 if value_name:
-                    lines.append(f"- `{value_name}`")
+                    if val_desc:
+                        lines.append(f"- `{value_name}`: {val_desc}")
+                    else:
+                        lines.append(f"- `{value_name}`")
 
             lines.append("")
 
@@ -363,7 +368,7 @@ def write_compound(compound: ET.Element) -> Path | None:
         ]
 
         for typedef in typedefs:
-            name = typedef.get("name", "unknown")
+            name = member_name(typedef) or typedef.get("name", "unknown")
             typedef_type = member_type(typedef)
             brief, detailed = description(typedef)
 
@@ -434,15 +439,6 @@ def main() -> None:
 
         root = tree.getroot()
 
-        # Doxygen XML files contain:
-        #
-        # <doxygen>
-        #     <compounddef kind="class">
-        #         ...
-        #     </compounddef>
-        # </doxygen>
-        #
-        # Therefore we must process compounddef, not the root.
         compounds = root.findall("compounddef")
 
         for compound in compounds:
