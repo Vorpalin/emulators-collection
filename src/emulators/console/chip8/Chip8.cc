@@ -18,7 +18,8 @@ uint8_t CHIP8_FONTSET[80] = {
     0xF0, 0x80, 0xF0, 0x90, 0xF0,  // 6
     0xF0, 0x10, 0x20, 0x40, 0x40,  // 7
     0xF0, 0x90, 0xF0, 0x90, 0xF0,  // 8
-    0xF0, 0x90, 0xF0, 0x10, 0xF0,  // A
+    0xF0, 0x90, 0xF0, 0x10, 0xF0,  // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90,  // A
     0xE0, 0x90, 0xE0, 0x90, 0xE0,  // B
     0xF0, 0x80, 0x80, 0x80, 0xF0,  // C
     0xE0, 0x90, 0x90, 0x90, 0xE0,  // D
@@ -546,11 +547,11 @@ void Chip8::executeOpcode(uint16_t opcode) {
           break;
         case 0x29:  // FX29: Set I to the location of the sprite for the
                     // character in VX
-          this->I = this->V[x] * 5;
+          this->I = (V[x] & 0xF) * 5;
           break;
         case 0x30:  // FX30: Set I to the location of the 10-byte font sprite
                     // for the character in VX
-          this->I = this->V[x] * 10;
+          this->I = 0x50 + (this->V[x] % 10) * 10;
           break;
         case 0x33:  // FX33: Store the binary-coded decimal representation of VX
           ram(this->I) = this->V[x] / 100;

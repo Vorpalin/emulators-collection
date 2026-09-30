@@ -17,8 +17,10 @@ WORKDIR /app
 
 COPY . .
 
-RUN cmake -S . -B build -G Ninja
-
-RUN cmake --build build
+ARG WARNINGS_AS_ERRORS=OFF
+RUN cmake -S . -B build -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DWARNINGS_AS_ERRORS=${WARNINGS_AS_ERRORS} \
+ && cmake --build build
 
 CMD ["./build/emulators-collection"]

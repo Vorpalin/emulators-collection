@@ -5,7 +5,11 @@ const int GB_HEIGHT = 144;
 
 GameBoy::GameBoy() : bus() {}
 
-GameBoy::~GameBoy() {}
+GameBoy::~GameBoy() {
+  if (texture) {
+    SDL_DestroyTexture(texture);
+  }
+}
 
 void GameBoy::loadProgram(const std::string& filename) {
   reset();

@@ -8,6 +8,14 @@ project(emulators-collection
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Default to a Release build; use -DCMAKE_BUILD_TYPE=Debug to debug.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors (enabled in CI)" OFF)
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
@@ -18,19 +26,13 @@ find_package(SDL2_ttf REQUIRED)
 
 add_library(emulator_options INTERFACE)
 
-target_compile_features(emulator_options
-    INTERFACE
-        cxx_std_20
-)
+# Optimization level comes from CMAKE_BUILD_TYPE (Release => -O3 -DNDEBUG).
+set(EMULATOR_WARNINGS -Wall -Wextra -pedantic -Wold-style-cast)
 
 target_compile_options(emulator_options
     INTERFACE
-        -O3
-        -Wall
-        -Wextra
-        -Werror
-        -pedantic
-        -Wold-style-cast
+        "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:${EMULATOR_WARNINGS}>"
+        "$<$<AND:$<BOOL:${WARNINGS_AS_ERRORS}>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-Werror>"
 )
 
 target_include_directories(emulator_options

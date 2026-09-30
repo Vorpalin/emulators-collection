@@ -16,21 +16,22 @@ Game::Game(const std::string& file, const std::string& dir)
   std::string extension = file.substr(lastindex + 1);
 
   if (extension == "ch8") {
-    emulator = std::unique_ptr<Chip8>(new Chip8());
+    emulatorFactory = []() { return std::make_unique<Chip8>(); };
   } else if (extension == "a26") {
-    emulator = std::unique_ptr<Atari2600>(new Atari2600());
+    emulatorFactory = []() { return std::make_unique<Atari2600>(); };
   } else if (extension == "gb") {
-    emulator = std::unique_ptr<GameBoy>(new GameBoy());
+    emulatorFactory = []() { return std::make_unique<GameBoy>(); };
   } else {
     std::cerr << "Unsupported file extension: " << extension << std::endl;
-    emulator = nullptr;
+    emulatorFactory = nullptr;
   }
 }
 
 std::string Game::getName() { return name; }
 
 int Game::loadGame(SDL_Renderer* renderer) {
-  if (emulator) {
+  if (emulatorFactory) {
+    auto emulator = emulatorFactory();
     emulator->setRenderer(renderer);
     emulator->loadProgram(this->path);
     int result = emulator->run();

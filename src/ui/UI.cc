@@ -17,7 +17,7 @@ UI::UI() : gameSelector("games") {
       SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
 
   this->running = true;
-  this->gameSelector = GameSelector("games");
+  // this->gameSelector = GameSelector("games");
 
   this->games = this->gameSelector.getGames();
 
