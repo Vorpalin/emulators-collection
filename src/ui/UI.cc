@@ -10,6 +10,10 @@
 UI::UI() : gameSelector("games") {
   SDL_Init(SDL_INIT_VIDEO);
 
+  if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+    std::cerr << "Audio init failed: " << SDL_GetError() << std::endl;
+  }
+
   this->window = SDL_CreateWindow("Emulator", SDL_WINDOWPOS_CENTERED,
                                   SDL_WINDOWPOS_CENTERED, 640, 480,
                                   SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
@@ -39,6 +43,7 @@ UI::~UI() {
   if (this->renderer) SDL_DestroyRenderer(this->renderer);
   if (this->window) SDL_DestroyWindow(this->window);
   SDL_Quit();
+  SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
 void UI::handleInput() {
