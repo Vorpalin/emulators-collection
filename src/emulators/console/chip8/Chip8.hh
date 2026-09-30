@@ -169,4 +169,6 @@ class Chip8 : public Console {
 
   bool highResolutionMode;  ///< True when SCHIP high-resolution (128x64) mode
                             ///< is active.
+  bool audioPaused;  ///< True when the audio device is paused to save CPU.
+  int silentTicks;   ///< Number of consecutive timer ticks with no sound.
 };

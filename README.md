@@ -274,7 +274,7 @@ GameSelector
  └── Game
       │
       ▼
-   Emulator
+   Console
 ```
 
 Each `Game` associates a ROM file with the emulator implementation required to execute it.

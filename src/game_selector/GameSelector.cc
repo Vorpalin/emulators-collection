@@ -14,10 +14,12 @@ GameSelector::GameSelector(std::string gamesDirectory) : selectedGameIndex(0) {
 }
 
 void GameSelector::nextGame() {
+  if (games.empty()) return;
   selectedGameIndex = (selectedGameIndex + 1) % games.size();
 }
 
 void GameSelector::previousGame() {
+  if (games.empty()) return;
   selectedGameIndex = (selectedGameIndex - 1 + games.size()) % games.size();
 }
 

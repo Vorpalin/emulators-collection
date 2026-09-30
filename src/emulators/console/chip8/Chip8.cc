@@ -18,7 +18,8 @@ uint8_t CHIP8_FONTSET[80] = {
     0xF0, 0x80, 0xF0, 0x90, 0xF0,  // 6
     0xF0, 0x10, 0x20, 0x40, 0x40,  // 7
     0xF0, 0x90, 0xF0, 0x90, 0xF0,  // 8
-    0xF0, 0x90, 0xF0, 0x10, 0xF0,  // A
+    0xF0, 0x90, 0xF0, 0x10, 0xF0,  // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90,  // A
     0xE0, 0x90, 0xE0, 0x90, 0xE0,  // B
     0xF0, 0x80, 0x80, 0x80, 0xF0,  // C
     0xE0, 0x90, 0x90, 0x90, 0xE0,  // D
@@ -99,10 +100,22 @@ void Chip8::initAudio() {
     SDL_QuitSubSystem(SDL_INIT_AUDIO);  // undo SDL_InitSubSystem above
     return;
   }
-  SDL_PauseAudioDevice(this->audioDevice, 0);  // tourne en permanence
+
+  SDL_PauseAudioDevice(this->audioDevice, 1);
+  this->audioPaused = true;
+  this->silentTicks = 0;
 }
 
-void Chip8::setBeep(bool on) { this->beepOn.store(on); }
+void Chip8::setBeep(bool on) {
+  this->beepOn.store(on);
+  if (on) {
+    this->silentTicks = 0;
+    if (this->audioDevice != 0 && this->audioPaused) {
+      SDL_PauseAudioDevice(this->audioDevice, 0);
+      this->audioPaused = false;
+    }
+  }
+}
 
 void Chip8::shutdownAudio() {
   if (this->audioDevice != 0) {
@@ -123,7 +136,13 @@ void Chip8::updateTimers() {
     --this->sound_timer;
   }
   bool minHold = std::chrono::steady_clock::now() < this->beepUntil;
-  this->setBeep(this->sound_timer > 0 || minHold);
+  const bool on = this->sound_timer > 0 || minHold;
+  this->setBeep(on);
+  if (!on && this->audioDevice != 0 && !this->audioPaused &&
+      ++this->silentTicks > 3) {
+    SDL_PauseAudioDevice(this->audioDevice, 1);
+    this->audioPaused = true;
+  }
 }
 
 void Chip8::loadProgram(const std::string& filename) {
@@ -155,7 +174,6 @@ void Chip8::loadProgram(const std::string& filename) {
     return;
   }
 
-  // get the size of the file and read it into memory starting at 0x200
   std::streamsize size = file.tellg();
   file.seekg(0, std::ios::beg);
 
@@ -546,11 +564,11 @@ void Chip8::executeOpcode(uint16_t opcode) {
           break;
         case 0x29:  // FX29: Set I to the location of the sprite for the
                     // character in VX
-          this->I = this->V[x] * 5;
+          this->I = (V[x] & 0xF) * 5;
           break;
         case 0x30:  // FX30: Set I to the location of the 10-byte font sprite
                     // for the character in VX
-          this->I = this->V[x] * 10;
+          this->I = 0x50 + (this->V[x] % 10) * 10;
           break;
         case 0x33:  // FX33: Store the binary-coded decimal representation of VX
           ram(this->I) = this->V[x] / 100;
@@ -619,7 +637,6 @@ int Chip8::run() {
     this->handleInput();
 
     if (!this->running) {
-      // En pause : on ne consomme pas de CPU et on fige la référence des timers
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
       lastTimerUpdate = clock::now();
       continue;
@@ -641,7 +658,6 @@ int Chip8::run() {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
-  // The audio thread uses `this`: stop it before the object can be destroyed.
   this->shutdownAudio();
   return this->returnValue;
 }

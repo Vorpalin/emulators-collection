@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -52,6 +53,7 @@ class Game {
   std::string name;  ///< Display name (file name without extension).
   std::string path;  ///< Full path to the ROM file on disk.
 
-  std::unique_ptr<Console>
-      emulator;  ///< Emulator instance used to run the game.
+  std::function<std::unique_ptr<Console>()>
+      emulatorFactory;  ///< Factory function to create the appropriate
+                        ///< emulator.
 };
