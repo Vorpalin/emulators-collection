@@ -3,12 +3,49 @@
 const int GB_WIDTH = 160;
 const int GB_HEIGHT = 144;
 
-GameBoy::GameBoy() : bus() {}
+GameBoy::GameBoy() : bus() { initAudio(); }
 
 GameBoy::~GameBoy() {
   if (texture) {
     SDL_DestroyTexture(texture);
   }
+  if (audioDevice) {
+    SDL_CloseAudioDevice(audioDevice);
+  }
+}
+
+void GameBoy::initAudio() {
+  if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
+    return;  // audio is optional, so we don't throw an error
+  }
+  SDL_AudioSpec desiredSpec;
+  SDL_zero(desiredSpec);
+  desiredSpec.freq = 44100;
+  desiredSpec.format = AUDIO_F32SYS;
+  desiredSpec.channels = 2;
+  desiredSpec.samples = 1024;
+  desiredSpec.callback = nullptr;  // we will use SDL_QueueAudio
+
+  SDL_AudioSpec obtainedSpec;
+  audioDevice = SDL_OpenAudioDevice(nullptr, 0, &desiredSpec, &obtainedSpec, 0);
+
+  if (audioDevice > 0) {
+    SDL_PauseAudioDevice(audioDevice, 0);  // start audio playback
+  }
+}
+
+void GameBoy::updateAudio() {
+  if (audioDevice == 0) {
+    return;  // audio is not initialized
+  }
+
+  if (SDL_GetQueuedAudioSize(audioDevice) > 4096 * sizeof(float)) {
+    return;  // too many samples queued, skip this update
+  }
+  float samples = bus.getSample();
+
+  // Queue the audio samples to the SDL audio device
+  SDL_QueueAudio(audioDevice, &samples, sizeof(float));
 }
 
 void GameBoy::loadProgram(const std::string& filename) {
@@ -93,6 +130,7 @@ int GameBoy::run() {
   while (isRunning) {
     handleInput();
     bus.tick();
+    updateAudio();
     if (bus.consumeFrameReady()) {
       renderFrame();
     }

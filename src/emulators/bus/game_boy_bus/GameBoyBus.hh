@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 
+#include "emulators/audio/APU/APU.hh"
 #include "emulators/bus/Bus.hh"
 #include "emulators/cartridge/game_boy_cartridge/GameBoyCartridge.hh"
 #include "emulators/controller/game_boy_controller/GameBoyController.hh"
@@ -92,6 +93,12 @@ class GameBoyBus : public Bus {
     return r;
   }
 
+  /**
+   * @brief Gets the current audio sample.
+   * @return The current audio sample.
+   */
+  float getSample();
+
   /// Interrupt controller (IF at 0xFF0F, IE at 0xFFFF). Public so that the
   /// CPU and peripherals can request/query interrupts.
   GameBoyInterruptController interrupts;
@@ -109,6 +116,7 @@ class GameBoyBus : public Bus {
   GameBoyPPU ppu;                    ///< Picture processing unit.
   std::array<uint8_t, 0x2000> wram;  ///< Work RAM (0xC000-0xDFFF).
   std::array<uint8_t, 0x7F> hram;    ///< High RAM (0xFF80-0xFFFE).
+  APU apu;                           ///< Audio processing unit.
 
   GameBoyTimer timer;        ///< DIV/TIMA/TMA/TAC timer.
   GameBoyController joypad;  ///< Joypad register (0xFF00).

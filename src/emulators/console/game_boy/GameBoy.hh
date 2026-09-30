@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SDL2/SDL.h>
+
 #include <array>
 #include <cstdint>
 
@@ -49,15 +51,16 @@ class GameBoy : public Console {
     this->renderer = renderer;
   }
 
-  /** @brief Gives access to the system bus (useful for debugging/tests). */
-  GameBoyBus& getBus() { return bus; }
-
  private:
   GameBoyBus bus;         ///< System bus, owner of all hardware components.
   bool isRunning = true;  ///< Main loop flag; set to false to quit.
 
   SDL_Renderer* renderer = nullptr;  ///< SDL renderer (not owned).
   SDL_Texture* texture = nullptr;    ///< Streaming texture holding the frame.
+
+  SDL_AudioDeviceID audioDevice = 0;  ///< SDL audio device (not owned).
+  void initAudio();                   ///< Initializes the SDL audio device.
+  void updateAudio();  ///< Updates the SDL audio buffer with new samples.
 
   /** @brief Polls SDL events and forwards key states to the joypad. */
   void handleInput();

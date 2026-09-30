@@ -25,8 +25,6 @@ void APU::reset() {
   nr51 = 0;
 }
 
-void APU::connectBus(std::shared_ptr<Bus> bus) { this->bus = bus; }
-
 void APU::tick(uint8_t cycles) {
   if (!audioEnabled) {
     return;

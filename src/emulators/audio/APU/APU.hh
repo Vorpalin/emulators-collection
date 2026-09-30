@@ -4,8 +4,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "emulators/bus/Bus.hh"
-
 struct Channel1 {
   bool enabled = false;
 
@@ -88,8 +86,6 @@ class APU {
   APU();
   ~APU();
 
-  void connectBus(std::shared_ptr<Bus> bus);
-
   void tick(uint8_t cycles);
 
   void reset();
@@ -100,7 +96,6 @@ class APU {
   float getSample();
 
  private:
-  std::shared_ptr<Bus> bus;
   bool audioEnabled = false;
 
   int frameStep = 0;

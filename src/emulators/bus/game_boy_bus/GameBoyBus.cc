@@ -42,7 +42,10 @@ void GameBoyBus::tick() {
   uint32_t cycles = cpu.execute();
   ppu.tick(cycles * 4);
   timer.tick(cycles * 4);
+  apu.tick(cycles * 4);
 }
+
+float GameBoyBus::getSample() { return apu.getSample(); }
 
 void GameBoyBus::write(uint16_t address, uint8_t value) {
   if (address < 0x8000) {
@@ -60,6 +63,8 @@ void GameBoyBus::write(uint16_t address, uint8_t value) {
     ppu.write(address, value);  // OAM
   } else if (address < 0xFF00) {
     // Unusable region; real hardware mostly ignores writes here.
+  } else if (address >= 0xFF10 && address < 0xFF40) {
+    apu.write(address, value);
   } else if (address < 0xFF80) {
     switch (address) {
       case 0xFF00:
@@ -109,6 +114,8 @@ uint8_t GameBoyBus::read(uint16_t address) {
     return ppu.read(address);  // OAM
   } else if (address < 0xFF00) {
     return 0xFF;  // unusable region
+  } else if (address >= 0xFF10 && address < 0xFF40) {
+    return apu.read(address);
   } else if (address < 0xFF80) {
     switch (address) {
       case 0xFF00:
