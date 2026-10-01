@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 
+#include "emulators/audio/APU/APU.hh"
 #include "emulators/bus/Bus.hh"
 #include "emulators/cartridge/game_boy_cartridge/GameBoyCartridge.hh"
 #include "emulators/controller/game_boy_controller/GameBoyController.hh"
@@ -33,7 +34,11 @@
  * | 0xC000-0xDFFF   | Work RAM                             |
  * | 0xE000-0xFDFF   | Echo of work RAM                     |
  * | 0xFE00-0xFE9F   | OAM (PPU)                            |
- * | 0xFF00-0xFF7F   | I/O registers                        |
+ * | 0xFEA0-0xFEFF   | Unusable                             |
+ * | 0xFF00-0xFF0F   | I/O registers                        |
+ * | 0xFF10-0xFF3F   | Audio registers                      |
+ * | 0xFF40-0xFF4B   | PPU registers                        |
+ * | 0xFF4C-0xFF7F   | Unused                               |
  * | 0xFF80-0xFFFE   | High RAM                             |
  * | 0xFFFF          | Interrupt Enable register            |
  */
@@ -73,6 +78,12 @@ class GameBoyBus : public Bus {
    */
   void tick() override;
 
+  /**
+   * @brief Executes one CPU instruction and advances PPU, timer and APU.
+   * @return Number of T-cycles (4.194304 MHz clock) the instruction took.
+   */
+  uint32_t step();
+
   /** @brief Gives access to the joypad, to feed it host input. */
   GameBoyController& getJoypad() { return joypad; }
 
@@ -92,6 +103,17 @@ class GameBoyBus : public Bus {
     return r;
   }
 
+  /**
+   * @brief Gets the current audio sample.
+   * @return The current audio sample.
+   */
+  float getSample();
+
+  /**
+   * @brief Gets the current stereo audio sample (left/right, each in [-1, 1]).
+   */
+  void getStereoSample(float& left, float& right);
+
   /// Interrupt controller (IF at 0xFF0F, IE at 0xFFFF). Public so that the
   /// CPU and peripherals can request/query interrupts.
   GameBoyInterruptController interrupts;
@@ -109,6 +131,7 @@ class GameBoyBus : public Bus {
   GameBoyPPU ppu;                    ///< Picture processing unit.
   std::array<uint8_t, 0x2000> wram;  ///< Work RAM (0xC000-0xDFFF).
   std::array<uint8_t, 0x7F> hram;    ///< High RAM (0xFF80-0xFFFE).
+  APU apu;                           ///< Audio processing unit.
 
   GameBoyTimer timer;        ///< DIV/TIMA/TMA/TAC timer.
   GameBoyController joypad;  ///< Joypad register (0xFF00).

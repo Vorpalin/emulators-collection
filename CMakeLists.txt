@@ -92,6 +92,7 @@ add_library(gameboy STATIC
     src/emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.cc
     src/emulators/cartridge/game_boy_cartridge/GameBoyCartridge.cc
     src/emulators/controller/game_boy_controller/GameBoyController.cc
+    src/emulators/audio/APU/APU.cc
 )
 
 target_link_libraries(gameboy

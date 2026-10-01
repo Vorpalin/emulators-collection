@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 #include "emulators/bus/game_boy_bus/GameBoyBus.hh"
 #include "emulators/console/Console.hh"
@@ -58,6 +59,15 @@ class GameBoy : public Console {
 
   SDL_Renderer* renderer = nullptr;  ///< SDL renderer (not owned).
   SDL_Texture* texture = nullptr;    ///< Streaming texture holding the frame.
+
+  SDL_AudioDeviceID audioDevice = 0;  ///< Output device (0 = no audio).
+  bool audioSubsystem = false;        ///< True if we hold an SDL audio ref.
+  int sampleRate = 44100;             ///< Rate actually granted by the device.
+
+  /** @brief Opens the audio device (once) and stores the granted rate. */
+  void openAudio();
+  /** @brief Closes the audio device and releases the SDL audio reference. */
+  void closeAudio();
 
   /** @brief Polls SDL events and forwards key states to the joypad. */
   void handleInput();

@@ -5,7 +5,7 @@ FROM ubuntu:${UBUNTU_VERSION} AS toolchain
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get update -y && apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
         ninja-build \
@@ -34,7 +34,7 @@ FROM ubuntu:${UBUNTU_VERSION} AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get update -y && apt-get install -y --no-install-recommends \
         libsdl2-2.0-0 \
         libsdl2-ttf-2.0-0 \
         libpulse0 \
