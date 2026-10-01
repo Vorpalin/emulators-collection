@@ -25,7 +25,7 @@ void APU::reset() {
   nr51 = 0;
 }
 
-void APU::tick(uint8_t cycles) {
+void APU::tick(uint32_t cycles) {
   if (!audioEnabled) {
     return;
   }
@@ -37,28 +37,28 @@ void APU::tick(uint8_t cycles) {
   }
 
   channel1.timer -= cycles;
-  if (channel1.timer <= 0) {
-    int freq = 2048 - ((channel1.nr13 | (channel1.nr14 & 0x07) << 8));
-    channel1.timer += (2048 - freq) * 4;
+  while (channel1.timer <= 0) {
+    int raw = channel1.nr13 | ((channel1.nr14 & 0x07) << 8);
+    channel1.timer += (2048 - raw) * 4;
     channel1.duty = (channel1.duty + 1) % 8;
   }
 
   channel2.timer -= cycles;
-  if (channel2.timer <= 0) {
-    int freq = 2048 - ((channel2.nr23 | (channel2.nr24 & 0x07) << 8));
-    channel2.timer += (2048 - freq) * 4;
+  while (channel2.timer <= 0) {
+    int raw = channel2.nr23 | ((channel2.nr24 & 0x07) << 8);
+    channel2.timer += (2048 - raw) * 4;
     channel2.duty = (channel2.duty + 1) % 8;
   }
 
   channel3.timer -= cycles;
-  if (channel3.timer <= 0) {
-    int freq = 2048 - ((channel3.nr33 | (channel3.nr34 & 0x07) << 8));
-    channel3.timer += (2048 - freq) * 2;
+  while (channel3.timer <= 0) {
+    int raw = channel3.nr33 | ((channel3.nr34 & 0x07) << 8);
+    channel3.timer += (2048 - raw) * 2;
     channel3.position = (channel3.position + 1) % 32;
   }
 
   channel4.timer -= cycles;
-  if (channel4.timer <= 0) {
+  while (channel4.timer <= 0) {
     const int divisors[8] = {8, 16, 32, 48, 64, 80, 96, 112};
     int divisor = divisors[channel4.nr43 & 0x07];
     int shift = (channel4.nr43 >> 4) & 0x07;
@@ -124,7 +124,7 @@ void APU::stepLength() {
 }
 
 void APU::stepVolumeEnvelope() {
-  auto updateEnvelope = [](int volume, int envelopeTimer, uint8_t nr,
+  auto updateEnvelope = [](int& volume, int& envelopeTimer, uint8_t nr,
                            bool& enabled) {
     if (!enabled) return;
 
@@ -191,7 +191,8 @@ int APU::calculateSweepFrequency() {
 }
 
 void APU::triggerChannel1() {
-  channel1.enabled = true;
+  channel1.enabled = (channel1.nr12 & 0xF8) != 0;  // DAC off -> stays silent
+  channel1.timer = (2048 - (channel1.nr13 | ((channel1.nr14 & 0x07) << 8))) * 4;
   if (channel1.length == 0) {
     channel1.length = 64;
   }
@@ -211,7 +212,8 @@ void APU::triggerChannel1() {
 }
 
 void APU::triggerChannel2() {
-  channel2.enabled = true;
+  channel2.enabled = (channel2.nr22 & 0xF8) != 0;
+  channel2.timer = (2048 - (channel2.nr23 | ((channel2.nr24 & 0x07) << 8))) * 4;
   if (channel2.length == 0) {
     channel2.length = 64;
   }
@@ -220,7 +222,8 @@ void APU::triggerChannel2() {
 }
 
 void APU::triggerChannel3() {
-  channel3.enabled = true;
+  channel3.enabled = (channel3.nr30 & 0x80) != 0;  // NR30 bit 7 = DAC power
+  channel3.timer = (2048 - (channel3.nr33 | ((channel3.nr34 & 0x07) << 8))) * 2;
   if (channel3.length == 0) {
     channel3.length = 256;
   }
@@ -228,7 +231,7 @@ void APU::triggerChannel3() {
 }
 
 void APU::triggerChannel4() {
-  channel4.enabled = true;
+  channel4.enabled = (channel4.nr42 & 0xF8) != 0;
   if (channel4.length == 0) {
     channel4.length = 64;
   }
@@ -290,6 +293,10 @@ uint8_t APU::read(uint16_t addr) {
 }
 
 void APU::write(uint16_t addr, uint8_t data) {
+  if (addr >= 0xFF30 && addr <= 0xFF3F) {
+    channel3.waveTable[addr - 0xFF30] = data;
+    return;
+  }
   switch (addr) {
     case 0xFF10:
       channel1.nr10 = data;
@@ -330,10 +337,11 @@ void APU::write(uint16_t addr, uint8_t data) {
 
     case 0xFF1A:
       channel3.nr30 = data;
-      channel3.length = 64 - (data & 0x3F);
+      if (!(data & 0x80)) channel3.enabled = false;  // DAC off
       break;
     case 0xFF1B:
       channel3.nr31 = data;
+      channel3.length = 256 - data;
       break;
     case 0xFF1C:
       channel3.nr32 = data;
@@ -373,7 +381,7 @@ void APU::write(uint16_t addr, uint8_t data) {
       break;
 
     case 0xFF26:
-      audioEnabled = (data & 0x80) != 0;
+      audioEnabled = (data & 0x80);
       if (!audioEnabled) {
         nr50 = 0x00;
         nr51 = 0x00;
@@ -382,9 +390,11 @@ void APU::write(uint16_t addr, uint8_t data) {
   }
 }
 
-float APU::getSample() {
+void APU::getStereoSample(float& left, float& right) {
+  left = 0.0f;
+  right = 0.0f;
   if (!audioEnabled) {
-    return 0.0f;
+    return;
   }
 
   float output1 = 0.0f;
@@ -398,7 +408,8 @@ float APU::getSample() {
     if (!dutyValue) {
       dutyValue = -1;  // Invert the duty value for silence
     }
-    output1 = dutyValue * channel1.volume / 15.0f;
+    output1 = static_cast<float>(dutyValue) *
+              static_cast<float>(channel1.volume) / 15.0f;
   }
 
   if (channel2.enabled) {
@@ -407,7 +418,8 @@ float APU::getSample() {
     if (!dutyValue) {
       dutyValue = -1;  // Invert the duty value for silence
     }
-    output2 = dutyValue * channel2.volume / 15.0f;
+    output2 = static_cast<float>(dutyValue) *
+              static_cast<float>(channel2.volume) / 15.0f;
   }
 
   if (channel3.enabled) {
@@ -416,21 +428,21 @@ float APU::getSample() {
         (channel3.position % 2 == 0) ? (sampleByte >> 4) : (sampleByte & 0x0F);
 
     int volumeCode = (channel3.nr32 >> 5) & 0x03;
-    if (volumeCode == 0) {
-      sampleValue = 0.0f;  // Mute
-    } else if (volumeCode == 2) {
+    if (volumeCode == 2) {
       sampleValue >>= 1;  // 50%
     } else if (volumeCode == 3) {
       sampleValue >>= 2;  // 25%
     }
 
-    output3 = (sampleValue / 7.5f) - 1.0f;  // Normalize to [-1, 1]
+    if (volumeCode != 0) {  // 0 = mute: output silence, not a -1.0 DC level
+      output3 = (static_cast<float>(sampleValue) / 7.5f) - 1.0f;  // [-1, 1]
+    }
   }
 
   if (channel4.enabled) {
     int lfsrBit = channel4.lfsr & 0x01;
     output4 = (lfsrBit == 0) ? 1.0f : -1.0f;  // Invert the LFSR output
-    output4 *= channel4.volume / 15.0f;
+    output4 *= static_cast<float>(channel4.volume) / 15.0f;
   }
 
   float leftOutput = 0.0f;
@@ -446,7 +458,15 @@ float APU::getSample() {
   if (nr51 & 0x04) rightOutput += output3;
   if (nr51 & 0x08) rightOutput += output4;
 
-  float leftVolume = (nr50 & 0x07) / 7.0f;
-  float rightVolume = ((nr50 >> 4) & 0x07) / 7.0f;
-  return (leftOutput * leftVolume + rightOutput * rightVolume) / 4.0f;
+  // NR50: bits 6-4 = left master volume, bits 2-0 = right (0 still means 1/8).
+  float leftVolume = static_cast<float>(((nr50 >> 4) & 0x07) + 1) / 8.0f;
+  float rightVolume = static_cast<float>((nr50 & 0x07) + 1) / 8.0f;
+  left = leftOutput * leftVolume / 4.0f;
+  right = rightOutput * rightVolume / 4.0f;
+}
+
+float APU::getSample() {
+  float l, r;
+  getStereoSample(l, r);
+  return (l + r) * 0.5f;
 }

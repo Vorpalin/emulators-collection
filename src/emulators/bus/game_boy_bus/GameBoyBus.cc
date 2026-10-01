@@ -25,6 +25,7 @@ void GameBoyBus::reset() {
   cpu.reset();
   cartridge.reset();
   ppu.reset();
+  apu.reset();
   timer.reset();
   joypad.reset();
   interrupts.reset();
@@ -35,17 +36,24 @@ void GameBoyBus::reset() {
   dmaActive = false;
 }
 
-void GameBoyBus::tick() {
-  // For now, we will just execute one instruction per tick.
-  // In a real implementation, we would need to handle timing and
-  // synchronization with other components like the GPU and APU.
-  uint32_t cycles = cpu.execute();
-  ppu.tick(cycles * 4);
-  timer.tick(cycles * 4);
-  apu.tick(cycles * 4);
+void GameBoyBus::tick() { step(); }
+
+uint32_t GameBoyBus::step() {
+  // One CPU instruction per step. `cycles` is in machine cycles (M-cycles);
+  // every other component runs on the 4.194304 MHz clock, hence `* 4`.
+  const uint32_t cycles = cpu.execute();
+  const uint32_t tCycles = cycles * 4;
+  ppu.tick(tCycles);
+  timer.tick(tCycles);
+  apu.tick(tCycles);
+  return tCycles;
 }
 
 float GameBoyBus::getSample() { return apu.getSample(); }
+
+void GameBoyBus::getStereoSample(float& left, float& right) {
+  apu.getStereoSample(left, right);
+}
 
 void GameBoyBus::write(uint16_t address, uint8_t value) {
   if (address < 0x8000) {

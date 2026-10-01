@@ -86,14 +86,14 @@ class APU {
   APU();
   ~APU();
 
-  void tick(uint8_t cycles);
+  void tick(uint32_t cycles);
 
   void reset();
-  void step(uint32_t cycles);
   void write(uint16_t addr, uint8_t data);
   uint8_t read(uint16_t addr);
 
-  float getSample();
+  float getSample();                                ///< mono mix
+  void getStereoSample(float& left, float& right);  ///< per-side mix
 
  private:
   bool audioEnabled = false;
@@ -114,7 +114,6 @@ class APU {
   uint8_t nr50 = 0;
   uint8_t nr51 = 0;
 
-  uint8_t getDutyOutput(int duty, int step);
   int calculateSweepFrequency();
   void triggerChannel1();
   void triggerChannel2();
