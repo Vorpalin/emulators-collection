@@ -35,10 +35,23 @@ void Atari2600Cartridge::loadROM(std::string &filename) {
   }
   std::streamsize size = file.tellg();
   file.seekg(0, std::ios::beg);
-  romData.resize(size);
-  if (!file.read(reinterpret_cast<char *>(romData.data()), size)) {
+  std::vector<uint8_t> buffer(static_cast<std::size_t>(size));
+  if (!file.read(reinterpret_cast<char *>(buffer.data()), size)) {
     std::cerr << "Error reading ROM: " << filename << '\n';
-    romData.clear();  // Clear the ROM data vector on error
     return;
   }
+  loadROM(buffer.data(), buffer.size());
+}
+
+bool Atari2600Cartridge::loadROM(const uint8_t *data, std::size_t size) {
+  if (data == nullptr || size == 0) {
+    std::cerr << "Empty ROM\n";
+    return false;
+  }
+  if (size > 8192) {
+    std::cerr << "Unsupported ROM size: " << size << " bytes\n";
+    return false;
+  }
+  romData.assign(data, data + size);
+  return true;
 }

@@ -1,16 +1,13 @@
 #include "emulators/console/atari2600/Atari2600.hh"
 
-#include <SDL2/SDL.h>
-
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
-#include <vector>
 
 namespace {
 
-// Approximate NTSC palette, generated via YIQ -> RGB.
+// Approximate NTSC palette, generated via YIQ -> RGB (0xAARRGGBB).
 std::array<uint32_t, 128> buildPalette() {
   std::array<uint32_t, 128> pal{};
   const double kPi = 3.14159265358979323846;
@@ -38,7 +35,7 @@ std::array<uint32_t, 128> buildPalette() {
     const uint32_t g = clamp(y - 0.272 * i - 0.647 * q);
     const uint32_t b = clamp(y - 1.106 * i + 1.703 * q);
 
-    pal[c] = 0xFF000000u | (r << 16) | (g << 8) | b;
+    pal[static_cast<std::size_t>(c)] = 0xFF000000u | (r << 16) | (g << 8) | b;
   }
   return pal;
 }
@@ -49,119 +46,101 @@ const std::array<uint32_t, 128> kPalette = buildPalette();
 
 Atari2600::Atari2600()
     : bus(),
-      renderer(nullptr),
-      frameTexture(nullptr),
       audio(),
-      isRunning(true) {
+      framebuffer_(static_cast<std::size_t>(TIA1A::kWidth) * TIA1A::kHeight *
+                   4),
+      mono_(),
+      audio_() {
+  audio_.reserve(4096);
   // Route TIA audio register writes to the sound generator
   bus.setAudioWriteHook(
       [this](uint16_t reg, uint8_t value) { audio.write(reg, value); });
+  this->convertFrame();
 }
 
-Atari2600::~Atari2600() {
-  if (frameTexture) SDL_DestroyTexture(frameTexture);
-}
-
-void Atari2600::loadProgram(const std::string& filename) {
-  bus.loadROM(const_cast<std::string&>(filename));
-  bus.reset();
-}
-
-void Atari2600::setRenderer(SDL_Renderer* renderer) {
-  this->renderer = renderer;
-}
-
-void Atari2600::renderFrame() {
-  if (!renderer) return;
-
-  if (!frameTexture) {
-    frameTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
-                                     SDL_TEXTUREACCESS_STREAMING, TIA1A::kWidth,
-                                     TIA1A::kHeight);
-    if (!frameTexture) return;
-
-    SDL_SetTextureScaleMode(frameTexture, SDL_ScaleModeNearest);
-    SDL_RenderSetLogicalSize(renderer, TIA1A::kWidth, TIA1A::kHeight);
-  }
-
-  std::vector<uint32_t> pixels(TIA1A::kWidth * TIA1A::kHeight);
-  const uint8_t* frame = bus.frame();
-  for (size_t i = 0; i < pixels.size(); ++i) {
-    pixels[i] = kPalette[(frame[i] >> 1) & 0x7F];
-  }
-
-  SDL_UpdateTexture(frameTexture, nullptr, pixels.data(),
-                    TIA1A::kWidth * static_cast<int>(sizeof(uint32_t)));
-  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-  SDL_RenderClear(renderer);
-  SDL_RenderCopy(renderer, frameTexture, nullptr, nullptr);
-  SDL_RenderPresent(renderer);
+bool Atari2600::loadProgram(const uint8_t* data, std::size_t size) {
+  if (!bus.loadROM(data, size)) return false;
+  this->reset();
+  return true;
 }
 
 void Atari2600::reset() {
   bus.reset();
-  audio.write(0x19, 0);  // silence both channels
-  audio.write(0x1A, 0);
-  isRunning = true;  // Set the running state to true after reset
+  audio.reset();  // silence both channels
+  sampleAcc_ = 0.0;
+  audio_.clear();
+  for (bool& k : keys_) k = false;
+  this->updateInput();
+  this->convertFrame();
 }
 
-int Atari2600::run() {
-  isRunning =
-      true;  // Ensure the running state is true at the start of the run loop
+void Atari2600::setAudioSampleRate(int hz) {
+  if (hz <= 0) return;
+  sampleRate_ = static_cast<double>(hz);
+  audio.setSampleRate(hz);
+}
 
-  audio.open();
+void Atari2600::setKey(int key, bool pressed) {
+  if (key < 0 || key >= static_cast<int>(sizeof(keys_))) return;
+  keys_[key] = pressed;
+  this->updateInput();
+}
 
-  // Pace emulation to the NTSC frame rate (~59.92 Hz). The sound is generated
-  // in real time, so running faster than that would speed up the audio too.
-  const Uint64 perfFreq = SDL_GetPerformanceFrequency();
-  const Uint64 framePeriod = static_cast<Uint64>(perfFreq / 59.92);
-  Uint64 nextFrame = SDL_GetPerformanceCounter();
+void Atari2600::updateInput() {
+  uint8_t swcha = 0xFF;  // 1 = not pressed
+  if (keys_[kRight]) swcha &= ~0x80;
+  if (keys_[kLeft]) swcha &= ~0x40;
+  if (keys_[kDown]) swcha &= ~0x20;
+  if (keys_[kUp]) swcha &= ~0x10;
 
-  while (isRunning) {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT ||
-          (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
-        isRunning = false;
-      }
+  uint8_t swchb = 0xFF;
+  if (keys_[kReset]) swchb &= ~0x01;   // Reset
+  if (keys_[kSelect]) swchb &= ~0x02;  // Select
 
-      const Uint8* keys = SDL_GetKeyboardState(nullptr);
+  bus.setInput(swcha, swchb, keys_[kFire], false);
+}
 
-      uint8_t swcha = 0xFF;  // 1 = not pressed
-      if (keys[SDL_SCANCODE_RIGHT]) swcha &= ~0x80;
-      if (keys[SDL_SCANCODE_LEFT]) swcha &= ~0x40;
-      if (keys[SDL_SCANCODE_DOWN]) swcha &= ~0x20;
-      if (keys[SDL_SCANCODE_UP]) swcha &= ~0x10;
-
-      uint8_t swchb = 0xFF;
-      if (keys[SDL_SCANCODE_F1]) swchb &= ~0x01;   // Reset
-      if (keys[SDL_SCANCODE_TAB]) swchb &= ~0x02;  // Select
-
-      const bool fire0 = keys[SDL_SCANCODE_SPACE] || keys[SDL_SCANCODE_Z];
-
-      bus.setInput(swcha, swchb, fire0, false);
-    }
-
-    for (int cycle = 0; cycle < 10000 && isRunning && !bus.frameReady();
-         ++cycle) {
-      bus.tick();
-    }
-
-    if (bus.frameReady()) {
-      renderFrame();
-      bus.clearFrameReady();
-      audio.update();
-
-      nextFrame += framePeriod;
-      const Uint64 now = SDL_GetPerformanceCounter();
-      if (nextFrame > now) {
-        SDL_Delay(static_cast<Uint32>((nextFrame - now) * 1000 / perfFreq));
-      } else {
-        nextFrame = now;  // fell behind: don't try to catch up in a burst
-      }
-    }
+void Atari2600::convertFrame() {
+  const uint8_t* frame = bus.frame();
+  const std::size_t pixels =
+      static_cast<std::size_t>(TIA1A::kWidth) * TIA1A::kHeight;
+  for (std::size_t i = 0; i < pixels; ++i) {
+    const uint32_t argb = kPalette[(frame[i] >> 1) & 0x7F];
+    uint8_t* out = &framebuffer_[i * 4];
+    out[0] = static_cast<uint8_t>((argb >> 16) & 0xFF);  // R
+    out[1] = static_cast<uint8_t>((argb >> 8) & 0xFF);   // G
+    out[2] = static_cast<uint8_t>(argb & 0xFF);          // B
+    out[3] = 255;                                        // A
   }
+}
 
-  audio.close();  // close while SDL is still initialised
-  return 0;
+void Atari2600::generateAudio() {
+  audio_.clear();
+
+  // One video frame lasts 1/59.92 s; carry the fractional part over.
+  sampleAcc_ += sampleRate_ / kFrameRate;
+  const int frames = static_cast<int>(sampleAcc_);
+  sampleAcc_ -= frames;
+  if (frames <= 0) return;
+
+  mono_.resize(static_cast<std::size_t>(frames));
+  audio.generate(mono_.data(), frames);
+
+  audio_.reserve(mono_.size() * 2);
+  for (const float s : mono_) {
+    audio_.push_back(s);  // left
+    audio_.push_back(s);  // right
+  }
+}
+
+void Atari2600::stepFrame() {
+  // Run until the TIA finishes a frame (VSYNC), with a safety cap so a ROM
+  // that never syncs cannot freeze the host.
+  for (int i = 0; i < kMaxTicksPerFrame && !bus.frameReady(); ++i) {
+    bus.tick();
+  }
+  if (bus.frameReady()) bus.clearFrameReady();
+
+  this->convertFrame();
+  this->generateAudio();
 }

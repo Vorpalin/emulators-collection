@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -34,6 +35,16 @@ class Atari2600Bus : public Bus {
    * @param filename Path to the ROM file to load.
    */
   void loadROM(std::string& filename) override;
+
+  /**
+   * @brief Load a cartridge ROM image from memory.
+   * @param data Pointer to the ROM bytes.
+   * @param size Number of bytes.
+   * @return false if the ROM is rejected by the cartridge.
+   */
+  bool loadROM(const uint8_t* data, std::size_t size) {
+    return cartridge.loadROM(data, size);
+  }
 
   /**
    * @brief Reset the CPU and all attached components to their power-up

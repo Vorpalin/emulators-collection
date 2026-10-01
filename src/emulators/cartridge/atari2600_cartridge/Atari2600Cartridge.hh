@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -26,6 +27,15 @@ class Atari2600Cartridge {
    * @param filename Path to the ROM file to load.
    */
   void loadROM(std::string &filename);
+
+  /**
+   * @brief Load a ROM image from memory (no file system needed).
+   * @param data Pointer to the ROM bytes.
+   * @param size Number of bytes (2K, 4K or 8K images are supported).
+   * @return false if the image is empty or larger than 8K (unsupported
+   *         bank-switching scheme); the previous ROM is then kept.
+   */
+  bool loadROM(const uint8_t *data, std::size_t size);
 
   /**
    * @brief Reset cartridge state (e.g. current bank) to its default.

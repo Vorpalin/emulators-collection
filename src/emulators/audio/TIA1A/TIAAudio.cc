@@ -1,52 +1,16 @@
 #include "emulators/audio/TIA1A/TIAAudio.hh"
 
-TIAAudio::TIAAudio() {
-  for (auto& r : regs_) r.store(0);
+void TIAAudio::reset() {
+  for (auto& r : regs_) r = 0;
+  ch_[0] = Channel{};
+  ch_[1] = Channel{};
+  clockAcc_ = 0.0;
+  xPrev_ = 0.0f;
+  yPrev_ = 0.0f;
 }
 
-bool TIAAudio::open(int freq, int bufferSamples) {
-  if (dev_ != 0) return true;
-  if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
-    std::cerr << "Audio init failed: " << SDL_GetError() << '\n';
-    return false;
-  }
-  audioInit_ = true;
-
-  SDL_AudioSpec want{}, have{};
-  want.freq = freq;
-  want.format = AUDIO_S16SYS;
-  want.channels = 1;
-  want.samples = static_cast<Uint16>(bufferSamples);
-  want.callback = &TIAAudio::callback;
-  want.userdata = this;
-
-  dev_ = SDL_OpenAudioDevice(nullptr, 0, &want, &have,
-                             SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
-  if (dev_ == 0) {
-    std::cerr << "Could not open audio device: " << SDL_GetError() << '\n';
-    close();  // undo SDL_InitSubSystem
-    return false;
-  }
-
-  sampleRate_ = have.freq;
-
-  // Start corked; the first non-zero AUDV write starts the stream.
-  SDL_PauseAudioDevice(dev_, 1);
-  paused_ = true;
-  return true;
-}
-
-void TIAAudio::close() {
-  if (dev_ != 0) {
-    SDL_PauseAudioDevice(dev_, 1);  // make sure the callback is idle
-    SDL_CloseAudioDevice(dev_);     // waits for the audio thread to exit
-    dev_ = 0;
-  }
-  paused_ = true;
-  if (audioInit_) {
-    if (SDL_WasInit(SDL_INIT_AUDIO)) SDL_QuitSubSystem(SDL_INIT_AUDIO);
-    audioInit_ = false;
-  }
+void TIAAudio::setSampleRate(int hz) {
+  if (hz > 0) sampleRate_ = static_cast<double>(hz);
 }
 
 void TIAAudio::write(uint16_t addr, uint8_t value) {
@@ -55,38 +19,15 @@ void TIAAudio::write(uint16_t addr, uint8_t value) {
 
   static constexpr uint8_t kMask[6] = {0x0F, 0x0F, 0x1F, 0x1F, 0x0F, 0x0F};
   const int i = addr - 0x15;
-  regs_[i].store(value & kMask[i], std::memory_order_relaxed);
-
-  // Wake the device as soon as something audible is requested.
-  if ((i == 4 || i == 5) && (value & 0x0F) && paused_ && dev_ != 0) {
-    SDL_PauseAudioDevice(dev_, 0);
-    paused_ = false;
-  }
-  if (i == 4 || i == 5) idleFrames_ = 0;
+  regs_[i] = static_cast<uint8_t>(value & kMask[i]);
 }
 
-void TIAAudio::update() {
-  if (dev_ == 0 || paused_) return;
-  const bool silent = (regs_[4].load(std::memory_order_relaxed) == 0) &&
-                      (regs_[5].load(std::memory_order_relaxed) == 0);
-  if (!silent) {
-    idleFrames_ = 0;
-    return;
-  }
-  if (++idleFrames_ > 30) {
-    SDL_PauseAudioDevice(dev_, 1);
-    paused_ = true;
-  }
-}
-
-void TIAAudio::setSampleRate(int hz) { sampleRate_ = hz; }
-
-void TIAAudio::generate(int16_t* out, int count) {
+void TIAAudio::generate(float* out, int count) {
   uint8_t audc[2], audf[2], audv[2];
   for (int c = 0; c < 2; ++c) {
-    audc[c] = regs_[0 + c].load(std::memory_order_relaxed);
-    audf[c] = regs_[2 + c].load(std::memory_order_relaxed);
-    audv[c] = regs_[4 + c].load(std::memory_order_relaxed);
+    audc[c] = regs_[0 + c];
+    audf[c] = regs_[2 + c];
+    audv[c] = regs_[4 + c];
   }
 
   const double step = kTiaAudioHz / sampleRate_;
@@ -107,7 +48,7 @@ void TIAAudio::generate(int16_t* out, int count) {
     const float y = x - xPrev_ + 0.995f * yPrev_;
     xPrev_ = x;
     yPrev_ = y;
-    out[i] = static_cast<int16_t>(y);
+    out[i] = y;
   }
 }
 
@@ -187,10 +128,4 @@ void TIAAudio::tick(Channel& ch, uint8_t audc, uint8_t audf) {
       }
       break;
   }
-}
-
-void TIAAudio::callback(void* userdata, Uint8* stream, int len) {
-  static_cast<TIAAudio*>(userdata)->generate(
-      reinterpret_cast<int16_t*>(stream),
-      len / static_cast<int>(sizeof(int16_t)));
 }

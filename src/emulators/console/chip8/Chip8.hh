@@ -1,174 +1,116 @@
 #pragma once
 
-#include <atomic>
-#include <chrono>
+#include <array>
+#include <cstddef>
 #include <cstdint>
-#include <string>
+#include <vector>
 
 #include "emulators/console/Console.hh"
 
-struct SDL_Renderer;
-struct SDL_Window;
-
 /**
  * @file Chip8.hh
- * @brief CHIP-8 interpreter/emulator, implementing the Console interface.
+ * @brief CHIP-8 / Super-CHIP interpreter, implementing the Console interface.
  */
 
 /**
  * @class Chip8
  * @brief Emulates a CHIP-8 system: 4K memory, 16 general registers, a
  *        64x32 (or 128x64 in high-resolution mode) monochrome display,
- *        a simple call stack, timers and a hex keypad, plus a square-wave
- *        beep via SDL audio.
+ *        a simple call stack, timers and a hex keypad.
+ *
+ * This class does not depend on SDL: video is exposed as an RGBA
+ * framebuffer, audio as float PCM samples, and input is received through
+ * setKey().
  */
 class Chip8 : public Console {
  public:
-  /**
-   * @brief Construct a Chip8 instance with memory, registers and the font
-   *        set initialized, ready to load a program.
-   */
+  /// Construct a Chip8 instance with an empty memory and the font loaded.
   Chip8();
 
-  /**
-   * @brief Run the emulator's main loop (input, timers, cycles, rendering)
-   *        until the program halts or the user quits.
-   * @return Implementation-defined exit code; by convention 1 signals the
-   *         whole application should quit.
-   */
-  int run() override;
+  ~Chip8() override = default;
 
-  /**
-   * @brief Load a CHIP-8 program/ROM into memory starting at 0x200.
-   * @param filename Path to the ROM file to load.
-   */
-  void loadProgram(const std::string& filename) override;
+  bool loadProgram(const uint8_t* data, std::size_t size) override;
+  void reset() override;
+  void stepFrame() override;
+  bool isHalted() const override { return halted; }
+  void setKey(int keyIndex, bool pressed) override;
 
-  /**
-   * @brief Provide the SDL renderer used to draw the display.
-   * @param renderer SDL renderer to draw to.
-   */
-  void setRenderer(SDL_Renderer* renderer) override;
+  int width() const override { return highResolutionMode ? 128 : 64; }
+  int height() const override { return highResolutionMode ? 64 : 32; }
+  const uint8_t* framebuffer() const override { return framebuffer_.data(); }
 
-  /**
-   * @brief Destroy the emulator, shutting down audio if it was initialized.
-   */
-  ~Chip8();
+  void setAudioSampleRate(int hz) override;
+  std::size_t audioFrameCount() const override { return audio_.size() / 2; }
+  const float* audioSamples() const override { return audio_.data(); }
 
  private:
-  /**
-   * @brief Poll SDL events and update key states / quit flags.
-   */
-  void handleInput();
+  /// CPU instructions executed per 60 Hz frame (~720 instructions/second).
+  static constexpr int kCyclesPerFrame = 12;
+  /// Minimum beep length, in frames (6 frames = 100 ms).
+  static constexpr int kBeepHoldFrames = 6;
+  static constexpr double kToneHz = 440.0;
+  static constexpr float kVolume = 0.09f;
+  static constexpr double kRampSeconds = 0.003;  ///< anti-click fade
 
-  /**
-   * @brief Clear all key-press states in the keypad array.
-   */
-  void clearKeyStates();
+  /// Reset registers, memory (font only), display and timers.
+  void resetState();
 
-  /**
-   * @brief Decrement the delay and sound timers, run at 60 Hz independently
-   *        of the CPU cycle rate.
-   */
+  /// Decrement the delay and sound timers (called once per frame, 60 Hz).
   void updateTimers();
 
-  /**
-   * @brief Render the current display buffer (gfx) to the screen.
-   */
-  void drawGraphics();
+  /// Convert the gfx buffer to the RGBA framebuffer.
+  void renderFramebuffer();
 
-  /**
-   * @brief Decode and execute a single fetched opcode.
-   * @param opcode The 16-bit CHIP-8 opcode to execute.
-   */
+  /// Synthesize this frame's audio samples into audio_.
+  void generateAudio();
+
+  /// Decode and execute a single fetched opcode.
   void executeOpcode(uint16_t opcode);
 
-  /**
-   * @brief Fetch, decode, and execute one instruction, advancing the
-   *        program counter as needed.
-   */
+  /// Fetch, decode, and execute one instruction.
   void cycle();
 
-  SDL_AudioDeviceID audioDevice =
-      0;  ///< SDL audio device handle for the beep tone (0 if not open).
-  double gain = 0.0;   ///< Current output gain for the beep waveform.
-  double phase = 0.0;  ///< Running phase of the beep square wave.
-  std::atomic<bool> beepOn{false};  ///< Whether the beep is currently sounding.
-
-  double sampleRate = 44100.0;  ///< Audio sample rate, in Hz.
-
   /**
-   * @brief Initialize SDL audio and open the device used for the beep tone.
-   */
-  void initAudio();
-
-  /**
-   * @brief Close the audio device and shut down SDL audio if this instance
-   *        initialized it.
-   */
-  void shutdownAudio();
-
-  /**
-   * @brief Turn the beep tone on or off.
-   * @param on True to start beeping, false to stop.
-   */
-  void setBeep(bool on);
-
-  /**
-   * @brief SDL audio callback: synthesizes the beep square wave.
-   * @param userdata Pointer to the owning Chip8 instance.
-   * @param stream   Destination buffer, as raw bytes.
-   * @param len      Length of @p stream, in bytes.
-   */
-  static void audioCallback(void* userdata, Uint8* stream, int len);
-
-  std::chrono::steady_clock::time_point
-      beepUntil{};  ///< Time point at which the beep should stop.
-
-  /**
-   * The CHIP-8 has 4K memory (4096 bytes).
-   *
-   * Memory map:
-   *  - 0x000-0x1FF: CHIP-8 interpreter (contains the font set in this
-   * emulator).
-   *  - 0x050-0x0A0: Built-in 4x5 pixel font set (0-F).
-   *  - 0x200-0xFFF: Program ROM and work RAM.
+   * CHIP-8 memory map:
+   *  - 0x000-0x1FF: interpreter area (font set stored here).
+   *  - 0x050-0x0A0: built-in font set.
+   *  - 0x200-0xFFF: program ROM and work RAM.
    */
   uint8_t memory[4096];
 
-  uint8_t V[16];  ///< 16 general-purpose 8-bit registers (V0 to VF).
+  uint8_t V[16];  ///< General-purpose registers (V0 to VF).
+  uint16_t I;     ///< Index register.
+  uint16_t pc;    ///< Program counter.
 
-  uint16_t I;  ///< Index register, used for memory addressing.
+  uint8_t gfx[128 * 64];  ///< Display buffer (128x64 for high-res mode).
+  uint8_t draw_flag;      ///< Set when the framebuffer must be regenerated.
 
-  uint16_t pc;  ///< Program counter.
+  uint8_t delay_timer;  ///< Delay timer, counts down at 60 Hz.
+  uint8_t sound_timer;  ///< Sound timer; beeps while non-zero.
 
-  uint8_t gfx[128 * 64];  ///< Display buffer (128x64 to support high-resolution
-                          ///< mode).
+  uint16_t stack[16];  ///< Call stack.
+  uint16_t sp;         ///< Stack pointer.
 
-  uint8_t draw_flag;  ///< Set when the display needs to be redrawn.
+  uint8_t key[16];  ///< Current state of the hex keypad (1 = pressed).
+  uint8_t rpl[16];  ///< RPL user flags (SCHIP persistent registers).
 
-  uint8_t delay_timer;  ///< General-purpose delay timer, counts down at 60 Hz.
-  uint8_t sound_timer;  ///< Sound timer; beeps while non-zero, counts down at
-                        ///< 60 Hz.
+  /// Last key pressed since the previous frame (-1 if none); used by FX0A.
+  int lastPressedKey = -1;
 
-  /// Call stack used to store return addresses for subroutine calls.
-  uint16_t stack[16];
+  bool halted;              ///< True when the program ended or crashed.
+  bool highResolutionMode;  ///< True when SCHIP 128x64 mode is active.
 
-  uint16_t sp;  ///< Stack pointer, indexes into stack[].
+  std::vector<uint8_t> rom_;  ///< Copy of the loaded ROM, used by reset().
 
-  uint8_t key[16];  ///< State of the 16-key hexadecimal keypad (0x0-0xF).
-  uint8_t rpl[16];  ///< RPL user flags (SCHIP persistent storage registers).
+  /// RGBA output, sized for the largest resolution.
+  std::array<uint8_t, 128 * 64 * 4> framebuffer_{};
 
-  SDL_Renderer* renderer;  ///< SDL renderer used for drawGraphics().
-
-  bool running;  ///< Whether the emulator's main loop should keep running.
-  bool quit;     ///< Set when the whole application should quit (e.g. window
-                 ///< closed).
-
-  int returnValue;  ///< Value returned by run() when the loop exits.
-
-  bool highResolutionMode;  ///< True when SCHIP high-resolution (128x64) mode
-                            ///< is active.
-  bool audioPaused;  ///< True when the audio device is paused to save CPU.
-  int silentTicks;   ///< Number of consecutive timer ticks with no sound.
+  // --- Audio state ---
+  double sampleRate_ = 48000.0;
+  double sampleAcc_ = 0.0;  ///< Fractional samples carried between frames.
+  double phase_ = 0.0;      ///< Phase of the square wave, in [0, 1).
+  float gain_ = 0.0f;       ///< Current fade gain, in [0, 1].
+  int beepHoldFrames_ = 0;  ///< Remaining frames of the minimum beep length.
+  bool beepOn_ = false;
+  std::vector<float> audio_;  ///< Interleaved stereo samples of last frame.
 };
