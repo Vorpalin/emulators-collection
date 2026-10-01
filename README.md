@@ -11,7 +11,7 @@ The project is designed around a modular architecture where each emulator implem
 | **CHIP-8**        | ✅ Available       | CHIP-8 interpreter                                                                 |
 | **Super-CHIP 48** | ✅ Available       | Extended CHIP-8 interpreter with 128×64 display and additional instructions        |
 | **Atari 2600**    | ✅ Available       | Atari 2600 emulator with MOS 6507, MOS 6532 RIOT and TIA                           |
-| **Game Boy**      | 🚧 In development | Game Boy emulator with Sharp LR35902 CPU, PPU, timer, joypad and cartridge support |
+| **Game Boy**      | ✅ Available       | Game Boy emulator with Sharp LR35902 CPU, PPU, timer, joypad and cartridge support |
 
 More emulators will be added over time.
 
