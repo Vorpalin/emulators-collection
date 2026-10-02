@@ -33,7 +33,7 @@ export default function LoginPage() {
     } else {
 
       if (!USERNAME_RE.test(username)) {
-        setError('Pseudo : 3 to 20 characters (letters, numbers, _).');
+        setError('Username : 3 to 20 characters (letters, numbers, _).');
         setBusy(false);
         return;
       }
@@ -41,13 +41,11 @@ export default function LoginPage() {
       const { data: free, error: rpcErr } = await supabase.rpc('is_username_available', {
         name: username,
       });
-
       if (rpcErr) {
         setError(rpcErr.message);
         setBusy(false);
         return;
       }
-
       if (!free) {
         setError('This username is already taken.');
         setBusy(false);
@@ -57,7 +55,11 @@ export default function LoginPage() {
       const { data, error: err } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { username } },
+        options: {
+          data: { username },
+
+          emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+        },
       });
       if (err) setError(err.message);
 
@@ -80,7 +82,7 @@ export default function LoginPage() {
             <Cpu className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-extrabold tracking-wider text-white">RETRO GAMING</h1>
+            <h1 className="font-extrabold tracking-wider text-white">RETRO ASSEMBLY</h1>
             <p className="text-xs text-slate-400">
               {mode === 'signin' ? 'Sign in' : 'Create an account'}
             </p>
@@ -94,7 +96,7 @@ export default function LoginPage() {
             minLength={3}
             maxLength={20}
             pattern="[A-Za-z0-9_]{3,20}"
-            title="3 to 20 characters : letters, numbers or _"
+            title="3 to 20 characters: letters, numbers, or _"
             autoComplete="username"
             placeholder="Username"
             value={username}
@@ -106,7 +108,7 @@ export default function LoginPage() {
           type="email"
           required
           autoComplete="email"
-          placeholder="E-mail"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={input}

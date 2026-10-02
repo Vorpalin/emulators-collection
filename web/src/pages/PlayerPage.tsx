@@ -11,7 +11,7 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { downloadRom } from '../hooks/useGames';
+import { fetchRom } from '../lib/fetchRom';
 import { useSettings } from '../hooks/useSettings';
 import { EmulatorSession } from '../emulator/session';
 import { SYSTEMS } from '../emulator/systems';
@@ -50,7 +50,7 @@ export default function PlayerPage() {
           .single();
         if (err) throw new Error(err.message);
         const g = data as Game;
-        const bytes = await downloadRom(g);
+        const bytes = await fetchRom(g.rom_url);
         if (cancelled) return;
         setGame(g);
         setRom(bytes);
@@ -138,14 +138,14 @@ export default function PlayerPage() {
     <div className="space-y-4">
       <Link to="/" className="inline-flex items-center space-x-1.5 text-sm text-slate-400 hover:text-cyan-400">
         <ArrowLeft className="w-4 h-4" />
-        <span>Library</span>
+        <span>Bibliothèque</span>
       </Link>
 
       <div
         ref={frameRef}
         className="relative bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col"
       >
-        {/* Title bar */}
+        {/* Barre de titre */}
         <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0">
             <span
@@ -162,7 +162,7 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* Screen */}
+        {/* Écran */}
         <div className="relative flex items-center justify-center p-4 bg-black min-h-[320px]">
           <div
             className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
@@ -196,14 +196,14 @@ export default function PlayerPage() {
                   className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition"
                 >
                   <Play className="w-5 h-5 fill-current" />
-                  <span>{status === 'loading' || settingsLoading ? 'Loading…' : 'START'}</span>
+                  <span>{status === 'loading' || settingsLoading ? 'Chargement…' : 'LANCER'}</span>
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Control bar */}
+        {/* Barre de contrôle */}
         <div className="bg-slate-900 border-t border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
             <button onClick={togglePause} disabled={!playing} className={bar} title={paused ? 'Reprendre' : 'Pause'}>

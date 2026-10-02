@@ -99,3 +99,64 @@ jobs:
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Check Supabase configuration
+        if: github.event_name == 'push'
+        env:
+          SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Définissez les variables VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY (Settings > Secrets and variables > Actions > Variables)."
+            exit 1
+          fi
+
+      - name: Build website
+        env:
+          VITE_BASE: ${{ vars.PAGES_BASE || format('/{0}/', github.event.repository.name) }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || 'placeholder' }}
+        run: |
+          docker run --name site-build \
+            -e VITE_BASE -e VITE_SUPABASE_URL -e VITE_SUPABASE_ANON_KEY \
+            emulator-collection:latest \
+            sh -c 'npm --prefix web run build && cp web/dist/index.html web/dist/404.html'
+          docker cp site-build:/src/web/dist ./site
+
+      - name: Verify website output
+        run: |
+          test -f site/index.html
+          test -f site/404.html
+          test -f site/wasm/emulators.js
+          test -f site/wasm/emulators.wasm
+          test -f site/emu-audio-worklet.js
+          du -sh site
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346

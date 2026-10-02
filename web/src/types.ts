@@ -1,13 +1,12 @@
 import type { SystemId } from './emulator/systems';
 
-/** Ligne de la table `games`. */
+/** Ligne de la table `games`. Aucune ROM n'est stockée : seulement son URL. */
 export interface Game {
   id: string;
   owner_id: string;
   title: string;
   system: SystemId;
-  rom_path: string;
-  size_bytes: number;
+  rom_url: string; // adresse externe (HTTPS), téléchargée par le navigateur
   created_at: string;
 }
 

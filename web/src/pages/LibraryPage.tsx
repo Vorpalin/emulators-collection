@@ -1,17 +1,17 @@
-import { useMemo, useRef, useState, type ChangeEvent } from 'react';
-import { AlertCircle, Search, Sparkles, Upload } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { AlertCircle, Plus, Search, Sparkles } from 'lucide-react';
+import AddGameForm from '../components/AddGameForm';
 import GameCard from '../components/GameCard';
 import { useGames } from '../hooks/useGames';
-import { ACCEPTED_EXTENSIONS, SYSTEM_LIST, type SystemId } from '../emulator/systems';
+import { SYSTEM_LIST, type SystemId } from '../emulator/systems';
 import type { Game } from '../types';
 
 export default function LibraryPage() {
-  const { games, loading, error, upload, remove } = useGames();
+  const { games, loading, error, add, remove } = useGames();
   const [filter, setFilter] = useState<SystemId | 'all'>('all');
   const [query, setQuery] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [adding, setAdding] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const filtered = useMemo(
     () =>
@@ -23,24 +23,9 @@ export default function LibraryPage() {
     [games, filter, query],
   );
 
-  const onFiles = async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = '';
-    if (files.length === 0) return;
-    setUploading(true);
-    setUploadError(null);
-    try {
-      for (const file of files) await upload(file);
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const onDelete = (game: Game) => {
     if (window.confirm(`Supprimer « ${game.title} » ?`)) {
-      remove(game).catch((err) => setUploadError(String(err)));
+      remove(game).catch((err) => setActionError(String(err)));
     }
   };
 
@@ -56,36 +41,29 @@ export default function LibraryPage() {
       <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-purple-950/40 p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <span>My games</span>
+            <span>My library</span>
             <Sparkles className="w-5 h-5 text-amber-400" />
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Add your ROMs (<span className="font-mono">{ACCEPTED_EXTENSIONS}</span>). They are
-            stored in your private space: only you can see them.
+            Add games to your library by providing the URL of a ROM hosted elsewhere. Only the URL is
+            stored in your account: no files are copied to this site.
           </p>
         </div>
         <button
-          onClick={() => fileInput.current?.click()}
-          disabled={uploading}
-          className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition flex items-center space-x-2 text-sm"
+          onClick={() => setAdding((v) => !v)}
+          className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition flex items-center space-x-2 text-sm"
         >
-          <Upload className="w-4 h-4" />
-          <span>{uploading ? 'Uploading…' : 'Add a ROM'}</span>
+          <Plus className="w-4 h-4" />
+          <span>Add game</span>
         </button>
-        <input
-          ref={fileInput}
-          type="file"
-          multiple
-          accept={ACCEPTED_EXTENSIONS}
-          className="hidden"
-          onChange={onFiles}
-        />
       </div>
 
-      {(error || uploadError) && (
+      {adding && <AddGameForm onSubmit={add} onCancel={() => setAdding(false)} />}
+
+      {(error || actionError) && (
         <div className="flex items-center space-x-2 bg-rose-500/10 border border-rose-500/40 text-rose-300 text-sm rounded-xl px-4 py-3">
           <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{uploadError ?? error}</span>
+          <span>{actionError ?? error}</span>
         </div>
       )}
 
@@ -117,11 +95,11 @@ export default function LibraryPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-slate-800 rounded-2xl">
           <p className="text-slate-300 font-semibold">
-            {games.length === 0 ? 'Your library is empty' : 'No games match your criteria'}
+            {games.length === 0 ? 'Your library is empty' : 'No games match your search.'}
           </p>
           <p className="text-slate-500 text-sm mt-1">
             {games.length === 0
-              ? 'Add a free ROM or one of your personal saves to get started.'
+              ? 'Add a free-to-use ROM or one of your personal save files to get started.'
               : 'Try a different filter or search term.'}
           </p>
         </div>
