@@ -31,36 +31,37 @@ export default function LoginPage() {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) setError(err.message);
     } else {
-      // 1) Pseudo valide ? (mêmes règles que la contrainte SQL)
+
       if (!USERNAME_RE.test(username)) {
-        setError('Pseudo : 3 à 20 caractères (lettres, chiffres, _).');
+        setError('Pseudo : 3 to 20 characters (letters, numbers, _).');
         setBusy(false);
         return;
       }
-      // 2) Pseudo libre ? (fonction SQL is_username_available)
+
       const { data: free, error: rpcErr } = await supabase.rpc('is_username_available', {
         name: username,
       });
+
       if (rpcErr) {
         setError(rpcErr.message);
         setBusy(false);
         return;
       }
+
       if (!free) {
-        setError('Ce pseudo est déjà pris.');
+        setError('This username is already taken.');
         setBusy(false);
         return;
       }
-      // 3) Création du compte : le trigger SQL crée la ligne `profiles`
-      //    à partir de options.data.username.
+
       const { data, error: err } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { username } },
       });
       if (err) setError(err.message);
-      // Sans session retournée, Supabase attend la confirmation par e-mail.
-      else if (!data.session) setInfo('Compte créé : vérifiez votre boîte mail pour confirmer.');
+
+      else if (!data.session) setInfo('Account created: check your email to confirm.');
     }
     setBusy(false);
   };
@@ -79,9 +80,9 @@ export default function LoginPage() {
             <Cpu className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-extrabold tracking-wider text-white">RETRO ASSEMBLY</h1>
+            <h1 className="font-extrabold tracking-wider text-white">RETRO GAMING</h1>
             <p className="text-xs text-slate-400">
-              {mode === 'signin' ? 'Connexion' : 'Créer un compte'}
+              {mode === 'signin' ? 'Sign in' : 'Create an account'}
             </p>
           </div>
         </div>
@@ -93,9 +94,9 @@ export default function LoginPage() {
             minLength={3}
             maxLength={20}
             pattern="[A-Za-z0-9_]{3,20}"
-            title="3 à 20 caractères : lettres, chiffres ou _"
+            title="3 to 20 characters : letters, numbers or _"
             autoComplete="username"
-            placeholder="Pseudo"
+            placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className={input}
@@ -115,7 +116,7 @@ export default function LoginPage() {
           required
           minLength={6}
           autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-          placeholder="Mot de passe"
+          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={input}
@@ -129,7 +130,7 @@ export default function LoginPage() {
           disabled={busy}
           className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold py-2.5 rounded-xl transition"
         >
-          {busy ? '…' : mode === 'signin' ? 'Se connecter' : "S'inscrire"}
+          {busy ? '…' : mode === 'signin' ? 'Sign in' : "Sign up"}
         </button>
 
         <button
@@ -141,7 +142,7 @@ export default function LoginPage() {
           }}
           className="w-full text-xs text-slate-400 hover:text-cyan-400 transition"
         >
-          {mode === 'signin' ? "Pas de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
+          {mode === 'signin' ? "No account ? Sign up" : 'Already have an account ? Sign in'}
         </button>
       </form>
     </div>

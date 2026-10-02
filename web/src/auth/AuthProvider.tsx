@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 
 interface AuthState {
   user: User | null;
-  loading: boolean; // true tant que la session initiale n'est pas connue
+  loading: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setLoading(false);
     });
-    // Se met à jour à la connexion, la déconnexion et le refresh du token.
+
     const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
     return () => data.subscription.unsubscribe();
   }, []);
@@ -36,6 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth doit être utilisé dans <AuthProvider>');
+  if (!ctx) throw new Error('useAuth needs to be used within <AuthProvider>');
   return ctx;
 }

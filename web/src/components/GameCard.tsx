@@ -3,7 +3,6 @@ import { Play, Trash2 } from 'lucide-react';
 import { SYSTEMS, type SystemId } from '../emulator/systems';
 import type { Game } from '../types';
 
-/** Dégradé par console (pas de jaquettes : on ne les héberge pas). */
 const GRADIENTS: Record<SystemId, string> = {
   chip8: 'from-emerald-900/70 to-slate-950',
   atari2600: 'from-amber-900/70 to-slate-950',
@@ -36,7 +35,7 @@ export default function GameCard({ game, onDelete }: { game: Game; onDelete: (g:
             className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
           >
             <Play className="w-4 h-4 fill-current" />
-            <span>JOUER</span>
+            <span>PLAY</span>
           </Link>
         </div>
       </div>
@@ -45,12 +44,12 @@ export default function GameCard({ game, onDelete }: { game: Game; onDelete: (g:
         <div className="min-w-0">
           <h3 className="font-bold text-slate-100 text-sm truncate">{game.title}</h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Ajouté le {new Date(game.created_at).toLocaleDateString()}
+            Added on {new Date(game.created_at).toLocaleDateString()}
           </p>
         </div>
         <button
           onClick={() => onDelete(game)}
-          title="Supprimer"
+          title="Delete"
           className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition"
         >
           <Trash2 className="w-4 h-4" />

@@ -11,7 +11,6 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Tout ce qui suit nécessite d'être connecté */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route index element={<LibraryPage />} />

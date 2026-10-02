@@ -30,7 +30,7 @@ export default function PlayerPage() {
 
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [volume, setVolume] = useState<number | null>(null); // null = valeur des réglages
+  const [volume, setVolume] = useState<number | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -38,7 +38,6 @@ export default function PlayerPage() {
 
   const effectiveVolume = volume ?? settings.volume;
 
-  // 1) Récupère la fiche du jeu puis ses octets (bucket privé).
   useEffect(() => {
     let cancelled = false;
     setStatus('loading');
@@ -67,7 +66,6 @@ export default function PlayerPage() {
     };
   }, [gameId]);
 
-  // 2) Libère le cœur WASM et l'audio en quittant la page.
   useEffect(
     () => () => {
       sessionRef.current?.destroy();
@@ -76,7 +74,6 @@ export default function PlayerPage() {
     [],
   );
 
-  // Le démarrage doit venir d'un clic (politique d'autoplay audio).
   const start = async () => {
     if (!game || !rom || !canvasRef.current) return;
     const session = new EmulatorSession({
@@ -125,7 +122,7 @@ export default function PlayerPage() {
           <span>{error}</span>
         </div>
         <Link to="/" className="text-sm text-cyan-400 hover:underline">
-          ← Retour à la bibliothèque
+          ← Return to the library
         </Link>
       </div>
     );
@@ -141,14 +138,14 @@ export default function PlayerPage() {
     <div className="space-y-4">
       <Link to="/" className="inline-flex items-center space-x-1.5 text-sm text-slate-400 hover:text-cyan-400">
         <ArrowLeft className="w-4 h-4" />
-        <span>Bibliothèque</span>
+        <span>Library</span>
       </Link>
 
       <div
         ref={frameRef}
         className="relative bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col"
       >
-        {/* Barre de titre */}
+        {/* Title bar */}
         <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0">
             <span
@@ -165,7 +162,7 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* Écran */}
+        {/* Screen */}
         <div className="relative flex items-center justify-center p-4 bg-black min-h-[320px]">
           <div
             className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
@@ -199,14 +196,14 @@ export default function PlayerPage() {
                   className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition"
                 >
                   <Play className="w-5 h-5 fill-current" />
-                  <span>{status === 'loading' || settingsLoading ? 'Chargement…' : 'LANCER'}</span>
+                  <span>{status === 'loading' || settingsLoading ? 'Loading…' : 'START'}</span>
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Barre de contrôle */}
+        {/* Control bar */}
         <div className="bg-slate-900 border-t border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
             <button onClick={togglePause} disabled={!playing} className={bar} title={paused ? 'Reprendre' : 'Pause'}>

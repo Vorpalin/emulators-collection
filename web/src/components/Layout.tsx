@@ -10,7 +10,6 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
   }`;
 
-/** Coquille commune : header collant, navigation, zone de contenu, footer. */
 export default function Layout() {
   const { user, signOut } = useAuth();
   const { username } = useProfile();
@@ -25,20 +24,20 @@ export default function Layout() {
             </div>
             <div>
               <span className="font-extrabold text-lg tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500">
-                RETRO ASSEMBLY
+                RETRO GAMING
               </span>
-              <p className="text-xs text-slate-400">Émulateurs C++ / WebAssembly</p>
+              <p className="text-xs text-slate-400">Emulators C++ / WebAssembly</p>
             </div>
           </Link>
 
           <nav className="flex items-center space-x-1 bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/80">
             <NavLink to="/" end className={tabClass}>
               <FolderOpen className="w-4 h-4" />
-              <span>Bibliothèque</span>
+              <span>Library</span>
             </NavLink>
             <NavLink to="/controls" className={tabClass}>
               <Gamepad2 className="w-4 h-4" />
-              <span>Contrôles</span>
+              <span>Controls</span>
             </NavLink>
           </nav>
 
@@ -51,7 +50,7 @@ export default function Layout() {
               className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Déconnexion</span>
+              <span>Sign Out</span>
             </button>
           </div>
         </div>
@@ -62,7 +61,7 @@ export default function Layout() {
       </main>
 
       <footer className="border-t border-slate-800/80 bg-slate-900/50 py-4 px-6 text-center text-xs text-slate-500">
-        Retro Assembly • React, Tailwind, Supabase & WebAssembly
+        Retro Gaming • React, Tailwind, Supabase & WebAssembly
       </footer>
     </div>
   );

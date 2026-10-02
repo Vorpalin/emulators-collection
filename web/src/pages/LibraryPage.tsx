@@ -25,7 +25,7 @@ export default function LibraryPage() {
 
   const onFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    e.target.value = ''; // permet de re-sélectionner le même fichier
+    e.target.value = '';
     if (files.length === 0) return;
     setUploading(true);
     setUploadError(null);
@@ -56,12 +56,12 @@ export default function LibraryPage() {
       <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-purple-950/40 p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <span>Ma bibliothèque</span>
+            <span>My games</span>
             <Sparkles className="w-5 h-5 text-amber-400" />
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Ajoutez vos ROM (<span className="font-mono">{ACCEPTED_EXTENSIONS}</span>). Elles sont
-            stockées dans votre espace privé : vous seul pouvez les voir.
+            Add your ROMs (<span className="font-mono">{ACCEPTED_EXTENSIONS}</span>). They are
+            stored in your private space: only you can see them.
           </p>
         </div>
         <button
@@ -70,7 +70,7 @@ export default function LibraryPage() {
           className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition flex items-center space-x-2 text-sm"
         >
           <Upload className="w-4 h-4" />
-          <span>{uploading ? 'Envoi…' : 'Ajouter une ROM'}</span>
+          <span>{uploading ? 'Uploading…' : 'Add a ROM'}</span>
         </button>
         <input
           ref={fileInput}
@@ -92,7 +92,7 @@ export default function LibraryPage() {
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
         <div className="flex items-center space-x-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
           <button onClick={() => setFilter('all')} className={pill(filter === 'all')}>
-            Toutes
+            All
           </button>
           {SYSTEM_LIST.map((s) => (
             <button key={s.id} onClick={() => setFilter(s.id)} className={pill(filter === s.id)}>
@@ -104,7 +104,7 @@ export default function LibraryPage() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Rechercher…"
+            placeholder="Search…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
@@ -113,16 +113,16 @@ export default function LibraryPage() {
       </div>
 
       {loading ? (
-        <p className="text-center text-slate-500 text-sm font-mono py-12">Chargement…</p>
+        <p className="text-center text-slate-500 text-sm font-mono py-12">Loading…</p>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-slate-800 rounded-2xl">
           <p className="text-slate-300 font-semibold">
-            {games.length === 0 ? 'Votre bibliothèque est vide' : 'Aucun jeu ne correspond'}
+            {games.length === 0 ? 'Your library is empty' : 'No games match your criteria'}
           </p>
           <p className="text-slate-500 text-sm mt-1">
             {games.length === 0
-              ? 'Ajoutez une ROM libre de droits ou une de vos sauvegardes personnelles pour commencer.'
-              : 'Essayez un autre filtre ou une autre recherche.'}
+              ? 'Add a free ROM or one of your personal saves to get started.'
+              : 'Try a different filter or search term.'}
           </p>
         </div>
       ) : (
