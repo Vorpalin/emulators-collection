@@ -145,7 +145,7 @@ export default function PlayerPage() {
         ref={frameRef}
         className="relative bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col"
       >
-        {/* Barre de titre */}
+        {/* Title bar */}
         <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0">
             <span
@@ -162,7 +162,7 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* Écran */}
+        {/* Screen */}
         <div className="relative flex items-center justify-center p-4 bg-black min-h-[320px]">
           <div
             className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
@@ -203,7 +203,7 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* Barre de contrôle */}
+        {/* Control bar */}
         <div className="bg-slate-900 border-t border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
             <button onClick={togglePause} disabled={!playing} className={bar} title={paused ? 'Reprendre' : 'Pause'}>
@@ -257,7 +257,7 @@ export default function PlayerPage() {
       </div>
 
       <p className="text-xs text-slate-500">
-        Les touches se règlent dans l&apos;onglet « Contrôles ». Cliquez sur l&apos;écran si le clavier ne répond pas.
+        The keys are configured in the « Controls » tab. Click on the screen if the keyboard does not respond.
       </p>
     </div>
   );
