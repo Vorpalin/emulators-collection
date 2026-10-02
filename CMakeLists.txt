@@ -10,24 +10,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Default to a Release build; use -DCMAKE_BUILD_TYPE=Debug to debug.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
-
-option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors (enabled in CI)" OFF)
-
-find_package(SDL2 REQUIRED)
-find_package(SDL2_ttf REQUIRED)
 
 # ============================================================
 # Common options
 # ============================================================
 
+option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors (enabled in CI)" OFF)
+
 add_library(emulator_options INTERFACE)
 
-# Optimization level comes from CMAKE_BUILD_TYPE (Release => -O3 -DNDEBUG).
-set(EMULATOR_WARNINGS -Wall -Wextra -pedantic -Wold-style-cast)
+set(EMULATOR_WARNINGS
+    -Wall
+    -Wextra
+    -pedantic
+    -Wold-style-cast
+)
 
 target_compile_options(emulator_options
     INTERFACE
@@ -40,6 +40,7 @@ target_include_directories(emulator_options
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+
 # ============================================================
 # CHIP-8
 # ============================================================
@@ -51,8 +52,6 @@ add_library(chip8 STATIC
 target_link_libraries(chip8
     PUBLIC
         emulator_options
-        SDL2::SDL2
-        SDL2_ttf::SDL2_ttf
 )
 
 # ============================================================
@@ -73,8 +72,6 @@ add_library(atari2600 STATIC
 target_link_libraries(atari2600
     PUBLIC
         emulator_options
-        SDL2::SDL2
-        SDL2_ttf::SDL2_ttf
 )
 
 # ============================================================
@@ -98,27 +95,32 @@ add_library(gameboy STATIC
 target_link_libraries(gameboy
     PUBLIC
         emulator_options
-        SDL2::SDL2
-        SDL2_ttf::SDL2_ttf
 )
 
 # ============================================================
 # Main application
 # ============================================================
 
-add_executable(emulators-collection
-    src/main.cc
-    src/game/Game.cc
-    src/game_selector/GameSelector.cc
-    src/ui/UI.cc
-)
+if(EMSCRIPTEN)
 
-target_link_libraries(emulators-collection
-    PRIVATE
-        emulator_options
-        SDL2::SDL2
-        SDL2_ttf::SDL2_ttf
-        chip8
-        atari2600
-        gameboy
-)
+    add_executable(emulators
+        src/wasm/bindings.cc
+    )
+
+    target_link_libraries(emulators
+        PRIVATE
+            emulator_options
+            chip8
+            atari2600
+            gameboy
+    )
+
+    target_link_options(emulators
+        PRIVATE
+            --bind
+            -sMODULARIZE=1
+            -sEXPORT_ES6=1
+            -sALLOW_MEMORY_GROWTH=1
+        )
+
+endif()

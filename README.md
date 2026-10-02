@@ -141,18 +141,7 @@ When running through **WSL2**, the application can use WSLg for graphical output
 Run the Docker container with:
 
 ```bash
-docker run --rm -it \
-   --user "$(id -u):$(id -g)" \
-   -e DISPLAY=$DISPLAY \
-   -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
-   -e XDG_RUNTIME_DIR=/tmp/runtime \
-   -e PULSE_SERVER=unix:/tmp/runtime/pulse/native \
-   -e PULSE_LATENCY_MSEC=30 \
-   -e SDL_AUDIODRIVER=pulse \
-   -v /mnt/wslg/runtime-dir:/tmp/runtime \
-   -v /tmp/.X11-unix:/tmp/.X11-unix \
-   -v "$(pwd)/games:/app/games" \
-   emulator-collection
+docker run --rm -p 5173:5173 emulator-collection
 ```
 
 The local `games` directory is mounted into the container at `/app/games`.

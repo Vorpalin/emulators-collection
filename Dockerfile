@@ -1,54 +1,37 @@
-ARG UBUNTU_VERSION=24.04
+FROM emscripten/emsdk:6.0.10
 
-# ---- Toolchain ------------------------------------------------------------
-FROM ubuntu:${UBUNTU_VERSION} AS toolchain
+WORKDIR /src
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get update -y && apt-get install -y --no-install-recommends \
-        build-essential \
+# Tools needed by the project
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
         cmake \
         ninja-build \
-        libsdl2-dev \
-        libsdl2-ttf-dev \
-        libgtest-dev \
+        git \
     && rm -rf /var/lib/apt/lists/*
 
-# ---- Build -----------------------------------------------------------------
-FROM toolchain AS build
+# Copy the project
+COPY . .
 
-ARG BUILD_TYPE=Release
+# Install frontend dependencies
+WORKDIR /src/web
 
-WORKDIR /app
+RUN npm ci
 
-COPY CMakeLists.txt ./
-COPY src ./src
+WORKDIR /src
 
-RUN cmake -S . -B build -G Ninja \
-        -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+# Build the WebAssembly version
+RUN emcmake cmake \
+        -S . \
+        -B build-wasm \
+        -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build-wasm -j"$(nproc)" \
+    && mkdir -p web/public/wasm \
+    && cp build-wasm/emulators.js \
+       build-wasm/emulators.wasm \
+       web/public/wasm/
 
-RUN cmake --build build
+# Vite
+EXPOSE 5173
 
-# ---- Runtime (no compiler, no headers, no test binaries) -------------------
-FROM ubuntu:${UBUNTU_VERSION} AS runtime
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get update -y && apt-get install -y --no-install-recommends \
-        libsdl2-2.0-0 \
-        libsdl2-ttf-2.0-0 \
-        libpulse0 \
-        libgl1 \
-        libegl1 \
-        libgles2 \
-        libglx-mesa0 \
-        libegl-mesa0 \
-        libgl1-mesa-dri \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY assets ./assets
-COPY --from=build /app/build/emulators-collection ./emulators-collection
-
-CMD ["./emulators-collection"]
+CMD ["npm", "--prefix", "web", "run", "dev", "--", "--host", "0.0.0.0"]
