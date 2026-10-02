@@ -1,73 +1,80 @@
 # Emulators Collection
 
-A collection of classic video game console and computer emulators written in **C++20**, unified behind a single SDL2-based application.
+A collection of classic video game console and computer emulators written in **C++20**, running in the browser through **WebAssembly** with a **React/Vite** frontend.
 
-The project is designed around a modular architecture where each emulator implements a common `Emulator` interface while reusing dedicated hardware components such as CPUs, buses, PPUs, timers, controllers and cartridges.
+The project is designed around a modular architecture where each emulator implements a common `Emulator` interface while reusing dedicated hardware components such as CPUs, buses, PPUs, timers, controllers, audio hardware and cartridges.
+
+The C++ emulator cores remain independent from the web interface and are compiled to WebAssembly using **Emscripten**. The React frontend provides the browser-based user interface.
+
+---
 
 ## 🎮 Available Emulators
 
-| Emulator          | Status            | Description                                                                        |
-| ----------------- | ----------------- | ---------------------------------------------------------------------------------- |
-| **CHIP-8**        | ✅ Available       | CHIP-8 interpreter                                                                 |
-| **Super-CHIP 48** | ✅ Available       | Extended CHIP-8 interpreter with 128×64 display and additional instructions        |
-| **Atari 2600**    | ✅ Available       | Atari 2600 emulator with MOS 6507, MOS 6532 RIOT and TIA                           |
-| **Game Boy**      | ✅ Available       | Game Boy emulator with Sharp LR35902 CPU, PPU, timer, joypad and cartridge support |
+| Emulator | Status | Description |
+| --- | --- | --- |
+| **CHIP-8** | ✅ Available | CHIP-8 interpreter |
+| **Super-CHIP 48** | ✅ Available | Extended CHIP-8 interpreter with 128×64 display and additional instructions |
+| **Atari 2600** | ✅ Available | Atari 2600 emulator with MOS 6507, MOS 6532 RIOT and TIA |
+| **Game Boy** | ✅ Available | Game Boy emulator with Sharp LR35902 CPU, PPU, timer, joypad and cartridge support |
 
 More emulators will be added over time.
 
+---
+
 ## ✨ Features
 
-* Modular emulator architecture
-* Common `Emulator` interface for supported systems
-* Reusable hardware components:
+- Modular emulator architecture
+- Common `Emulator` interface for supported systems
+- Reusable hardware components:
+  - CPUs
+  - buses
+  - PPUs
+  - timers
+  - controllers
+  - audio hardware
+  - cartridges
+- C++20 implementation
+- Strict compiler warnings with `-Werror`
+- Web-based user interface
+- React + TypeScript frontend
+- Vite development environment
+- WebAssembly compilation with Emscripten
+- Browser-based video rendering
+- Browser-based audio output
+- Keyboard/controller input handling
+- Support for multiple emulators within the same web application
+- Docker-based WebAssembly and frontend build
+- Doxygen API documentation
+- Automated releases with semantic-release
+- GitHub Actions CI with pre-commit and Docker build checks
 
-  * CPUs
-  * buses
-  * PPUs
-  * timers
-  * controllers
-  * cartridges
-* C++20 implementation
-* Strict compiler warnings with `-Werror`
-* Docker-based development and execution
-* Game/ROM selection system
-* SDL2-based graphical interface
-* SDL2_ttf text rendering
-* Audio support for systems that provide audio hardware
-* Support for multiple emulators within the same application
-* Doxygen API documentation
-* Automated releases with semantic-release
-* GitHub Actions CI with pre-commit and Docker build checks
+---
 
 ## 📋 Requirements
 
-### With Docker
+### Docker
 
-Docker is the recommended way to build and run the project.
+Docker is the recommended way to build and run the web application.
 
 You need:
 
-* [Docker](https://www.docker.com/)
-* Linux or **WSL2 with WSLg** for graphical output
-* A compatible game/ROM collection
+- [Docker](https://www.docker.com/)
+- A modern web browser
 
-### Without Docker
+The Docker image contains the tools required to compile the C++ emulator cores to WebAssembly and run the Vite frontend.
 
-For a native build, you need:
+### Local development
 
-* A C++20 compiler such as GCC or Clang
-* [CMake](https://cmake.org/) ≥ 3.20
-* [Ninja](https://ninja-build.org/) (optional)
-* SDL2 development libraries
-* SDL2_ttf development libraries
+For WebAssembly development, you need:
 
-On Debian/Ubuntu:
+- A C++20 compiler
+- [CMake](https://cmake.org/) ≥ 3.20
+- [Ninja](https://ninja-build.org/) (recommended)
+- [Emscripten](https://emscripten.org/)
+- Node.js
+- npm
 
-```bash
-sudo apt-get install build-essential cmake ninja-build libsdl2-dev libsdl2-ttf-dev
-```
-
-> **Note:** ROMs are not included in this repository. Only use ROMs that you legally own or have permission to use.
+---
 
 ## 🏗️ Building
 
@@ -79,21 +86,61 @@ Build the Docker image from the project root:
 docker image build -t emulator-collection .
 ```
 
-The image uses Ubuntu and builds the project with CMake.
-
-The resulting executable is:
-
-```text
-build/emulators-collection
-```
-
-### Native build
+Run the web application:
 
 ```bash
-cmake -S . -B build -G Ninja
-cmake --build build
-./build/emulators-collection
+docker run --rm -p 5173:5173 emulator-collection
 ```
+
+The application is then available at:
+
+```text
+http://localhost:5173
+```
+
+The Docker image builds the C++ emulator cores to WebAssembly and starts the Vite development server.
+
+### WebAssembly build
+
+The WebAssembly build can also be performed locally.
+
+The build process uses Emscripten and CMake:
+
+```bash
+emcmake cmake \
+    -S . \
+    -B build-wasm \
+    -DCMAKE_BUILD_TYPE=Release
+
+cmake --build build-wasm
+```
+
+The generated WebAssembly files are copied to:
+
+```text
+web/public/wasm/
+```
+
+The web frontend can then load the generated WebAssembly module.
+
+### Frontend
+
+Install the frontend dependencies:
+
+```bash
+cd web
+npm ci
+```
+
+Start the Vite development server:
+
+```bash
+npm run dev
+```
+
+---
+
+## ⚙️ Build Configuration
 
 The project is compiled as C++20 with compiler extensions disabled and strict warnings enabled.
 
@@ -110,183 +157,147 @@ The current build configuration includes:
 
 Any compiler warning therefore causes the build to fail.
 
-## 🎮 Adding Games
+The WebAssembly build uses Emscripten to expose the emulator core to JavaScript through WebAssembly bindings.
 
-Create the `games` directory if it does not already exist:
+---
 
-```bash
-mkdir -p games
-```
+## 🌐 Web Application
 
-Then place your compatible ROMs inside it:
+The frontend is located in the `web/` directory and is implemented using:
 
-```text
-games/
-├── game1.ch8      # CHIP-8 / Super-CHIP
-├── game2.bin      # Atari 2600
-├── game3.gb       # Game Boy
-└── ...
-```
+- React
+- TypeScript
+- Vite
 
-The game selector scans the `games` directory and creates a `Game` object for each ROM.
+The frontend is responsible for:
 
-The appropriate emulator is selected according to the ROM file type.
+- Displaying the emulator interface
+- Loading emulator WebAssembly modules
+- Loading ROM data
+- Forwarding keyboard/controller input
+- Displaying the emulator framebuffer
+- Playing generated audio
+- Managing the current emulator session
 
-## ▶️ Running
+The emulator implementation itself remains in C++ and does not depend on React or browser-specific APIs.
 
-### WSL2 + WSLg
+### WebAssembly interface
 
-When running through **WSL2**, the application can use WSLg for graphical output.
+The C++ WebAssembly bindings expose the emulator through a small JavaScript-compatible interface.
 
-Run the Docker container with:
+The browser can:
 
-```bash
-docker run --rm -p 5173:5173 emulator-collection
-```
+- Load a ROM
+- Reset the emulator
+- Execute frames
+- Send input
+- Access the framebuffer
+- Access generated audio samples
+- Query the emulator dimensions
 
-The local `games` directory is mounted into the container at `/app/games`.
+This keeps the emulator core independent from the frontend while allowing it to run directly in the browser.
 
-This allows ROMs added on the host to be immediately available to the application.
-
-### Native Linux
-
-After a native build, run the application from the project root:
-
-```bash
-./build/emulators-collection
-```
-
-The application expects the `games` and `assets` directories to be available from the current working directory.
+---
 
 ## 🏗️ Project Structure
 
-The project is organized around the application, game management and emulator hardware layers:
+The project is organized around the C++ emulator cores, WebAssembly bindings and web frontend:
 
 ```text
 emulators-collection/
 ├── .github/
 │   └── workflows/                     # GitHub Actions CI
-├── assets/
-│   └── fonts/                         # UI fonts
-├── scripts/                           # Helper scripts
+├── scripts/                            # Helper and build scripts
 ├── src/
-│   ├── main.cc                        # Application entry point
-│   │
-│   ├── ui/                            # SDL2 graphical interface
-│   │
-│   ├── game/                          # ROM/game representation
-│   │
-│   ├── game_selector/                 # ROM discovery and selection
+│   ├── wasm/
+│   │   └── bindings.cc                 # WebAssembly bindings
 │   │
 │   └── emulators/
-│       ├── console/                   # Complete emulator systems
-│       │
-│       ├── cpu/                       # CPU implementations
-│       │
-│       ├── bus/                       # System memory buses
-│       │
-│       ├── ppu/                       # Video hardware
-│       │
-│       ├── processor/                 # Additional processors/chips
-│       │
-│       ├── timer/                     # Hardware timers
-|       |
-|       ├── audio/                     # Audio hardware
-│       │
-│       └── cartridge/                 # Cartridge and ROM handling
+│       ├── console/                    # Complete emulator systems
+│       ├── cpu/                        # CPU implementations
+│       ├── bus/                        # System memory buses
+│       ├── ppu/                        # Video hardware
+│       ├── processor/                  # Additional processors/chips
+│       ├── timer/                      # Hardware timers
+│       ├── audio/                      # Audio hardware
+│       ├── cartridge/                  # Cartridge and ROM handling
+│       └── controller/                 # Input/controller hardware
 │
-├── games/                             # Local ROM collection
-├── .clang-format                      # C/C++ formatting rules
-├── .pre-commit-config.yaml            # Pre-commit configuration
-├── .releaserc.json                    # semantic-release configuration
+├── web/
+│   ├── public/
+│   │   └── wasm/                       # Generated WebAssembly files
+│   ├── scripts/                        # Frontend/build scripts
+│   └── src/
+│       ├── emulator/                   # WASM loading and emulator sessions
+│       ├── pages/                      # Web pages
+│       ├── components/                 # React components
+│       └── ...
+│
+├── .clang-format                       # C/C++ formatting rules
+├── .pre-commit-config.yaml             # Pre-commit configuration
+├── .releaserc.json                     # semantic-release configuration
 ├── .dockerignore
 ├── .gitignore
-├── CMakeLists.txt                     # Build configuration
-├── Dockerfile                         # Docker build configuration
-├── Doxyfile                           # Doxygen configuration
-├── LICENSE                            # MIT license
+├── CMakeLists.txt                      # C++/WebAssembly build configuration
+├── Dockerfile                          # Web application Docker image
+├── Doxyfile                            # Doxygen configuration
+├── LICENSE                             # MIT license
 └── README.md
 ```
 
-The current CMake configuration reflects this organization, with separate source files for CPUs, buses, PPUs, timers, cartridges, consoles, game management and UI.
+The C++ emulator cores are kept separate from the web application. The `web/` directory contains only the browser-facing application and its WebAssembly integration.
+
+---
 
 ## 🧩 Architecture
 
-The application is structured around a small number of clearly separated responsibilities.
+The application is divided into three main layers:
 
 ```text
-                         ┌─────────────────┐
-                         │       UI        │
-                         │     SDL2        │
-                         └────────┬────────┘
-                                  │
-                                  ▼
-                         ┌─────────────────┐
-                         │  GameSelector   │
-                         │ ROM discovery   │
-                         └────────┬────────┘
-                                  │
-                                  ▼
-                         ┌─────────────────┐
-                         │      Game       │
-                         │ ROM + Emulator  │
-                         └────────┬────────┘
-                                  │
-                                  ▼
-                         ┌─────────────────┐
-                         │    Emulator     │
-                         │   Interface     │
-                         └────────┬────────┘
-                                  │
-                    ┌─────────────┼─────────────┐
-                    │             │             │
-                    ▼             ▼             ▼
-                ┌────────┐   ┌─────────┐   ┌─────────┐
-                │ CHIP-8 │   │ Atari   │   │  Game   │
-                │        │   │  2600   │   │   Boy   │
-                └────────┘   └─────────┘   └─────────┘
+                         ┌──────────────────────┐
+                         │      React/Vite      │
+                         │    Web Frontend      │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │    WASM Bindings     │
+                         │      Emscripten      │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │   Emulator Interface │
+                         └──────────┬───────────┘
+                                    │
+                  ┌─────────────────┼─────────────────┐
+                  │                 │                 │
+                  ▼                 ▼                 ▼
+             ┌─────────┐       ┌─────────┐       ┌─────────┐
+             │ CHIP-8  │       │ Atari   │       │  Game   │
+             │         │       │  2600   │       │   Boy   │
+             └─────────┘       └─────────┘       └─────────┘
 ```
 
-The application entry point is intentionally small: `main.cc` creates the `UI` and starts its main loop.
+The web frontend communicates with the C++ emulator through the WebAssembly bindings.
 
-### Game management
-
-`GameSelector` is responsible for discovering ROMs in the `games` directory, maintaining the current selection and launching the selected game.
-
-```text
-UI
- │
- ▼
-GameSelector
- │
- ├── Game
- ├── Game
- └── Game
-      │
-      ▼
-   Console
-```
-
-Each `Game` associates a ROM file with the emulator implementation required to execute it.
+The emulator implementations do not depend on React, Vite or browser APIs.
 
 ### Emulator interface
 
 All complete emulator systems implement the common `Emulator` interface.
 
-The interface provides the operations required by the application:
+The interface provides the operations required by the frontend through the WebAssembly bindings, including:
 
-```cpp
-class Emulator {
-public:
-    virtual ~Emulator() = default;
+- Loading a ROM
+- Resetting the emulator
+- Executing a frame
+- Handling input
+- Accessing the framebuffer
+- Accessing audio samples
+- Querying display dimensions
 
-    virtual void loadProgram(const std::string& filename) = 0;
-    virtual int run() = 0;
-    virtual void setRenderer(SDL_Renderer* renderer) = 0;
-};
-```
-
-This allows `Game` and `GameSelector` to interact with different systems without depending on their concrete implementation.
+This allows the web application to interact with different systems without depending on their concrete implementation.
 
 ### Inside a hardware emulator
 
@@ -304,23 +315,59 @@ For example, the Game Boy is organized around a system bus:
                     │  GameBoyBus  │
                     └──────┬───────┘
                            │
-        ┌──────────┬───────┼────────┬───────────┐
-        │          │       │        │           │
-        ▼          ▼       ▼        ▼           ▼
-      CPU         PPU     Timer    Joypad    Cartridge
-   LR35902    GameBoyPPU
+         ┌──────────┬──────┼───────┬───────────┐
+         │          │      │       │           │
+         ▼          ▼      ▼       ▼           ▼
+       CPU         PPU   Timer   Joypad    Cartridge
+     LR35902    GameBoyPPU
 ```
 
 The same principle is used for the Atari 2600, where the system bus connects the CPU, cartridge, RIOT and TIA components.
 
 ### Hardware components
 
-| System         | CPU       | Video        | Other components                                    |
-| -------------- | --------- | ------------ | --------------------------------------------------- |
-| **Atari 2600** | `CPU65`   | `TIA1A`      | `MOS6532`, cartridge, `Atari2600Bus`                |
-| **Game Boy**   | `LR35902` | `GameBoyPPU` | `GameBoyTimer`, controller, cartridge, `GameBoyBus` |
+| System | CPU | Video | Other components |
+| --- | --- | --- | --- |
+| **Atari 2600** | `CPU65` | `TIA1A` | `MOS6532`, cartridge, `Atari2600Bus` |
+| **Game Boy** | `LR35902` | `GameBoyPPU` | `GameBoyTimer`, joypad, cartridge, `GameBoyBus` |
 
-The Game Boy implementation therefore keeps the CPU, video, memory mapping, timing, input and cartridge logic as separate components rather than putting the complete system into a single class.
+The Game Boy implementation therefore keeps the CPU, video, memory mapping, timing, input, audio and cartridge logic as separate components rather than putting the complete system into a single class.
+
+---
+
+## 🎮 Emulator Sessions
+
+The frontend creates an emulator session around the WebAssembly emulator instance.
+
+Conceptually:
+
+```text
+React Page
+    │
+    ▼
+EmulatorSession
+    │
+    ├── Canvas
+    ├── Web Audio
+    ├── Keyboard Input
+    │
+    ▼
+WebAssembly Emulator
+    │
+    ▼
+C++ Emulator Core
+```
+
+The session is responsible for connecting browser APIs to the platform-independent emulator core.
+
+For example:
+
+- The C++ framebuffer is copied into a browser canvas.
+- C++ audio samples are forwarded to the Web Audio API.
+- Keyboard events are converted into emulator input.
+- The emulator executes frames through the WebAssembly module.
+
+---
 
 ## ➕ Adding a New Emulator
 
@@ -329,7 +376,7 @@ To add a new system:
 1. Create the console implementation under:
 
    ```text
-   src/emulators/emulator/<name>/
+   src/emulators/console/<name>/
    ```
 
 2. Implement the common `Emulator` interface.
@@ -348,13 +395,17 @@ To add a new system:
    src/emulators/interrupt_controller/
    ```
 
-4. Add the corresponding source files to `CMakeLists.txt`.
+4. Add the corresponding source files and target to `CMakeLists.txt`.
 
-5. Connect the emulator to the game-selection system so its ROM format can be recognized.
+5. Add the emulator to the WebAssembly bindings if required.
 
-6. Add Doxygen documentation for new classes.
+6. Add the corresponding system definition to the web frontend.
 
-7. Add the emulator to the table in this README.
+7. Add Doxygen documentation for new classes.
+
+8. Add the emulator to the table in this README.
+
+---
 
 ## 📚 Documentation
 
@@ -380,6 +431,8 @@ doxygen Doxyfile
 
 The generated HTML documentation can then be opened in a browser.
 
+---
+
 ## 🔄 Continuous Integration & Automation
 
 The project uses **GitHub Actions** to automatically validate, secure and release the project.
@@ -399,23 +452,20 @@ The main CI workflow verifies that changes are correctly formatted, validated an
 
 It runs on:
 
-* Pushes to `main`
-* Pull requests targeting `main`
+- Pushes to `main`
+- Pull requests targeting `main`
 
 The workflow performs the following checks:
 
-* **Pre-commit**
-
-  * C/C++ formatting with `clang-format`
-  * Static analysis with `cppcheck`
-  * Other repository checks configured in `.pre-commit-config.yaml`
-* **Commit message**
-
-  * Validates commit messages with the `commit-msg` check
-  * Ensures commits follow the project's expected commit message format
-* **Build**
-
-  * Builds the project using the project's `Dockerfile`
+- **Pre-commit**
+  - C/C++ formatting with `clang-format`
+  - Static analysis with `cppcheck`
+  - Other repository checks configured in `.pre-commit-config.yaml`
+- **Commit message**
+  - Validates commit messages with the `commit-msg` check
+  - Ensures commits follow the project's expected commit message format
+- **Build**
+  - Builds the WebAssembly/web application using the project's `Dockerfile`
 
 The same pre-commit checks can be run locally with:
 
@@ -440,9 +490,9 @@ It includes the project's configured security analysis and dependency checks.
 
 This workflow helps detect:
 
-* Vulnerabilities in dependencies
-* Security issues in the source code
-* Problems introduced by dependency or workflow changes
+- Vulnerabilities in dependencies
+- Security issues in the source code
+- Problems introduced by dependency or workflow changes
 
 Security checks are kept separate from the normal CI pipeline so that code quality, build validation and security analysis remain independently visible.
 
@@ -487,17 +537,16 @@ docs: update architecture documentation
               message         checks       release
                                              │
                                              ▼
-                                      GitHub Release
+                                       GitHub Release
 ```
 
-| Workflow       | Purpose                                           |
-| -------------- | ------------------------------------------------- |
-| `checks.yml`   | Code quality, commit-message validation and build |
-| `security.yml` | Security and dependency analysis                  |
-| `release.yml`  | Automated versioning and GitHub releases          |
+| Workflow | Purpose |
+| --- | --- |
+| `checks.yml` | Code quality, commit-message validation and WebAssembly/web build |
+| `security.yml` | Security and dependency analysis |
+| `release.yml` | Automated versioning and GitHub releases |
 
-```
-```
+---
 
 ## 🛠️ Development
 
@@ -539,15 +588,15 @@ C/C++ formatting rules are defined in:
 
 The project follows these main rules:
 
-* C++20
-* Compiler extensions disabled
-* `-Wall`
-* `-Wextra`
-* `-Werror`
-* `-pedantic`
-* `-Wold-style-cast`
-* `clang-format` for formatting
-* `cppcheck` for static analysis
+- C++20
+- Compiler extensions disabled
+- `-Wall`
+- `-Wextra`
+- `-Werror`
+- `-pedantic`
+- `-Wold-style-cast`
+- `clang-format` for formatting
+- `cppcheck` for static analysis
 
 Use C++ casts such as:
 
@@ -556,6 +605,8 @@ static_cast<int>(value)
 ```
 
 instead of C-style casts.
+
+---
 
 ## 📦 Releases
 
@@ -575,6 +626,8 @@ fix(atari2600): correct TIA sprite positioning
 refactor: reorganize emulator architecture
 docs: update README
 ```
+
+---
 
 ## 📄 License
 
