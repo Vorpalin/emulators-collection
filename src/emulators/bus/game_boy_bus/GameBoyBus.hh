@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -53,6 +54,16 @@ class GameBoyBus : public Bus {
    * @param filename Path to the ROM file.
    */
   void loadROM(std::string& filename) override;
+
+  /**
+   * @brief Load a ROM image from memory.
+   * @param data Pointer to the ROM bytes.
+   * @param size Number of bytes.
+   * @return false if the cartridge rejects the image.
+   */
+  bool loadROM(const uint8_t* data, std::size_t size) {
+    return cartridge.loadROM(data, size);
+  }
 
   /** @brief Resets all components to their power-on state. */
   void reset() override;

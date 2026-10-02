@@ -1,23 +1,26 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+import ProtectedRoute from './auth/ProtectedRoute';
+import Layout from './components/Layout';
+import LoginPage from './pages/LoginPage';
+import LibraryPage from './pages/LibraryPage';
+import PlayerPage from './pages/PlayerPage';
+import ControlsPage from './pages/ControlsPage';
 
-import "./App.css"
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-import Home from './pages/Home/Home';
-import Register from "./pages/Register/Register";
-import Login from "./pages/Login/Login";
-
-function App() {
+export default function App() {
   return (
-    <div className="App">
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Home />} />
-        </Routes>
-      </Router>
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* Tout ce qui suit nécessite d'être connecté */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          <Route index element={<LibraryPage />} />
+          <Route path="play/:gameId" element={<PlayerPage />} />
+          <Route path="controls" element={<ControlsPage />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
-
-export default App

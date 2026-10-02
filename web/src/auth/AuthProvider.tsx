@@ -1,0 +1,41 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { Session, User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+
+interface AuthState {
+  user: User | null;
+  loading: boolean; // true tant que la session initiale n'est pas connue
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthState | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setLoading(false);
+    });
+    // Se met à jour à la connexion, la déconnexion et le refresh du token.
+    const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  const value: AuthState = {
+    user: session?.user ?? null,
+    loading,
+    signOut: async () => {
+      await supabase.auth.signOut();
+    },
+  };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth doit être utilisé dans <AuthProvider>');
+  return ctx;
+}

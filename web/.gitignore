@@ -1,0 +1,6 @@
+node_modules
+dist
+.env
+.env.local
+# Sortie du build WebAssembly (générée par scripts/build-wasm.sh)
+public/wasm

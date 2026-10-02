@@ -295,12 +295,20 @@ void GameBoyCartridge::loadROM(std::string &filename) {
   }
   std::streamsize size = file.tellg();
   file.seekg(0, std::ios::beg);
-  romData.resize(size);
-  if (!file.read(reinterpret_cast<char *>(romData.data()), size)) {
+  std::vector<uint8_t> buffer(static_cast<std::size_t>(size));
+  if (!file.read(reinterpret_cast<char *>(buffer.data()), size)) {
     std::cerr << "Error reading ROM: " << filename << '\n';
-    romData.clear();
     return;
   }
+  loadROM(buffer.data(), buffer.size());
+}
 
+bool GameBoyCartridge::loadROM(const uint8_t *data, std::size_t size) {
+  if (data == nullptr || size < 0x150) {
+    std::cerr << "Invalid Game Boy ROM (" << size << " bytes)\n";
+    return false;
+  }
+  romData.assign(data, data + size);
   detectMBC();
+  return true;
 }
