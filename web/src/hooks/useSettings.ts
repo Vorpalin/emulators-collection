@@ -6,7 +6,6 @@ import type { Settings } from '../types';
 
 const DEFAULTS: Settings = { key_bindings: {}, crt_filter: true, volume: 80 };
 
-/** Réglages synchronisés avec Supabase (touches, volume, filtre CRT). */
 export function useSettings() {
   const { user } = useAuth();
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
@@ -29,7 +28,6 @@ export function useSettings() {
     };
   }, [user]);
 
-  /** Met à jour l'état local tout de suite, puis persiste (upsert). */
   const update = useCallback(
     async (patch: Partial<Settings>): Promise<void> => {
       if (!user) return;
@@ -41,7 +39,6 @@ export function useSettings() {
     [user],
   );
 
-  /** Touches effectives d'une console : valeurs par défaut + personnalisation. */
   const bindingsFor = useCallback(
     (system: SystemId): Record<string, string> => ({
       ...SYSTEMS[system].defaultBindings,
