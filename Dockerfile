@@ -26,10 +26,10 @@ RUN emcmake cmake \
         -B build-wasm \
         -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build-wasm -j"$(nproc)" \
-    && mkdir -p web/public/wasm \
+    && mkdir -p web/src/wasm \
     && cp build-wasm/emulators.js \
        build-wasm/emulators.wasm \
-       web/public/wasm/
+       web/src/wasm/
 
 # Vite
 EXPOSE 5173

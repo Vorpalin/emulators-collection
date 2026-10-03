@@ -23,15 +23,16 @@ let modulePromise: Promise<EmulatorModule> | null = null;
 
 export function loadEmulatorModule(): Promise<EmulatorModule> {
   if (!modulePromise) {
-    const url = `${import.meta.env.BASE_URL}wasm/emulators.js`;
-    modulePromise = import(/* @vite-ignore */ url)
+    modulePromise = import('../wasm/emulators.js')
       .then((m) => m.default() as Promise<EmulatorModule>)
       .catch((err) => {
         modulePromise = null;
         throw new Error(
-          `Impossible to load the WebAssembly module (${url}).`
+          'Impossible de charger le module WebAssembly.',
+          { cause: err }
         );
       });
   }
+
   return modulePromise;
 }
