@@ -66,6 +66,17 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install WebUI dependencies
+        working-directory: web
+        run: npm ci
+
       - name: Install pre-commit
         run: pip install pre-commit
 
