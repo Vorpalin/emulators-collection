@@ -161,7 +161,7 @@ export default function PlayerPage() {
               className={`w-2.5 h-2.5 rounded-full ${playing && !paused ? "bg-emerald-500 animate-pulse" : "bg-slate-600"}`}
             />
             <span className="font-bold text-sm text-slate-200 truncate">
-              {game?.title ?? "Chargement…"}
+              {game?.title ?? "Loading…"}
             </span>
             {system && (
               <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded font-mono">
@@ -210,8 +210,8 @@ export default function PlayerPage() {
                   <Play className="w-5 h-5 fill-current" />
                   <span>
                     {status === "loading" || settingsLoading
-                      ? "Chargement…"
-                      : "LANCER"}
+                      ? "Loading…"
+                      : "START"}
                   </span>
                 </button>
               </div>
