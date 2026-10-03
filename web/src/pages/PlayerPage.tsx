@@ -138,7 +138,7 @@ export default function PlayerPage() {
     <div className="space-y-4">
       <Link to="/" className="inline-flex items-center space-x-1.5 text-sm text-slate-400 hover:text-cyan-400">
         <ArrowLeft className="w-4 h-4" />
-        <span>Bibliothèque</span>
+        <span>Library</span>
       </Link>
 
       <div

@@ -40,10 +40,9 @@ export class EmulatorSession {
   private destroyed = false;
   private muted = false;
   private volume: number;
-  private queuedFrames = 0; // audio en attente dans le worklet (en frames)
-  private pressed = new Set<string>(); // KeyboardEvent.code actuellement enfoncés
+  private queuedFrames = 0;
+  private pressed = new Set<string>();
 
-  /** code clavier -> indice de touche du cœur */
   private keyMap = new Map<string, number>();
 
   constructor(private opts: SessionOptions) {
@@ -83,7 +82,7 @@ export class EmulatorSession {
     this.raf = requestAnimationFrame(this.loop);
   }
 
-  // ───────────── Contrôles ─────────────
+  // ───────────── Controls ─────────────
 
   pause(): void {
     this.paused = true;
@@ -130,7 +129,7 @@ export class EmulatorSession {
     this.emu?.delete();
   }
 
-  // ───────────── Boucle principale ─────────────
+  // ───────────── Main loop ─────────────
 
   private loop = (): void => {
     if (this.destroyed) return;
@@ -175,7 +174,7 @@ export class EmulatorSession {
     this.ctx2d.putImageData(this.image, 0, 0);
   }
 
-  // ───────────── Clavier ─────────────
+  // ───────────── Keyboard ─────────────
 
   private rebuildKeyMap(system: SystemDef, bindings: Record<string, string>): void {
     this.keyMap.clear();
@@ -188,7 +187,7 @@ export class EmulatorSession {
   private onKeyDown = (e: KeyboardEvent): void => {
     const key = this.keyMap.get(e.code);
     if (key === undefined) return;
-    e.preventDefault(); // évite le scroll (flèches/espace) et le focus (Tab)
+    e.preventDefault();
     if (e.repeat || this.paused) return;
     this.pressed.add(e.code);
     this.emu.setKey(key, true);
@@ -202,7 +201,6 @@ export class EmulatorSession {
     this.emu.setKey(key, false);
   };
 
-  /** Relâche toutes les touches (perte de focus, pause). */
   private releaseAll = (): void => {
     for (const code of this.pressed) {
       const key = this.keyMap.get(code);

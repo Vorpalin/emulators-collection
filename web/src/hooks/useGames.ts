@@ -15,10 +15,10 @@ export function validateRomUrl(raw: string): string | null {
   try {
     u = new URL(raw);
   } catch {
-    return 'URL invalide.';
+    return 'Invalid URL.';
   }
   const local = u.protocol === 'http:' && u.hostname === 'localhost';
-  if (u.protocol !== 'https:' && !local) return "L'URL doit commencer par https://";
+  if (u.protocol !== 'https:' && !local) return 'The URL must start with https://';
   return null;
 }
 
@@ -46,14 +46,25 @@ export function useGames() {
     void refresh();
   }, [refresh]);
 
-  /** Enregistre un jeu : seule l'URL est conservée (owner_id = auth.uid() par défaut). */
+  /** Enregistre un jeu : seule l'URL est conservée. */
   const add = useCallback(async (game: NewGame): Promise<void> => {
     const urlError = validateRomUrl(game.url);
     if (urlError) throw new Error(urlError);
 
+    // getUser() valide le jeton auprès de Supabase (getSession() ne fait que lire le cache
+    // local). Sans session valide, la requête partirait en "anon" et la politique RLS la
+    // refuserait avec un message peu clair.
+    const { data: auth, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !auth.user) throw new Error('Your session has expired. Please sign in again.');
+
     const { data, error: err } = await supabase
       .from('games')
-      .insert({ title: game.title, system: game.system, rom_url: game.url })
+      .insert({
+        owner_id: auth.user.id,
+        title: game.title,
+        system: game.system,
+        rom_url: game.url,
+      })
       .select()
       .single();
     if (err) throw new Error(err.message);

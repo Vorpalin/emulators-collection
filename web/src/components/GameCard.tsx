@@ -53,7 +53,7 @@ export default function GameCard({ game, onDelete }: { game: Game; onDelete: (g:
         </div>
         <button
           onClick={() => onDelete(game)}
-          title="Supprimer"
+          title="Delete"
           className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition"
         >
           <Trash2 className="w-4 h-4" />

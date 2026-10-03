@@ -1,29 +1,20 @@
-/** Taille maximale acceptée (la plus grosse ROM Game Boy standard fait 8 Mo). */
 export const MAX_ROM_BYTES = 16 * 1024 * 1024;
 
-/**
- * Télécharge une ROM depuis une URL externe.
- *
- * Le serveur doit autoriser le site via CORS (en-tête
- * `Access-Control-Allow-Origin`), sinon le navigateur bloque la lecture
- * de la réponse. On lit le flux par morceaux pour pouvoir interrompre un
- * fichier démesuré sans le charger entièrement en mémoire.
- */
 export async function fetchRom(url: string): Promise<Uint8Array> {
   let res: Response;
   try {
     res = await fetch(url, {
       mode: 'cors',
-      credentials: 'omit', // aucun cookie envoyé à un site tiers
+      credentials: 'omit',
       referrerPolicy: 'no-referrer',
     });
   } catch {
     throw new Error(
-      "Impossible de télécharger la ROM. Vérifiez l'URL et que le serveur autorise ce site " +
-        "(en-tête CORS « Access-Control-Allow-Origin »).",
+      "Failed to download ROM. Check the URL and that the server allows this site " +
+        "(CORS header « Access-Control-Allow-Origin »).",
     );
   }
-  if (!res.ok) throw new Error(`Téléchargement impossible (HTTP ${res.status}).`);
+  if (!res.ok) throw new Error(`Failed to download ROM (HTTP ${res.status}).`);
 
   const declared = Number(res.headers.get('content-length') ?? 0);
   if (declared > MAX_ROM_BYTES) throw tooLarge();
@@ -58,5 +49,5 @@ export async function fetchRom(url: string): Promise<Uint8Array> {
 }
 
 function tooLarge(): Error {
-  return new Error(`ROM trop volumineuse (maximum ${MAX_ROM_BYTES / 1024 / 1024} Mo).`);
+  return new Error(`ROM too large (maximum ${MAX_ROM_BYTES / 1024 / 1024} Mo).`);
 }

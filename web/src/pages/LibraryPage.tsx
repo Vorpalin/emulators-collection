@@ -24,7 +24,7 @@ export default function LibraryPage() {
   );
 
   const onDelete = (game: Game) => {
-    if (window.confirm(`Supprimer « ${game.title} » ?`)) {
+    if (window.confirm(`Delete « ${game.title} » ?`)) {
       remove(game).catch((err) => setActionError(String(err)));
     }
   };
