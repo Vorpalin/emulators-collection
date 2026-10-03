@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -31,6 +32,14 @@ class GameBoyCartridge {
    * @param filename Path to the ROM file.
    */
   void loadROM(std::string &filename);
+
+  /**
+   * @brief Load a ROM image from memory (no file system needed).
+   * @param data Pointer to the ROM bytes.
+   * @param size Number of bytes (must at least cover the 0x150-byte header).
+   * @return false if the image is too small to be a Game Boy ROM.
+   */
+  bool loadROM(const uint8_t *data, std::size_t size);
 
   /** @brief Resets all MBC registers and banks to their power-on values. */
   void reset();

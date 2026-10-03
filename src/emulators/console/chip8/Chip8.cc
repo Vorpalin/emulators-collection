@@ -1,14 +1,13 @@
 #include "emulators/console/chip8/Chip8.hh"
 
-#include <SDL2/SDL.h>
-
 #include <algorithm>
-#include <chrono>
-#include <fstream>
+#include <cstdlib>
 #include <iostream>
-#include <thread>
+#include <iterator>
 
-uint8_t CHIP8_FONTSET[80] = {
+namespace {
+
+constexpr uint8_t CHIP8_FONTSET[80] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
     0x20, 0x60, 0x20, 0x20, 0x70,  // 1
     0xF0, 0x10, 0xF0, 0x80, 0xF0,  // 2
@@ -27,106 +26,88 @@ uint8_t CHIP8_FONTSET[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80   // F
 };
 
+// Display colors (same as the former SDL renderer).
+constexpr uint8_t kBg[3] = {18, 18, 18};
+constexpr uint8_t kFg[3] = {230, 230, 230};
+
+}  // namespace
+
 Chip8::Chip8() {
-  for (int i = 0; i < 80; ++i) {
-    this->memory[i] = CHIP8_FONTSET[i];
-  }
-  this->I = 0;
-  this->pc = 0x200;  // program counter starts at 0x200
-  this->draw_flag = 0;
-  this->delay_timer = 0;
-  this->sound_timer = 0;
-  this->sp = 0;
-  this->renderer = nullptr;
-  this->quit = false;
-  this->running = true;
-  this->draw_flag = 1;
-  this->returnValue = 0;
-  this->highResolutionMode = false;
+  this->resetState();
+  this->audio_.reserve(4096);
+}
+
+void Chip8::resetState() {
+  std::fill(std::begin(this->memory), std::end(this->memory), 0);
+  std::copy(std::begin(CHIP8_FONTSET), std::end(CHIP8_FONTSET),
+            std::begin(this->memory));
+
   std::fill(std::begin(this->gfx), std::end(this->gfx), 0);
   std::fill(std::begin(this->V), std::end(this->V), 0);
   std::fill(std::begin(this->stack), std::end(this->stack), 0);
   std::fill(std::begin(this->key), std::end(this->key), 0);
-  this->V[0xF] = 0;  // Reset VF register
+  std::fill(std::begin(this->rpl), std::end(this->rpl), 0);
+
+  this->I = 0;
+  this->pc = 0x200;  // program counter starts at 0x200
+  this->sp = 0;
+  this->delay_timer = 0;
+  this->sound_timer = 0;
+  this->draw_flag = 1;
+  this->lastPressedKey = -1;
+  this->halted = false;
+  this->highResolutionMode = false;
+
+  this->beepHoldFrames_ = 0;
+  this->beepOn_ = false;
+  this->gain_ = 0.0f;
+  this->phase_ = 0.0;
+  this->sampleAcc_ = 0.0;
+  this->audio_.clear();
+
+  this->renderFramebuffer();
+  this->draw_flag = 0;
 }
 
-void Chip8::setRenderer(SDL_Renderer* renderer) { this->renderer = renderer; }
+bool Chip8::loadProgram(const uint8_t* data, std::size_t size) {
+  this->resetState();
+  this->rom_.clear();
 
-void Chip8::audioCallback(void* userdata, Uint8* stream, int len) {
-  auto* self = static_cast<Chip8*>(userdata);
-  auto* samples = reinterpret_cast<int16_t*>(stream);
-  const int count = len / sizeof(int16_t);
-
-  const double sampleRate = 44100.0;
-  const double tone = 440.0;
-  const float volume = 3000.0f;
-  const float target = self->beepOn.load() ? 1.0f : 0.0f;
-  const float step =
-      static_cast<float>(1.0 / (0.003 * sampleRate));  // rampe d'environ 3 ms
-
-  for (int i = 0; i < count; ++i) {
-    if (self->gain < target)
-      self->gain = std::min<float>(self->gain + step, target);
-    else if (self->gain > target)
-      self->gain = std::max<float>(self->gain - step, target);
-
-    float wave = self->phase < 0.5 ? 1.0f : -1.0f;
-    samples[i] = static_cast<int16_t>(wave * volume * self->gain);
-
-    self->phase += tone / sampleRate;
-    if (self->phase >= 1.0) self->phase -= 1.0;
+  if (data == nullptr || size == 0) {
+    std::cerr << "Empty ROM\n";
+    this->halted = true;
+    return false;
   }
+  if (size > sizeof(this->memory) - 0x200) {
+    std::cerr << "ROM too large\n";
+    this->halted = true;
+    return false;
+  }
+
+  this->rom_.assign(data, data + size);
+  std::copy(data, data + size, &this->memory[0x200]);
+  return true;
 }
 
-void Chip8::initAudio() {
-  if (this->audioDevice != 0) return;
-  if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
-    std::cerr << "Audio init failed: " << SDL_GetError() << '\n';
+void Chip8::reset() {
+  if (this->rom_.empty()) {
+    this->resetState();
     return;
   }
-
-  SDL_AudioSpec want{}, have{};
-  want.freq = 44100;
-  want.format = AUDIO_S16SYS;
-  want.channels = 1;
-  want.samples = 256;  // petit buffer = moins de latence
-  want.callback = Chip8::audioCallback;
-  want.userdata = this;
-
-  this->audioDevice = SDL_OpenAudioDevice(nullptr, 0, &want, &have,
-                                          SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
-  if (this->audioDevice == 0) {
-    std::cerr << "Could not open audio device: " << SDL_GetError() << '\n';
-    SDL_QuitSubSystem(SDL_INIT_AUDIO);  // undo SDL_InitSubSystem above
-    return;
-  }
-
-  SDL_PauseAudioDevice(this->audioDevice, 1);
-  this->audioPaused = true;
-  this->silentTicks = 0;
+  // Copy: loadProgram() clears rom_ before re-assigning it.
+  const std::vector<uint8_t> rom = this->rom_;
+  this->loadProgram(rom.data(), rom.size());
 }
 
-void Chip8::setBeep(bool on) {
-  this->beepOn.store(on);
-  if (on) {
-    this->silentTicks = 0;
-    if (this->audioDevice != 0 && this->audioPaused) {
-      SDL_PauseAudioDevice(this->audioDevice, 0);
-      this->audioPaused = false;
-    }
-  }
+void Chip8::setAudioSampleRate(int hz) {
+  if (hz > 0) this->sampleRate_ = static_cast<double>(hz);
 }
 
-void Chip8::shutdownAudio() {
-  if (this->audioDevice != 0) {
-    SDL_PauseAudioDevice(this->audioDevice, 1);
-    SDL_CloseAudioDevice(this->audioDevice);  // waits for the audio thread
-    this->audioDevice = 0;
-    if (SDL_WasInit(SDL_INIT_AUDIO)) SDL_QuitSubSystem(SDL_INIT_AUDIO);
-  }
+void Chip8::setKey(int keyIndex, bool pressed) {
+  if (keyIndex < 0 || keyIndex > 15) return;
+  this->key[keyIndex] = pressed ? 1 : 0;
+  if (pressed) this->lastPressedKey = keyIndex;
 }
-
-Chip8::~Chip8() { this->shutdownAudio(); }
 
 void Chip8::updateTimers() {
   if (this->delay_timer > 0) {
@@ -135,165 +116,71 @@ void Chip8::updateTimers() {
   if (this->sound_timer > 0) {
     --this->sound_timer;
   }
-  bool minHold = std::chrono::steady_clock::now() < this->beepUntil;
-  const bool on = this->sound_timer > 0 || minHold;
-  this->setBeep(on);
-  if (!on && this->audioDevice != 0 && !this->audioPaused &&
-      ++this->silentTicks > 3) {
-    SDL_PauseAudioDevice(this->audioDevice, 1);
-    this->audioPaused = true;
+  if (this->beepHoldFrames_ > 0) {
+    --this->beepHoldFrames_;
+  }
+  this->beepOn_ = this->sound_timer > 0 || this->beepHoldFrames_ > 0;
+}
+
+void Chip8::renderFramebuffer() {
+  const int pixels = this->width() * this->height();
+  for (int i = 0; i < pixels; ++i) {
+    const uint8_t* c = this->gfx[i] ? kFg : kBg;
+    uint8_t* out = &this->framebuffer_[static_cast<std::size_t>(i) * 4];
+    out[0] = c[0];
+    out[1] = c[1];
+    out[2] = c[2];
+    out[3] = 255;
   }
 }
 
-void Chip8::loadProgram(const std::string& filename) {
-  this->I = 0;
-  this->pc = 0x200;  // program counter starts at 0x200
-  this->draw_flag = 0;
-  this->delay_timer = 0;
-  this->sound_timer = 0;
-  this->sp = 0;
-  this->quit = false;
-  this->running = true;
-  this->highResolutionMode = false;
-  this->draw_flag = 1;
+void Chip8::generateAudio() {
+  this->audio_.clear();
 
-  std::fill(std::begin(this->memory), std::end(this->memory), 0);
-  std::fill(std::begin(this->gfx), std::end(this->gfx), 0);
-  std::fill(std::begin(this->V), std::end(this->V), 0);
-  std::fill(std::begin(this->stack), std::end(this->stack), 0);
+  // One video frame lasts 1/60 s; carry the fractional part between frames.
+  this->sampleAcc_ += this->sampleRate_ / 60.0;
+  const int frames = static_cast<int>(this->sampleAcc_);
+  this->sampleAcc_ -= frames;
 
-  for (int i = 0; i < 80; ++i) {
-    this->memory[i] = CHIP8_FONTSET[i];
+  const float target = this->beepOn_ ? 1.0f : 0.0f;
+  const float step =
+      static_cast<float>(1.0 / (kRampSeconds * this->sampleRate_));
+
+  for (int i = 0; i < frames; ++i) {
+    if (this->gain_ < target)
+      this->gain_ = std::min(this->gain_ + step, target);
+    else if (this->gain_ > target)
+      this->gain_ = std::max(this->gain_ - step, target);
+
+    const float wave = this->phase_ < 0.5 ? 1.0f : -1.0f;
+    const float sample = wave * kVolume * this->gain_;
+    this->audio_.push_back(sample);  // left
+    this->audio_.push_back(sample);  // right
+
+    this->phase_ += kToneHz / this->sampleRate_;
+    if (this->phase_ >= 1.0) this->phase_ -= 1.0;
   }
-
-  std::ifstream file(filename, std::ios::binary | std::ios::ate);
-
-  if (!file) {
-    this->quit = true;
-    std::cerr << "Could not open ROM: " << filename << '\n';
-    return;
-  }
-
-  std::streamsize size = file.tellg();
-  file.seekg(0, std::ios::beg);
-
-  if (static_cast<std::size_t>(size) > sizeof(this->memory) - 0x200) {
-    this->quit = true;
-    std::cerr << "ROM too large\n";
-    return;
-  }
-
-  file.read(reinterpret_cast<char*>(&this->memory[0x200]), size);
-
-  file.close();
-
-  SDL_RenderSetLogicalSize(this->renderer, 64, 32);
 }
 
-void Chip8::drawGraphics() {
-  SDL_SetRenderDrawColor(this->renderer, 18, 18, 18, 255);
-
-  SDL_RenderClear(this->renderer);
-
-  SDL_SetRenderDrawColor(this->renderer, 230, 230, 230, 255);
-
-  int scale = this->highResolutionMode ? 2 : 1;
-  for (int y = 0; y < 32 * scale; ++y) {
-    for (int x = 0; x < 64 * scale; ++x) {
-      if (this->gfx[y * 64 * scale + x]) {
-        SDL_Rect pixel{x, y, 1, 1};
-        SDL_RenderFillRect(this->renderer, &pixel);
-      }
+void Chip8::stepFrame() {
+  if (!this->halted) {
+    for (int i = 0; i < kCyclesPerFrame && !this->halted; ++i) {
+      this->cycle();
     }
+    this->updateTimers();
+  } else {
+    this->beepOn_ = false;  // fade out the beep once the program ended
   }
 
-  SDL_RenderPresent(this->renderer);
-}
-
-void Chip8::handleInput() {
-  SDL_Event event;
-  while (SDL_PollEvent(&event)) {
-    switch (event.type) {
-      case SDL_QUIT:
-        this->quit = true;
-        this->running = false;
-        this->returnValue = 1;
-        break;
-      case SDL_WINDOWEVENT:
-        if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
-            event.window.event == SDL_WINDOWEVENT_RESIZED) {
-          // Force SDL à recalculer le viewport avec la taille physique actuelle
-          int w = this->highResolutionMode ? 128 : 64;
-          int h = this->highResolutionMode ? 64 : 32;
-          SDL_RenderSetLogicalSize(this->renderer, w, h);
-        }
-        break;
-      case SDL_KEYDOWN:
-        switch (event.key.keysym.sym) {
-          case SDLK_ESCAPE:
-            this->quit = true;
-            this->running = false;
-            break;
-          case SDLK_SPACE:
-            this->running = !this->running;
-            break;
-          case SDLK_0:
-            this->key[0x0] = 1;
-            break;
-          case SDLK_1:
-            this->key[0x1] = 1;
-            break;
-          case SDLK_2:
-            this->key[0x2] = 1;
-            break;
-          case SDLK_3:
-            this->key[0x3] = 1;
-            break;
-          case SDLK_c:
-            this->key[0xC] = 1;
-            break;
-          case SDLK_4:
-            this->key[0x4] = 1;
-            break;
-          case SDLK_5:
-            this->key[0x5] = 1;
-            break;
-          case SDLK_6:
-            this->key[0x6] = 1;
-            break;
-          case SDLK_d:
-            this->key[0xD] = 1;
-            break;
-          case SDLK_7:
-            this->key[0x7] = 1;
-            break;
-          case SDLK_8:
-            this->key[0x8] = 1;
-            break;
-          case SDLK_9:
-            this->key[0x9] = 1;
-            break;
-          case SDLK_e:
-            this->key[0xE] = 1;
-            break;
-          case SDLK_a:
-            this->key[0xA] = 1;
-            break;
-          case SDLK_b:
-            this->key[0xB] = 1;
-            break;
-          case SDLK_f:
-            this->key[0xF] = 1;
-            break;
-          default:
-            break;  // Ignore other keys
-        }
-        break;
-
-      default:
-        break;
-    }
+  if (this->draw_flag) {
+    this->renderFramebuffer();
+    this->draw_flag = 0;
   }
+
+  this->generateAudio();
+
+  // A key tap is only visible to FX0A during the frame that follows it.
+  this->lastPressedKey = -1;
 }
 
 void Chip8::executeOpcode(uint16_t opcode) {
@@ -313,7 +200,7 @@ void Chip8::executeOpcode(uint16_t opcode) {
 
   switch (opcode & 0xF000) {
     case 0x0000:
-      if ((opcode & 0xFFF0) == 0x00C0) {
+      if ((opcode & 0xFFF0) == 0x00C0) {  // 00CN: Scroll display down N lines
         int lines = n;
         for (int y = 32 * scale - 1; y >= lines; --y) {
           for (int x = 0; x < 64 * scale; ++x) {
@@ -339,8 +226,7 @@ void Chip8::executeOpcode(uint16_t opcode) {
         case 0x00EE:  // 00EE: Return from subroutine
           if (this->sp == 0) {
             std::cerr << "Stack underflow\n";
-            this->quit = true;
-            this->running = false;
+            this->halted = true;
             break;
           }
           --this->sp;
@@ -370,19 +256,18 @@ void Chip8::executeOpcode(uint16_t opcode) {
           }
           this->draw_flag = 1;
           break;
-        case 0x00FD:  // 00FD: Exit the emulator
-          this->quit = true;
-          this->running = false;
+        case 0x00FD:  // 00FD: Exit the interpreter
+          this->halted = true;
           break;
         case 0x00FE:  // 00FE: Set the display to low resolution (64x32)
-          SDL_RenderSetLogicalSize(this->renderer, 64, 32);
           std::fill(std::begin(this->gfx), std::end(this->gfx), 0);
           this->highResolutionMode = false;
+          this->draw_flag = 1;
           break;
         case 0x00FF:  // 00FF: Set the display to high resolution (128x64)
-          SDL_RenderSetLogicalSize(this->renderer, 128, 64);
           std::fill(std::begin(this->gfx), std::end(this->gfx), 0);
           this->highResolutionMode = true;
+          this->draw_flag = 1;
           break;
         default:
           std::cerr << "Unknown opcode [0x0000]: " << std::hex << opcode
@@ -395,8 +280,7 @@ void Chip8::executeOpcode(uint16_t opcode) {
     case 0x2000:  // 2NNN: Call subroutine at NNN
       if (static_cast<std::size_t>(this->sp) >= std::size(this->stack)) {
         std::cerr << "Stack overflow\n";
-        this->quit = true;
-        this->running = false;
+        this->halted = true;
         break;
       }
       this->stack[this->sp] = this->pc;
@@ -510,12 +394,12 @@ void Chip8::executeOpcode(uint16_t opcode) {
       break;
     }
     case 0xE000:
+      // Key states now come from setKey() with real press/release events,
+      // so (unlike the SDL version) the keys are not cleared after a test.
       if (nn == 0x9E) {  // EX9E: Skip next instruction if the key stored in VX
                          // is pressed
         if (this->key[this->V[x] & 0x0F] != 0) {
           this->pc += 2;
-          this->key[this->V[x] & 0x0F] =
-              0;  // Clear the key state after processing
         }
       } else if (nn == 0xA1) {  // EXA1: Skip next instruction if the key stored
                                 // in VX isn't pressed
@@ -533,16 +417,10 @@ void Chip8::executeOpcode(uint16_t opcode) {
           this->V[x] = this->delay_timer;
           break;
         case 0x0A: {  // FX0A: Wait for a key press
-          bool keyPressed = false;
-          for (int i = 0; i < 16; ++i) {
-            if (this->key[i] != 0) {
-              this->V[x] = i;
-              keyPressed = true;
-              this->key[i] = 0;  // Clear the key state after processing
-              break;
-            }
-          }
-          if (!keyPressed) {
+          if (this->lastPressedKey >= 0) {
+            this->V[x] = static_cast<uint8_t>(this->lastPressedKey);
+            this->lastPressedKey = -1;
+          } else {
             this->pc -= 2;  // repeat this instruction until a key is pressed
           }
           break;
@@ -553,10 +431,8 @@ void Chip8::executeOpcode(uint16_t opcode) {
         case 0x18:  // FX18: Set the sound timer to VX
           this->sound_timer = this->V[x];
           if (this->sound_timer > 0) {
-            this->beepUntil =
-                std::chrono::steady_clock::now() +
-                std::chrono::milliseconds(100);  // minimum beep length
-            this->setBeep(true);
+            this->beepHoldFrames_ = kBeepHoldFrames;  // minimum beep length
+            this->beepOn_ = true;
           }
           break;
         case 0x1E:  // FX1E: Add VX to I
@@ -611,53 +487,10 @@ void Chip8::executeOpcode(uint16_t opcode) {
   }
 }
 
-void Chip8::clearKeyStates() {
-  for (int i = 0; i < 16; ++i) {
-    this->key[i] = 0;
-  }
-}
-
 void Chip8::cycle() {
   const std::size_t addr = this->pc % sizeof(this->memory);
   uint16_t opcode = (this->memory[addr] << 8) |
                     this->memory[(addr + 1) % sizeof(this->memory)];
   this->pc = static_cast<uint16_t>(addr + 2);
   this->executeOpcode(opcode);
-}
-
-int Chip8::run() {
-  using clock = std::chrono::steady_clock;
-  constexpr auto timerPeriod = std::chrono::microseconds(16667);  // ~60 Hz
-
-  this->initAudio();
-
-  auto lastTimerUpdate = clock::now();
-
-  while (!this->quit) {
-    this->handleInput();
-
-    if (!this->running) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-      lastTimerUpdate = clock::now();
-      continue;
-    }
-
-    this->cycle();
-
-    auto now = clock::now();
-    if (now - lastTimerUpdate >= timerPeriod) {
-      this->updateTimers();
-      lastTimerUpdate += timerPeriod;
-    }
-
-    if (this->draw_flag) {
-      this->drawGraphics();
-      this->draw_flag = 0;
-    }
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  }
-
-  this->shutdownAudio();
-  return this->returnValue;
 }
