@@ -17,9 +17,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    // Lecture de la session stockée. Si elle échoue (verrou du navigateur, stockage
-    // illisible...), on considère l'utilisateur déconnecté : sans ce catch, `loading`
-    // restait à true et l'écran « Loading… » bloquait la page de connexion à jamais.
     supabase.auth
       .getSession()
       .then(({ data }) => {
@@ -33,9 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (active) setLoading(false);
       });
 
-    // Se déclenche aussi au chargement (INITIAL_SESSION), à la connexion, à la
-    // déconnexion et au rafraîchissement du jeton : l'état initial est donc connu
-    // dès le premier événement, même si getSession() tarde.
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
       setLoading(false);

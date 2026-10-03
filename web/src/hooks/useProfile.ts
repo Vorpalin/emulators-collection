@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 
-/** Pseudo de l'utilisateur connecté (table `profiles`). */
 export function useProfile() {
   const { user } = useAuth();
   const [username, setUsername] = useState<string | null>(null);

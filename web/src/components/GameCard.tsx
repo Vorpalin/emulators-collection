@@ -23,7 +23,6 @@ function formatSize(bytes: number): string {
     : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-/** Taille du fichier, ou domaine d'origine pour un jeu ajouté par URL. */
 function sourceLabel(game: Game): string {
   if (game.size_bytes != null) return formatSize(game.size_bytes);
   if (game.rom_url) return hostOf(game.rom_url);

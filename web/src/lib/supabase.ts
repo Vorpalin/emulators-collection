@@ -10,6 +10,4 @@ if (!url || !anonKey) {
   );
 }
 
-// La clé "anon" est publique par conception : la sécurité repose sur les
-// politiques RLS définies dans supabase/schema.sql.
 export const supabase = createClient(url, anonKey);

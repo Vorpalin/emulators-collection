@@ -8,7 +8,6 @@ interface Props {
   onCancel: () => void;
 }
 
-/** Titre par défaut : nom du fichier sans extension (tetris.gb -> « tetris »). */
 function titleFromFile(name: string): string {
   return name.replace(/\.[^/.]+$/, '');
 }
@@ -28,7 +27,6 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pré-remplit titre et console depuis le fichier tant que l'utilisateur n'y a pas touché.
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files?.[0] ?? null;
     setFile(picked);

@@ -83,7 +83,7 @@ export default function LoginPage() {
             <Cpu className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-extrabold tracking-wider text-white">RETRO ASSEMBLY</h1>
+            <h1 className="font-extrabold tracking-wider text-white">EMULATORS COLLECTION</h1>
             <p className="text-xs text-slate-400">
               {mode === 'signin' ? 'Sign in' : 'Create an account'}
             </p>

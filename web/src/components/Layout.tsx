@@ -24,9 +24,8 @@ export default function Layout() {
             </div>
             <div>
               <span className="font-extrabold text-lg tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500">
-                RETRO GAMING
+                EMULATORS COLLECTION
               </span>
-              <p className="text-xs text-slate-400">Emulators C++ / WebAssembly</p>
             </div>
           </Link>
 
@@ -61,7 +60,7 @@ export default function Layout() {
       </main>
 
       <footer className="border-t border-slate-800/80 bg-slate-900/50 py-4 px-6 text-center text-xs text-slate-500">
-        Retro Gaming • React, Tailwind, Supabase & WebAssembly
+        Emulators Collection • React, Tailwind, Supabase & WebAssembly
       </footer>
     </div>
   );
