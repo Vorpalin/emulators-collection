@@ -1,4 +1,4 @@
-import type { SystemId } from "./emulator/systems";
+import type { SystemId } from './emulator/systems';
 
 /** Ligne de la table `games`. */
 export interface Game {

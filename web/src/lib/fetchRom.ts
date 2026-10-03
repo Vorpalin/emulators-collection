@@ -4,19 +4,19 @@ export async function fetchRom(url: string): Promise<Uint8Array> {
   let res: Response;
   try {
     res = await fetch(url, {
-      mode: "cors",
-      credentials: "omit",
-      referrerPolicy: "no-referrer",
+      mode: 'cors',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
     });
   } catch {
     throw new Error(
-      "Failed to download ROM. Check the URL and that the server allows this site " +
-        "(CORS header « Access-Control-Allow-Origin »).",
+      'Failed to download ROM. Check the URL and that the server allows this site ' +
+        '(CORS header « Access-Control-Allow-Origin »).',
     );
   }
   if (!res.ok) throw new Error(`Failed to download ROM (HTTP ${res.status}).`);
 
-  const declared = Number(res.headers.get("content-length") ?? 0);
+  const declared = Number(res.headers.get('content-length') ?? 0);
   if (declared > MAX_ROM_BYTES) throw tooLarge();
 
   if (!res.body) {
@@ -49,7 +49,5 @@ export async function fetchRom(url: string): Promise<Uint8Array> {
 }
 
 function tooLarge(): Error {
-  return new Error(
-    `ROM too large (maximum ${MAX_ROM_BYTES / 1024 / 1024} Mo).`,
-  );
+  return new Error(`ROM too large (maximum ${MAX_ROM_BYTES / 1024 / 1024} Mo).`);
 }

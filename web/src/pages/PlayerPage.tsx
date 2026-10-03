@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowLeft,
@@ -9,28 +9,23 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
-} from "lucide-react";
-import { supabase } from "../lib/supabase";
-import { loadRom } from "../hooks/useGames";
-import { useSettings } from "../hooks/useSettings";
-import { EmulatorSession } from "../emulator/session";
-import { SYSTEMS } from "../emulator/systems";
-import type { Game } from "../types";
+} from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { loadRom } from '../hooks/useGames';
+import { useSettings } from '../hooks/useSettings';
+import { EmulatorSession } from '../emulator/session';
+import { SYSTEMS } from '../emulator/systems';
+import type { Game } from '../types';
 
-type Status = "loading" | "ready" | "playing" | "error";
+type Status = 'loading' | 'ready' | 'playing' | 'error';
 
 export default function PlayerPage() {
   const { gameId } = useParams();
-  const {
-    settings,
-    loading: settingsLoading,
-    update,
-    bindingsFor,
-  } = useSettings();
+  const { settings, loading: settingsLoading, update, bindingsFor } = useSettings();
 
   const [game, setGame] = useState<Game | null>(null);
   const [rom, setRom] = useState<Uint8Array | null>(null);
-  const [status, setStatus] = useState<Status>("loading");
+  const [status, setStatus] = useState<Status>('loading');
   const [error, setError] = useState<string | null>(null);
 
   const [paused, setPaused] = useState(false);
@@ -45,13 +40,13 @@ export default function PlayerPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
+    setStatus('loading');
     (async () => {
       try {
         const { data, error: err } = await supabase
-          .from("games")
-          .select("*")
-          .eq("id", gameId)
+          .from('games')
+          .select('*')
+          .eq('id', gameId)
           .single();
         if (err) throw new Error(err.message);
         const g = data as Game;
@@ -59,11 +54,11 @@ export default function PlayerPage() {
         if (cancelled) return;
         setGame(g);
         setRom(bytes);
-        setStatus("ready");
+        setStatus('ready');
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : String(e));
-        setStatus("error");
+        setStatus('error');
       }
     })();
     return () => {
@@ -90,11 +85,11 @@ export default function PlayerPage() {
     try {
       await session.start(rom);
       sessionRef.current = session;
-      setStatus("playing");
+      setStatus('playing');
     } catch (e) {
       session.destroy();
       setError(e instanceof Error ? e.message : String(e));
-      setStatus("error");
+      setStatus('error');
     }
   };
 
@@ -119,7 +114,7 @@ export default function PlayerPage() {
     sessionRef.current?.setVolume(v);
   };
 
-  if (status === "error") {
+  if (status === 'error') {
     return (
       <div className="max-w-xl mx-auto mt-12 space-y-4">
         <div className="flex items-start space-x-3 bg-rose-500/10 border border-rose-500/40 text-rose-300 rounded-xl p-4 text-sm">
@@ -135,10 +130,10 @@ export default function PlayerPage() {
 
   const system = game ? SYSTEMS[game.system] : null;
   const aspect = system?.displayAspect ?? 1;
-  const playing = status === "playing";
+  const playing = status === 'playing';
 
   const bar =
-    "p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 rounded-lg transition";
+    'p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 rounded-lg transition';
 
   return (
     <div className="space-y-4">
@@ -158,10 +153,10 @@ export default function PlayerPage() {
         <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0">
             <span
-              className={`w-2.5 h-2.5 rounded-full ${playing && !paused ? "bg-emerald-500 animate-pulse" : "bg-slate-600"}`}
+              className={`w-2.5 h-2.5 rounded-full ${playing && !paused ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'}`}
             />
             <span className="font-bold text-sm text-slate-200 truncate">
-              {game?.title ?? "Loading…"}
+              {game?.title ?? 'Loading…'}
             </span>
             {system && (
               <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded font-mono">
@@ -187,8 +182,8 @@ export default function PlayerPage() {
                 className="pointer-events-none absolute inset-0 z-20"
                 style={{
                   background:
-                    "linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06))",
-                  backgroundSize: "100% 4px, 6px 100%",
+                    'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06))',
+                  backgroundSize: '100% 4px, 6px 100%',
                 }}
               />
             )}
@@ -204,15 +199,11 @@ export default function PlayerPage() {
               <div className="absolute inset-0 z-30 bg-slate-950 flex items-center justify-center">
                 <button
                   onClick={() => void start()}
-                  disabled={status !== "ready" || settingsLoading}
+                  disabled={status !== 'ready' || settingsLoading}
                   className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition"
                 >
                   <Play className="w-5 h-5 fill-current" />
-                  <span>
-                    {status === "loading" || settingsLoading
-                      ? "Loading…"
-                      : "START"}
-                  </span>
+                  <span>{status === 'loading' || settingsLoading ? 'Loading…' : 'START'}</span>
                 </button>
               </div>
             )}
@@ -226,13 +217,9 @@ export default function PlayerPage() {
               onClick={togglePause}
               disabled={!playing}
               className={bar}
-              title={paused ? "Reprendre" : "Pause"}
+              title={paused ? 'Reprendre' : 'Pause'}
             >
-              {paused ? (
-                <Play className="w-4 h-4" />
-              ) : (
-                <Pause className="w-4 h-4" />
-              )}
+              {paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
             </button>
             <button
               onClick={() => sessionRef.current?.reset()}
@@ -249,18 +236,15 @@ export default function PlayerPage() {
               onClick={() => void update({ crt_filter: !settings.crt_filter })}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono border transition ${
                 settings.crt_filter
-                  ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-400"
-                  : "bg-slate-950 border-slate-800 text-slate-500"
+                  ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-400'
+                  : 'bg-slate-950 border-slate-800 text-slate-500'
               }`}
             >
               CRT
             </button>
 
             <div className="flex items-center space-x-2">
-              <button
-                onClick={toggleMute}
-                className="text-slate-400 hover:text-slate-200"
-              >
+              <button onClick={toggleMute} className="text-slate-400 hover:text-slate-200">
                 {muted || effectiveVolume === 0 ? (
                   <VolumeX className="w-4 h-4 text-rose-400" />
                 ) : (
@@ -290,8 +274,8 @@ export default function PlayerPage() {
       </div>
 
       <p className="text-xs text-slate-500">
-        The keys are configured in the « Controls » tab. Click on the screen if
-        the keyboard does not respond.
+        The keys are configured in the « Controls » tab. Click on the screen if the keyboard does
+        not respond.
       </p>
     </div>
   );

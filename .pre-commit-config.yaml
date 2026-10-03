@@ -25,6 +25,16 @@ repos:
         args:
           - --enable=warning,performance,portability
 
+  - repo: local
+    hooks:
+      - id: prettier
+        name: Prettier (WebUI)
+        entry: ./scripts/prettier-hook.sh
+        language: system
+        files: ^web/
+        exclude: ^web/(node_modules|dist|public/wasm)/
+        pass_filenames: true
+
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.3.0
     hooks:

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-import { useAuth } from "../auth/AuthProvider";
-import { SYSTEMS, type SystemId } from "../emulator/systems";
-import type { Settings } from "../types";
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../auth/AuthProvider';
+import { SYSTEMS, type SystemId } from '../emulator/systems';
+import type { Settings } from '../types';
 
 const DEFAULTS: Settings = { key_bindings: {}, crt_filter: true, volume: 80 };
 
@@ -15,8 +15,8 @@ export function useSettings() {
     if (!user) return;
     let cancelled = false;
     supabase
-      .from("user_settings")
-      .select("key_bindings, crt_filter, volume")
+      .from('user_settings')
+      .select('key_bindings, crt_filter, volume')
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
@@ -32,13 +32,11 @@ export function useSettings() {
     async (patch: Partial<Settings>): Promise<void> => {
       if (!user) return;
       setSettings((prev) => ({ ...prev, ...patch }));
-      await supabase
-        .from("user_settings")
-        .upsert({
-          user_id: user.id,
-          ...patch,
-          updated_at: new Date().toISOString(),
-        });
+      await supabase.from('user_settings').upsert({
+        user_id: user.id,
+        ...patch,
+        updated_at: new Date().toISOString(),
+      });
     },
     [user],
   );

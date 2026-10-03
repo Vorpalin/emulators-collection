@@ -1,12 +1,6 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { Session, User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 
 interface AuthState {
   user: User | null;
@@ -32,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (active) setSession(data.session);
       })
       .catch((err) => {
-        console.error("Could not read the session:", err);
+        console.error('Could not read the session:', err);
         if (active) setSession(null);
       })
       .finally(() => {
@@ -65,6 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth needs to be used within <AuthProvider>");
+  if (!ctx) throw new Error('useAuth needs to be used within <AuthProvider>');
   return ctx;
 }

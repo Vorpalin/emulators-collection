@@ -1,19 +1,15 @@
-import { useMemo, useState } from "react";
-import { AlertCircle, Plus, Search, Sparkles } from "lucide-react";
-import AddGameForm from "../components/AddGameForm";
-import GameCard from "../components/GameCard";
-import { useGames } from "../hooks/useGames";
-import {
-  ACCEPTED_EXTENSIONS,
-  SYSTEM_LIST,
-  type SystemId,
-} from "../emulator/systems";
-import type { Game } from "../types";
+import { useMemo, useState } from 'react';
+import { AlertCircle, Plus, Search, Sparkles } from 'lucide-react';
+import AddGameForm from '../components/AddGameForm';
+import GameCard from '../components/GameCard';
+import { useGames } from '../hooks/useGames';
+import { ACCEPTED_EXTENSIONS, SYSTEM_LIST, type SystemId } from '../emulator/systems';
+import type { Game } from '../types';
 
 export default function LibraryPage() {
   const { games, loading, error, add, remove } = useGames();
-  const [filter, setFilter] = useState<SystemId | "all">("all");
-  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<SystemId | 'all'>('all');
+  const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -21,7 +17,7 @@ export default function LibraryPage() {
     () =>
       games.filter(
         (g) =>
-          (filter === "all" || g.system === filter) &&
+          (filter === 'all' || g.system === filter) &&
           g.title.toLowerCase().includes(query.toLowerCase()),
       ),
     [games, filter, query],
@@ -36,8 +32,8 @@ export default function LibraryPage() {
   const pill = (active: boolean) =>
     `px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
       active
-        ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20"
-        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+        ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
     }`;
 
   return (
@@ -49,9 +45,8 @@ export default function LibraryPage() {
             <Sparkles className="w-5 h-5 text-amber-400" />
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Upload your ROMs ({ACCEPTED_EXTENSIONS.split(",").join(", ")}). They
-            are stored privately in your account: only you can see and play
-            them.
+            Upload your ROMs ({ACCEPTED_EXTENSIONS.split(',').join(', ')}). They are stored
+            privately in your account: only you can see and play them.
           </p>
         </div>
         <button
@@ -63,9 +58,7 @@ export default function LibraryPage() {
         </button>
       </div>
 
-      {adding && (
-        <AddGameForm onSubmit={add} onCancel={() => setAdding(false)} />
-      )}
+      {adding && <AddGameForm onSubmit={add} onCancel={() => setAdding(false)} />}
 
       {(error || actionError) && (
         <div className="flex items-center space-x-2 bg-rose-500/10 border border-rose-500/40 text-rose-300 text-sm rounded-xl px-4 py-3">
@@ -76,18 +69,11 @@ export default function LibraryPage() {
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
         <div className="flex items-center space-x-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
-          <button
-            onClick={() => setFilter("all")}
-            className={pill(filter === "all")}
-          >
+          <button onClick={() => setFilter('all')} className={pill(filter === 'all')}>
             All
           </button>
           {SYSTEM_LIST.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setFilter(s.id)}
-              className={pill(filter === s.id)}
-            >
+            <button key={s.id} onClick={() => setFilter(s.id)} className={pill(filter === s.id)}>
               {s.label}
             </button>
           ))}
@@ -105,20 +91,16 @@ export default function LibraryPage() {
       </div>
 
       {loading ? (
-        <p className="text-center text-slate-500 text-sm font-mono py-12">
-          Loading…
-        </p>
+        <p className="text-center text-slate-500 text-sm font-mono py-12">Loading…</p>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-slate-800 rounded-2xl">
           <p className="text-slate-300 font-semibold">
-            {games.length === 0
-              ? "Your library is empty"
-              : "No games match your search."}
+            {games.length === 0 ? 'Your library is empty' : 'No games match your search.'}
           </p>
           <p className="text-slate-500 text-sm mt-1">
             {games.length === 0
-              ? "Add a free-to-use ROM or one of your personal save files to get started."
-              : "Try a different filter or search term."}
+              ? 'Add a free-to-use ROM or one of your personal save files to get started.'
+              : 'Try a different filter or search term.'}
           </p>
         </div>
       ) : (
