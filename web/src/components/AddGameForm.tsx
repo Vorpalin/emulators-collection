@@ -1,21 +1,15 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
-import { Plus, Upload, X } from "lucide-react";
-import {
-  ACCEPTED_EXTENSIONS,
-  SYSTEM_LIST,
-  detectSystem,
-  type SystemId,
-} from "../emulator/systems";
-import { validateRomFile, type NewGame } from "../hooks/useGames";
+import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { Plus, Upload, X } from 'lucide-react';
+import { ACCEPTED_EXTENSIONS, SYSTEM_LIST, detectSystem, type SystemId } from '../emulator/systems';
+import { validateRomFile, type NewGame } from '../hooks/useGames';
 
 interface Props {
   onSubmit: (game: NewGame) => Promise<void>;
   onCancel: () => void;
 }
 
-/** Titre par défaut : nom du fichier sans extension (tetris.gb -> « tetris »). */
 function titleFromFile(name: string): string {
-  return name.replace(/\.[^/.]+$/, "");
+  return name.replace(/\.[^/.]+$/, '');
 }
 
 function formatSize(bytes: number): string {
@@ -26,14 +20,13 @@ function formatSize(bytes: number): string {
 
 export default function AddGameForm({ onSubmit, onCancel }: Props) {
   const [file, setFile] = useState<File | null>(null);
-  const [title, setTitle] = useState("");
-  const [system, setSystem] = useState<SystemId>("gameboy");
+  const [title, setTitle] = useState('');
+  const [system, setSystem] = useState<SystemId>('gameboy');
   const [titleTouched, setTitleTouched] = useState(false);
   const [systemTouched, setSystemTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pré-remplit titre et console depuis le fichier tant que l'utilisateur n'y a pas touché.
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files?.[0] ?? null;
     setFile(picked);
@@ -60,7 +53,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
   };
 
   const input =
-    "w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition";
+    'w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition';
 
   return (
     <form
@@ -69,11 +62,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
     >
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-slate-200 text-sm">Add a game</h2>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-slate-500 hover:text-slate-300"
-        >
+        <button type="button" onClick={onCancel} className="text-slate-500 hover:text-slate-300">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -81,9 +70,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
       <label className="flex items-center gap-3 cursor-pointer bg-slate-950 border border-dashed border-slate-700 hover:border-cyan-500 rounded-lg px-3 py-3 transition">
         <Upload className="w-4 h-4 text-cyan-400 shrink-0" />
         <span className="text-sm text-slate-300 truncate">
-          {file
-            ? `${file.name} (${formatSize(file.size)})`
-            : "Choose a ROM file…"}
+          {file ? `${file.name} (${formatSize(file.size)})` : 'Choose a ROM file…'}
         </span>
         <input
           type="file"
@@ -125,9 +112,8 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
       </div>
 
       <p className="text-xs text-slate-500">
-        Accepted formats: {ACCEPTED_EXTENSIONS.split(",").join(", ")}. Maximum
-        16 MB. The file is stored privately in your account: only you can play
-        it.
+        Accepted formats: {ACCEPTED_EXTENSIONS.split(',').join(', ')}. Maximum 16 MB. The file is
+        stored privately in your account: only you can play it.
       </p>
 
       {error && <p className="text-sm text-rose-400">{error}</p>}
@@ -138,7 +124,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
         className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm flex items-center space-x-2 transition"
       >
         <Plus className="w-4 h-4" />
-        <span>{busy ? "Uploading…" : "Add"}</span>
+        <span>{busy ? 'Uploading…' : 'Add'}</span>
       </button>
     </form>
   );

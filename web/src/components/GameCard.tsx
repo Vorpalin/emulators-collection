@@ -1,19 +1,19 @@
-import { Link } from "react-router-dom";
-import { Play, Trash2 } from "lucide-react";
-import { SYSTEMS, type SystemId } from "../emulator/systems";
-import type { Game } from "../types";
+import { Link } from 'react-router-dom';
+import { Play, Trash2 } from 'lucide-react';
+import { SYSTEMS, type SystemId } from '../emulator/systems';
+import type { Game } from '../types';
 
 const GRADIENTS: Record<SystemId, string> = {
-  chip8: "from-emerald-900/70 to-slate-950",
-  atari2600: "from-amber-900/70 to-slate-950",
-  gameboy: "from-purple-900/70 to-slate-950",
+  chip8: 'from-emerald-900/70 to-slate-950',
+  atari2600: 'from-amber-900/70 to-slate-950',
+  gameboy: 'from-purple-900/70 to-slate-950',
 };
 
 function hostOf(url: string): string {
   try {
     return new URL(url).host;
   } catch {
-    return "?";
+    return '?';
   }
 }
 
@@ -23,20 +23,13 @@ function formatSize(bytes: number): string {
     : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-/** Taille du fichier, ou domaine d'origine pour un jeu ajouté par URL. */
 function sourceLabel(game: Game): string {
   if (game.size_bytes != null) return formatSize(game.size_bytes);
   if (game.rom_url) return hostOf(game.rom_url);
-  return "";
+  return '';
 }
 
-export default function GameCard({
-  game,
-  onDelete,
-}: {
-  game: Game;
-  onDelete: (g: Game) => void;
-}) {
+export default function GameCard({ game, onDelete }: { game: Game; onDelete: (g: Game) => void }) {
   const system = SYSTEMS[game.system];
 
   return (
@@ -67,9 +60,7 @@ export default function GameCard({
 
       <div className="p-3.5 flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="font-bold text-slate-100 text-sm truncate">
-            {game.title}
-          </h3>
+          <h3 className="font-bold text-slate-100 text-sm truncate">{game.title}</h3>
           <p className="text-xs text-slate-500 mt-0.5">
             Added on {new Date(game.created_at).toLocaleDateString()}
           </p>
