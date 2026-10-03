@@ -121,6 +121,7 @@ if(EMSCRIPTEN)
             -sMODULARIZE=1
             -sEXPORT_ES6=1
             -sALLOW_MEMORY_GROWTH=1
+            -sEXPORTED_RUNTIME_METHODS=HEAPU8,HEAPF32
         )
 
 endif()
