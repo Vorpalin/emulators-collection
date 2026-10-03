@@ -1,26 +1,26 @@
-import { useEffect, useState } from 'react';
-import { Gamepad2, RotateCcw } from 'lucide-react';
-import { useSettings } from '../hooks/useSettings';
-import { SYSTEM_LIST, SYSTEMS, type SystemId } from '../emulator/systems';
+import { useEffect, useState } from "react";
+import { Gamepad2, RotateCcw } from "lucide-react";
+import { useSettings } from "../hooks/useSettings";
+import { SYSTEM_LIST, SYSTEMS, type SystemId } from "../emulator/systems";
 
 function prettyKey(code: string): string {
-  if (code.startsWith('Key')) return code.slice(3);
-  if (code.startsWith('Digit')) return code.slice(5);
+  if (code.startsWith("Key")) return code.slice(3);
+  if (code.startsWith("Digit")) return code.slice(5);
   const names: Record<string, string> = {
-    ArrowUp: '↑',
-    ArrowDown: '↓',
-    ArrowLeft: '←',
-    ArrowRight: '→',
-    Space: 'Space',
-    ShiftRight: 'Shift right',
-    ShiftLeft: 'Shift left',
+    ArrowUp: "↑",
+    ArrowDown: "↓",
+    ArrowLeft: "←",
+    ArrowRight: "→",
+    Space: "Space",
+    ShiftRight: "Shift right",
+    ShiftLeft: "Shift left",
   };
   return names[code] ?? code;
 }
 
 export default function ControlsPage() {
   const { settings, loading, update, bindingsFor } = useSettings();
-  const [systemId, setSystemId] = useState<SystemId>('gameboy');
+  const [systemId, setSystemId] = useState<SystemId>("gameboy");
   const [listening, setListening] = useState<string | null>(null);
 
   const system = SYSTEMS[systemId];
@@ -33,28 +33,29 @@ export default function ControlsPage() {
     if (!listening) return;
     const onKey = (e: KeyboardEvent) => {
       e.preventDefault();
-      if (e.code === 'Escape') {
+      if (e.code === "Escape") {
         setListening(null);
         return;
       }
       const next = { ...bindings };
 
-      const clash = Object.keys(next).find((id) => next[id] === e.code && id !== listening);
+      const clash = Object.keys(next).find(
+        (id) => next[id] === e.code && id !== listening,
+      );
       if (clash) next[clash] = next[listening];
       next[listening] = e.code;
       void save(next);
       setListening(null);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [listening, bindings]);
 
   const pill = (active: boolean) =>
     `px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
       active
-        ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+        ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20"
+        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
     }`;
 
   return (
@@ -103,29 +104,34 @@ export default function ControlsPage() {
           <div className="bg-cyan-500/10 border border-cyan-500 p-3 rounded-xl flex items-center space-x-3">
             <span className="w-3 h-3 rounded-full bg-cyan-400 animate-ping" />
             <span className="text-sm font-bold text-cyan-300">
-              Press a key for « {system.actions.find((a) => a.id === listening)?.label} »
-              (Escape to cancel)
+              Press a key for «{" "}
+              {system.actions.find((a) => a.id === listening)?.label} » (Escape
+              to cancel)
             </span>
           </div>
         )}
 
-        <div className={`grid gap-2 ${system.actions.length > 8 ? 'sm:grid-cols-2' : ''}`}>
+        <div
+          className={`grid gap-2 ${system.actions.length > 8 ? "sm:grid-cols-2" : ""}`}
+        >
           {system.actions.map((action) => (
             <div
               key={action.id}
               className="flex items-center justify-between p-2.5 bg-slate-950 rounded-lg border border-slate-800/80"
             >
-              <span className="text-xs font-mono text-slate-300 font-bold">{action.label}</span>
+              <span className="text-xs font-mono text-slate-300 font-bold">
+                {action.label}
+              </span>
               <button
                 disabled={loading}
                 onClick={() => setListening(action.id)}
                 className={`text-xs font-mono px-2.5 py-1 rounded border transition ${
                   listening === action.id
-                    ? 'bg-cyan-500 text-slate-950 border-cyan-400'
-                    : 'bg-slate-800 hover:bg-slate-700 text-cyan-400 border-slate-700'
+                    ? "bg-cyan-500 text-slate-950 border-cyan-400"
+                    : "bg-slate-800 hover:bg-slate-700 text-cyan-400 border-slate-700"
                 }`}
               >
-                {bindings[action.id] ? prettyKey(bindings[action.id]) : '—'}
+                {bindings[action.id] ? prettyKey(bindings[action.id]) : "—"}
               </button>
             </div>
           ))}

@@ -1,10 +1,10 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
-import ProtectedRoute from './auth/ProtectedRoute';
-import Layout from './components/Layout';
-import LoginPage from './pages/LoginPage';
-import LibraryPage from './pages/LibraryPage';
-import PlayerPage from './pages/PlayerPage';
-import ControlsPage from './pages/ControlsPage';
+import { Navigate, Route, Routes } from "react-router-dom";
+import ProtectedRoute from "./auth/ProtectedRoute";
+import Layout from "./components/Layout";
+import LoginPage from "./pages/LoginPage";
+import LibraryPage from "./pages/LibraryPage";
+import PlayerPage from "./pages/PlayerPage";
+import ControlsPage from "./pages/ControlsPage";
 
 export default function App() {
   return (

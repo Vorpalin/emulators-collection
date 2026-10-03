@@ -1,31 +1,20 @@
-import { loadEmulatorModule, type EmulatorInstance, type EmulatorModule } from './wasm';
-import type { SystemDef } from './systems';
+import {
+  loadEmulatorModule,
+  type EmulatorInstance,
+  type EmulatorModule,
+} from "./wasm";
+import type { SystemDef } from "./systems";
 
-/** Audio gardé d'avance dans le worklet (compromis latence / sécurité). */
 const TARGET_BUFFER_SECONDS = 0.08;
-/** Plafond de frames émulées par rafraîchissement d'écran (évite la spirale). */
 const MAX_STEPS_PER_TICK = 4;
 
 export interface SessionOptions {
   canvas: HTMLCanvasElement;
   system: SystemDef;
-  /** action.id -> KeyboardEvent.code (même forme que SystemDef.defaultBindings). */
   bindings: Record<string, string>;
   volume: number; // 0..100
 }
 
-/**
- * Pilote un cœur WebAssembly : charge la ROM, fait tourner l'émulation,
- * dessine dans le canvas, envoie le son à un AudioWorklet et relaie le clavier.
- *
- * Principe de synchronisation : on n'émule une frame que si le worklet
- * a moins de ~80 ms d'audio en attente. La vitesse du jeu suit donc
- * l'horloge de la carte son, quel que soit le taux de rafraîchissement
- * de l'écran (60, 120, 144 Hz...).
- *
- * À créer depuis un geste utilisateur (clic) à cause de la politique
- * d'autoplay des navigateurs.
- */
 export class EmulatorSession {
   private module!: EmulatorModule;
   private emu!: EmulatorInstance;
@@ -46,8 +35,8 @@ export class EmulatorSession {
   private keyMap = new Map<string, number>();
 
   constructor(private opts: SessionOptions) {
-    const ctx = opts.canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D indisponible');
+    const ctx = opts.canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas 2D indisponible");
     this.ctx2d = ctx;
     this.volume = opts.volume;
     this.rebuildKeyMap(opts.system, opts.bindings);
@@ -58,9 +47,13 @@ export class EmulatorSession {
     this.emu = new this.module.Emulator();
 
     // --- Audio ---
-    this.audioCtx = new AudioContext({ latencyHint: 'interactive' });
-    await this.audioCtx.audioWorklet.addModule(`${import.meta.env.BASE_URL}emu-audio-worklet.js`);
-    this.node = new AudioWorkletNode(this.audioCtx, 'emu-audio', { outputChannelCount: [2] });
+    this.audioCtx = new AudioContext({ latencyHint: "interactive" });
+    await this.audioCtx.audioWorklet.addModule(
+      `${import.meta.env.BASE_URL}emu-audio-worklet.js`,
+    );
+    this.node = new AudioWorkletNode(this.audioCtx, "emu-audio", {
+      outputChannelCount: [2],
+    });
     this.node.port.onmessage = (e: MessageEvent<number>) => {
       this.queuedFrames = e.data;
     };
@@ -72,12 +65,14 @@ export class EmulatorSession {
     // --- ROM ---
     this.emu.setSampleRate(this.audioCtx.sampleRate);
     if (!this.emu.load(this.opts.system.id, rom)) {
-      throw new Error('ROM refusée par l\'émulateur (fichier invalide ou non supporté).');
+      throw new Error(
+        "ROM refusée par l'émulateur (fichier invalide ou non supporté).",
+      );
     }
 
-    window.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('keyup', this.onKeyUp);
-    window.addEventListener('blur', this.releaseAll);
+    window.addEventListener("keydown", this.onKeyDown);
+    window.addEventListener("keyup", this.onKeyUp);
+    window.addEventListener("blur", this.releaseAll);
 
     this.raf = requestAnimationFrame(this.loop);
   }
@@ -121,9 +116,9 @@ export class EmulatorSession {
   destroy(): void {
     this.destroyed = true;
     cancelAnimationFrame(this.raf);
-    window.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('keyup', this.onKeyUp);
-    window.removeEventListener('blur', this.releaseAll);
+    window.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("keyup", this.onKeyUp);
+    window.removeEventListener("blur", this.releaseAll);
     this.node?.disconnect();
     void this.audioCtx?.close();
     this.emu?.delete();
@@ -132,7 +127,15 @@ export class EmulatorSession {
   // ───────────── Main loop ─────────────
 
   private loop = (): void => {
-    if (this.destroyed) return;
+    if (
+      this.destroyed ||
+      !this.module ||
+      !this.emu ||
+      !this.audioCtx ||
+      !this.node
+    ) {
+      return;
+    }
 
     if (!this.paused) {
       const target = this.audioCtx.sampleRate * TARGET_BUFFER_SECONDS;
@@ -149,16 +152,22 @@ export class EmulatorSession {
   };
 
   private pushAudio(): void {
+    if (!this.module || !this.module.HEAPF32) return;
     const frames = this.emu.audioFrameCount();
     if (frames === 0) return;
-    // Copie : la mémoire WASM peut être réallouée, et on transfère le buffer.
-    const src = new Float32Array(this.module.HEAPF32.buffer, this.emu.audioPtr(), frames * 2);
+
+    const src = new Float32Array(
+      this.module.HEAPF32.buffer,
+      this.emu.audioPtr(),
+      frames * 2,
+    );
     const copy = new Float32Array(src);
     this.node.port.postMessage(copy, [copy.buffer]);
     this.queuedFrames += frames;
   }
 
   private draw(): void {
+    if (!this.module || !this.module.HEAPU8) return;
     const w = this.emu.width();
     const h = this.emu.height();
     const canvas = this.opts.canvas;
@@ -169,14 +178,21 @@ export class EmulatorSession {
     if (!this.image || this.image.width !== w || this.image.height !== h) {
       this.image = this.ctx2d.createImageData(w, h);
     }
-    const pixels = new Uint8Array(this.module.HEAPU8.buffer, this.emu.framebufferPtr(), w * h * 4);
+    const pixels = new Uint8Array(
+      this.module.HEAPU8.buffer,
+      this.emu.framebufferPtr(),
+      w * h * 4,
+    );
     this.image.data.set(pixels);
     this.ctx2d.putImageData(this.image, 0, 0);
   }
 
   // ───────────── Keyboard ─────────────
 
-  private rebuildKeyMap(system: SystemDef, bindings: Record<string, string>): void {
+  private rebuildKeyMap(
+    system: SystemDef,
+    bindings: Record<string, string>,
+  ): void {
     this.keyMap.clear();
     for (const action of system.actions) {
       const code = bindings[action.id];

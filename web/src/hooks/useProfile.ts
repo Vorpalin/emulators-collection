@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../auth/AuthProvider';
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../auth/AuthProvider";
 
 /** Pseudo de l'utilisateur connecté (table `profiles`). */
 export function useProfile() {
@@ -14,9 +14,9 @@ export function useProfile() {
     }
     let cancelled = false;
     supabase
-      .from('profiles')
-      .select('username')
-      .eq('id', user.id)
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (!cancelled) setUsername(data?.username ?? null);

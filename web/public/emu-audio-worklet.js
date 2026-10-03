@@ -41,4 +41,4 @@ class EmuAudio extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor('emu-audio', EmuAudio);
+registerProcessor("emu-audio", EmuAudio);

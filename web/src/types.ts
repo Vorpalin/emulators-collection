@@ -1,12 +1,16 @@
-import type { SystemId } from './emulator/systems';
+import type { SystemId } from "./emulator/systems";
 
-/** Ligne de la table `games`. Aucune ROM n'est stockée : seulement son URL. */
+/** Ligne de la table `games`. */
 export interface Game {
   id: string;
   owner_id: string;
   title: string;
   system: SystemId;
-  rom_url: string; // adresse externe (HTTPS), téléchargée par le navigateur
+  /** ROM stockée dans Supabase Storage (bucket "roms") : chemin "<user_id>/<fichier>". */
+  rom_path: string | null;
+  size_bytes: number | null;
+  /** Ancien mode : ROM hébergée ailleurs. Les jeux déjà ajoutés ainsi restent jouables. */
+  rom_url: string | null;
   created_at: string;
 }
 

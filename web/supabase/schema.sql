@@ -1,6 +1,6 @@
 -- =====================================================================
 --  Retro Assembly : script complet à exécuter dans Supabase
---  (profils, bibliothèque de jeux par URL externe, réglages)
+--  (profils, bibliothèque de jeux avec ROM dans Supabase Storage, réglages)
 --  Dashboard > SQL Editor > New query > coller > Run
 --  Rejouable sans risque (idempotent) : il peut être relancé après une
 --  modification sans casser l'existant.
@@ -101,41 +101,43 @@ grant update (username) on public.profiles to authenticated;
 
 -- ─────────────────────────────────────────────────────────────────────
 -- 5. BIBLIOTHÈQUE DE JEUX (privée, par utilisateur)
---    Aucune ROM n'est stockée ici : on garde seulement l'URL externe,
---    que le navigateur télécharge (fetch) au lancement du jeu.
+--    La ROM est stockée dans Supabase Storage (bucket "roms") : on garde ici
+--    son chemin (rom_path). La colonne rom_url ne sert plus qu'aux jeux
+--    ajoutés avant le retour au stockage Supabase : ils restent jouables.
 -- ─────────────────────────────────────────────────────────────────────
 create table if not exists public.games (
   id          uuid primary key default gen_random_uuid(),
   owner_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
   title       text not null,
   system      text not null check (system in ('chip8', 'atari2600', 'gameboy')),
-  rom_url     text not null check (rom_url ~* '^(https://|http://localhost)'),
+  rom_path    text,       -- chemin dans le bucket "roms" : <user_id>/<fichier>
+  size_bytes  integer,
+  rom_url     text,       -- ancien mode : URL externe (lecture seule)
   created_at  timestamptz not null default now()
 );
 create index if not exists games_owner_idx on public.games (owner_id, created_at desc);
 
--- Garantit la valeur par défaut même si la table a été créée à la main (éditeur de
--- tables du dashboard) ou par une ancienne version : sans elle, un INSERT qui
--- n'envoie pas owner_id est refusé par la politique RLS ("new row violates ...").
-alter table public.games alter column owner_id set default auth.uid();
+-- Mise à niveau d'une table existante, sans perdre de données (rejouable) :
+-- fonctionne depuis la version "URL seule" comme depuis la toute première version.
+alter table public.games add column if not exists rom_path   text;
+alter table public.games add column if not exists size_bytes integer;
+alter table public.games add column if not exists rom_url    text;
+alter table public.games alter column rom_path   drop not null;
+alter table public.games alter column size_bytes drop not null;
+alter table public.games alter column rom_url    drop not null;
 
--- Migration : si vous aviez exécuté l'ancienne version (ROM dans Supabase
--- Storage), on supprime ces lignes (leurs fichiers ne sont plus utilisés)
--- et on remplace les colonnes rom_path / size_bytes par rom_url.
-do $$
-begin
-  if exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'games' and column_name = 'rom_path'
-  ) then
-    alter table public.games add column if not exists rom_url text;
-    delete from public.games where rom_url is null;
-    alter table public.games drop column rom_path, drop column size_bytes;
-    alter table public.games alter column rom_url set not null;
-    alter table public.games
-      add constraint games_rom_url_check check (rom_url ~* '^(https://|http://localhost)');
-  end if;
-end $$;
+alter table public.games drop constraint if exists games_rom_url_check;
+alter table public.games add constraint games_rom_url_check
+  check (rom_url is null or rom_url ~* '^(https://|http://localhost)');
+
+-- Un jeu doit avoir une ROM : dans Storage, ou (anciens jeux) à une URL.
+alter table public.games drop constraint if exists games_has_rom;
+alter table public.games add constraint games_has_rom
+  check (rom_path is not null or rom_url is not null);
+
+-- Garantit la valeur par défaut même si la table a été créée à la main : sans elle,
+-- un INSERT qui n'envoie pas owner_id est refusé par la politique RLS.
+alter table public.games alter column owner_id set default auth.uid();
 
 alter table public.games enable row level security;
 
@@ -175,10 +177,25 @@ grant select, insert, update on public.user_settings to authenticated;
 
 
 -- ─────────────────────────────────────────────────────────────────────
--- 7. NETTOYAGE : l'ancienne version stockait les ROM dans Supabase Storage.
---    On retire ses politiques. Le bucket "roms" (s'il existe) se supprime
---    depuis le dashboard : Storage > roms > ... > Delete bucket.
+-- 7. STOCKAGE DES ROM (bucket privé, un dossier par utilisateur)
+--    Chaque utilisateur n'accède qu'à son dossier "<user_id>/...".
+--    La limite de 16 Mo doit rester égale à MAX_ROM_BYTES dans lib/fetchRom.ts.
 -- ─────────────────────────────────────────────────────────────────────
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('roms', 'roms', false, 16777216)
+on conflict (id) do update set public = false, file_size_limit = 16777216;
+
 drop policy if exists "roms: read own" on storage.objects;
+create policy "roms: read own" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'roms' and (storage.foldername(name))[1] = auth.uid()::text);
+
 drop policy if exists "roms: upload own" on storage.objects;
+create policy "roms: upload own" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'roms' and (storage.foldername(name))[1] = auth.uid()::text);
+
 drop policy if exists "roms: delete own" on storage.objects;
+create policy "roms: delete own" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'roms' and (storage.foldername(name))[1] = auth.uid()::text);

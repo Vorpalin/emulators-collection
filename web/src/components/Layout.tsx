@@ -1,13 +1,13 @@
-import { NavLink, Outlet, Link } from 'react-router-dom';
-import { Cpu, FolderOpen, Gamepad2, LogOut } from 'lucide-react';
-import { useAuth } from '../auth/AuthProvider';
-import { useProfile } from '../hooks/useProfile';
+import { NavLink, Outlet, Link } from "react-router-dom";
+import { Cpu, FolderOpen, Gamepad2, LogOut } from "lucide-react";
+import { useAuth } from "../auth/AuthProvider";
+import { useProfile } from "../hooks/useProfile";
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
     isActive
-      ? 'bg-slate-800 text-cyan-400 shadow-sm border border-slate-700'
-      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+      ? "bg-slate-800 text-cyan-400 shadow-sm border border-slate-700"
+      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent"
   }`;
 
 export default function Layout() {
@@ -26,7 +26,9 @@ export default function Layout() {
               <span className="font-extrabold text-lg tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500">
                 RETRO GAMING
               </span>
-              <p className="text-xs text-slate-400">Emulators C++ / WebAssembly</p>
+              <p className="text-xs text-slate-400">
+                Emulators C++ / WebAssembly
+              </p>
             </div>
           </Link>
 
