@@ -1,10 +1,41 @@
 #include "emulators/cpu/LR35902/LR35902.hh"
 
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 #include "emulators/bus/game_boy_bus/GameBoyBus.hh"
 #include "emulators/cpu/LR35902/opcodes.hh"
 #include "emulators/cpu/LR35902/opcodesPrefix.hh"
+
+using json = nlohmann::json;
+
+void to_json(nlohmann::json &j, const LR35902State &state) {
+  j = {
+      {"A", state.A},           {"B", state.B},
+      {"C", state.C},           {"D", state.D},
+      {"E", state.E},           {"H", state.H},
+      {"L", state.L},           {"PC", state.PC},
+      {"SP", state.SP},         {"F", state.F},
+      {"IME", state.IME},       {"imeDelay", state.imeDelay},
+      {"halted", state.halted},
+  };
+}
+
+void from_json(const nlohmann::json &j, LR35902State &state) {
+  j.at("A").get_to(state.A);
+  j.at("B").get_to(state.B);
+  j.at("C").get_to(state.C);
+  j.at("D").get_to(state.D);
+  j.at("E").get_to(state.E);
+  j.at("H").get_to(state.H);
+  j.at("L").get_to(state.L);
+  j.at("PC").get_to(state.PC);
+  j.at("SP").get_to(state.SP);
+  j.at("F").get_to(state.F);
+  j.at("IME").get_to(state.IME);
+  j.at("imeDelay").get_to(state.imeDelay);
+  j.at("halted").get_to(state.halted);
+}
 
 void LR35902::setState(const LR35902State &state) {
   A = state.A;

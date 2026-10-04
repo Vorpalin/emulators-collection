@@ -1,6 +1,9 @@
 #include "emulators/ppu/TIA1A/TIA1A.hh"
 
 #include <cstring>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 namespace {
 
@@ -22,6 +25,64 @@ inline int mod160(int v) {
 }
 
 }  // namespace
+
+void to_json(nlohmann::json& j, const TIA1AState& state) {
+  j = {
+      {"p_grp", state.p_grp},
+      {"p_nusiz", state.p_nusiz},
+      {"p_reflect", state.p_reflect},
+      {"p_vdel", state.p_vdel},
+      {"p_pos", state.p_pos},
+      {"p_hm", state.p_hm},
+
+      {"m_enabled", state.m_enabled},
+      {"m_resetToPlayer", state.m_resetToPlayer},
+      {"m_pos", state.m_pos},
+      {"m_hm", state.m_hm},
+
+      {"bl_enabled", state.bl_enabled},
+      {"bl_enabledOld", state.bl_enabledOld},
+      {"bl_vdel", state.bl_vdel},
+      {"bl_pos", state.bl_pos},
+      {"bl_hm", state.bl_hm},
+
+      {"pf0", state.pf0},
+      {"pf1", state.pf1},
+      {"pf2", state.pf2},
+      {"ctrlpf", state.ctrlpf},
+
+      {"colup", state.colup},
+      {"colupf", state.colupf},
+  };
+}
+
+void from_json(const nlohmann::json& j, TIA1AState& state) {
+  j.at("p_grp").get_to(state.p_grp);
+  j.at("p_nusiz").get_to(state.p_nusiz);
+  j.at("p_reflect").get_to(state.p_reflect);
+  j.at("p_vdel").get_to(state.p_vdel);
+  j.at("p_pos").get_to(state.p_pos);
+  j.at("p_hm").get_to(state.p_hm);
+
+  j.at("m_enabled").get_to(state.m_enabled);
+  j.at("m_resetToPlayer").get_to(state.m_resetToPlayer);
+  j.at("m_pos").get_to(state.m_pos);
+  j.at("m_hm").get_to(state.m_hm);
+
+  j.at("bl_enabled").get_to(state.bl_enabled);
+  j.at("bl_enabledOld").get_to(state.bl_enabledOld);
+  j.at("bl_vdel").get_to(state.bl_vdel);
+  j.at("bl_pos").get_to(state.bl_pos);
+  j.at("bl_hm").get_to(state.bl_hm);
+
+  j.at("pf0").get_to(state.pf0);
+  j.at("pf1").get_to(state.pf1);
+  j.at("pf2").get_to(state.pf2);
+  j.at("ctrlpf").get_to(state.ctrlpf);
+
+  j.at("colup").get_to(state.colup);
+  j.at("colupf").get_to(state.colupf);
+}
 
 void TIA1A::setState(const TIA1AState& state) {
   p_[0].grp = state.p_grp[0];
@@ -60,6 +121,7 @@ void TIA1A::setState(const TIA1AState& state) {
   colup_[0] = state.colup[0];
   colup_[1] = state.colup[1];
   colupf_ = state.colupf;
+  colubk_ = state.colubk;
 }
 
 TIA1AState TIA1A::getState() const {

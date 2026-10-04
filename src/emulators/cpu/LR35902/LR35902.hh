@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 #include "emulators/bus/Bus.hh"
 #include "emulators/cpu/CPU.hh"
@@ -20,6 +21,9 @@ struct LR35902State {
   uint8_t imeDelay;
   bool halted;
 };
+
+void to_json(nlohmann::json &j, const LR35902State &state);
+void from_json(const nlohmann::json &j, LR35902State &state);
 
 /**
  * @class LR35902

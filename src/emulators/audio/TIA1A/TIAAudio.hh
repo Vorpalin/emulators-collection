@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 /**
  * @file TIAAudio.hh
@@ -27,6 +28,9 @@ struct TIAAudioState {
   uint16_t p9[2] = {};   ///< 9-bit LFSR state (white noise).
   bool out[2] = {};      ///< Current output level of each channel.
 };
+
+void to_json(nlohmann::json& j, const TIAAudioState& state);
+void from_json(const nlohmann::json& j, TIAAudioState& state);
 
 /**
  * @class TIAAudio

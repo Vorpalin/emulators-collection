@@ -1,5 +1,29 @@
 #include "emulators/audio/TIA1A/TIAAudio.hh"
 
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+void to_json(nlohmann::json& j, const TIAAudioState& state) {
+  j = {
+      {"regs", state.regs}, {"div", state.div}, {"pos31", state.pos31},
+      {"pos6", state.pos6}, {"sub", state.sub}, {"p4", state.p4},
+      {"p5", state.p5},     {"p9", state.p9},   {"out", state.out},
+  };
+}
+
+void from_json(const nlohmann::json& j, TIAAudioState& state) {
+  j.at("regs").get_to(state.regs);
+  j.at("div").get_to(state.div);
+  j.at("pos31").get_to(state.pos31);
+  j.at("pos6").get_to(state.pos6);
+  j.at("sub").get_to(state.sub);
+  j.at("p4").get_to(state.p4);
+  j.at("p5").get_to(state.p5);
+  j.at("p9").get_to(state.p9);
+  j.at("out").get_to(state.out);
+}
+
 void TIAAudio::setState(const TIAAudioState& state) {
   for (int i = 0; i < 6; ++i) regs_[i] = state.regs[i];
   for (int c = 0; c < 2; ++c) {

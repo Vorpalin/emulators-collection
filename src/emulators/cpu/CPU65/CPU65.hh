@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,9 @@ struct CPU65State {
 
   bool halted;
 };
+
+void to_json(nlohmann::json &j, const CPU65State &state);
+void from_json(const nlohmann::json &j, CPU65State &state);
 
 /**
  * @class CPU65

@@ -15,6 +15,21 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # ============================================================
+# Dependencies
+# ============================================================
+
+include(FetchContent)
+
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.12.0
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(nlohmann_json)
+
+# ============================================================
 # Common options
 # ============================================================
 
@@ -40,7 +55,6 @@ target_include_directories(emulator_options
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-
 # ============================================================
 # CHIP-8
 # ============================================================
@@ -52,6 +66,7 @@ add_library(chip8 STATIC
 target_link_libraries(chip8
     PUBLIC
         emulator_options
+        nlohmann_json::nlohmann_json
 )
 
 # ============================================================
@@ -72,6 +87,7 @@ add_library(atari2600 STATIC
 target_link_libraries(atari2600
     PUBLIC
         emulator_options
+        nlohmann_json::nlohmann_json
 )
 
 # ============================================================
@@ -95,6 +111,7 @@ add_library(gameboy STATIC
 target_link_libraries(gameboy
     PUBLIC
         emulator_options
+        nlohmann_json::nlohmann_json
 )
 
 # ============================================================
@@ -122,6 +139,6 @@ if(EMSCRIPTEN)
             -sEXPORT_ES6=1
             -sALLOW_MEMORY_GROWTH=1
             -sEXPORTED_RUNTIME_METHODS=HEAPU8,HEAPF32
-        )
+    )
 
 endif()

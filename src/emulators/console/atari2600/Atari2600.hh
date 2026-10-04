@@ -71,8 +71,8 @@ class Atari2600 : public Console {
   std::size_t audioFrameCount() const override { return audio_.size() / 2; }
   const float* audioSamples() const override { return audio_.data(); }
 
-  void saveState(const std::string& path) const;
-  void loadState(const std::string& path);
+  std::string saveState() const override;
+  bool loadState(const std::string& filename) override;
 
  private:
   Atari2600State getState() const;

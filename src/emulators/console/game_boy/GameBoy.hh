@@ -70,8 +70,8 @@ class GameBoy : public Console {
   GameBoyState getState() const;
   void setState(const GameBoyState& state);
 
-  void saveState(const std::string& filename) const override;
-  void loadState(const std::string& filename) override;
+  std::string saveState() const override;
+  bool loadState(const std::string& json) override;
 
  private:
   static constexpr int kWidth = 160;

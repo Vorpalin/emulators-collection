@@ -1,5 +1,10 @@
 #include "emulators/console/game_boy/GameBoy.hh"
 
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
 namespace {
 
 // Same grey shades as the former SDL renderer (R = G = B).
@@ -126,19 +131,19 @@ void GameBoy::stepFrame() {
   this->convertFrame();
 }
 
-void GameBoy::saveState(const std::string& filename) const {
-  nlohmann::json j = this->getState();
-  std::ofstream file(filename);
-  if (!file)
-    throw std::runtime_error("Failed to open file for writing: " + filename);
-  file << j.dump(4);
+std::string GameBoy::saveState() const {
+  const nlohmann::json j = getState();
+  return j.dump(4);
 }
 
-void GameBoy::loadState(const std::string& filename) {
-  std::ifstream file(filename);
-  if (!file)
-    throw std::runtime_error("Failed to open file for reading: " + filename);
-  nlohmann::json j;
-  file >> j;
-  this->setState(j.get<GameBoyState>());
+bool GameBoy::loadState(const std::string& json) {
+  try {
+    const nlohmann::json j = nlohmann::json::parse(json);
+    this->setState(j.get<GameBoyState>());
+    return true;
+  } catch (const std::exception& e) {
+    std::cerr << "Failed to parse JSON for loading state: " << e.what()
+              << std::endl;
+    return false;
+  }
 }

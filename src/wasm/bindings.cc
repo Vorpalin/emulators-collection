@@ -182,6 +182,16 @@ class EmulatorWrapper {
     return console_ ? reinterpret_cast<uintptr_t>(console_->audioSamples()) : 0;
   }
 
+  bool loadState(std::string const& json) {
+    if (console_) return console_->loadState(json);
+    return false;
+  }
+
+  std::string saveState() const {
+    if (console_) return console_->saveState();
+    return "";
+  }
+
  private:
   /**
    * @brief Currently loaded emulator instance.
@@ -211,5 +221,7 @@ EMSCRIPTEN_BINDINGS(emulators) {
       .function("height", &EmulatorWrapper::height)
       .function("framebufferPtr", &EmulatorWrapper::framebufferPtr)
       .function("audioFrameCount", &EmulatorWrapper::audioFrameCount)
-      .function("audioPtr", &EmulatorWrapper::audioPtr);
+      .function("audioPtr", &EmulatorWrapper::audioPtr)
+      .function("loadState", &EmulatorWrapper::loadState)
+      .function("saveState", &EmulatorWrapper::saveState);
 }

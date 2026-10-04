@@ -1,6 +1,47 @@
 #include "emulators/bus/game_boy_bus/GameBoyBus.hh"
 
 #include <iostream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+void to_json(nlohmann::json& j, const GameBoyBusState& state) {
+  j = {
+      {"cpu", state.cpu},
+      {"interrupts", state.interrupts},
+      {"apu", state.apu},
+      {"cartridge", state.cartridge},
+      {"ppu", state.ppu},
+      {"timer", state.timer},
+      {"joypad", state.joypad},
+
+      {"wram", state.wram},
+      {"hram", state.hram},
+
+      {"serialData", state.serialData},
+      {"serialControl", state.serialControl},
+
+      {"dmaActive", state.dmaActive},
+  };
+}
+
+void from_json(const nlohmann::json& j, GameBoyBusState& state) {
+  j.at("cpu").get_to(state.cpu);
+  j.at("interrupts").get_to(state.interrupts);
+  j.at("apu").get_to(state.apu);
+  j.at("cartridge").get_to(state.cartridge);
+  j.at("ppu").get_to(state.ppu);
+  j.at("timer").get_to(state.timer);
+  j.at("joypad").get_to(state.joypad);
+
+  j.at("wram").get_to(state.wram);
+  j.at("hram").get_to(state.hram);
+
+  j.at("serialData").get_to(state.serialData);
+  j.at("serialControl").get_to(state.serialControl);
+
+  j.at("dmaActive").get_to(state.dmaActive);
+}
 
 void GameBoyBus::setState(const GameBoyBusState& state) {
   cpu.setState(state.cpu);

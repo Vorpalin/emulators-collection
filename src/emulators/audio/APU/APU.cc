@@ -1,11 +1,159 @@
 #include "emulators/audio/APU/APU.hh"
 
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
 static const uint8_t DUTY_CYCLES[4][8] = {
     {0, 0, 0, 0, 0, 0, 0, 1},  // 12.5%
     {1, 0, 0, 0, 0, 0, 0, 1},  // 25%
     {1, 0, 0, 0, 0, 1, 1, 1},  // 50%
     {0, 1, 1, 1, 1, 1, 1, 0}   // -25%
 };
+
+void to_json(nlohmann::json& j, const APUState& state) {
+  j = {
+      {"channel1", state.channel1},
+      {"channel2", state.channel2},
+      {"channel3", state.channel3},
+      {"channel4", state.channel4},
+
+      {"audioEnabled", state.audioEnabled},
+      {"frameStep", state.frameStep},
+      {"frameTimer", state.frameTimer},
+
+      {"nr50", state.nr50},
+      {"nr51", state.nr51},
+  };
+}
+
+void to_json(nlohmann::json& j, const Channel1& ch1) {
+  j = {
+      {"enabled", ch1.enabled},
+      {"nr10", ch1.nr10},
+      {"nr11", ch1.nr11},
+      {"nr12", ch1.nr12},
+      {"nr13", ch1.nr13},
+      {"nr14", ch1.nr14},
+      {"timer", ch1.timer},
+      {"duty", ch1.duty},
+      {"length", ch1.length},
+      {"volume", ch1.volume},
+      {"envelopeTimer", ch1.envelopeTimer},
+      {"sweepEnabled", ch1.sweepEnabled},
+      {"output", ch1.output},
+  };
+}
+
+void to_json(nlohmann::json& j, const Channel2& ch2) {
+  j = {
+      {"enabled", ch2.enabled}, {"nr21", ch2.nr21},
+      {"nr22", ch2.nr22},       {"nr23", ch2.nr23},
+      {"nr24", ch2.nr24},       {"timer", ch2.timer},
+      {"duty", ch2.duty},       {"length", ch2.length},
+      {"volume", ch2.volume},   {"envelopeTimer", ch2.envelopeTimer},
+      {"output", ch2.output},
+  };
+}
+
+void to_json(nlohmann::json& j, const Channel3& ch3) {
+  j = {
+      {"enabled", ch3.enabled}, {"nr30", ch3.nr30},
+      {"nr31", ch3.nr31},       {"nr32", ch3.nr32},
+      {"nr33", ch3.nr33},       {"nr34", ch3.nr34},
+      {"timer", ch3.timer},     {"position", ch3.position},
+      {"length", ch3.length},   {"waveTable", ch3.waveTable},
+      {"output", ch3.output},
+  };
+}
+
+void to_json(nlohmann::json& j, const Channel4& ch4) {
+  j = {
+      {"enabled", ch4.enabled},
+      {"nr41", ch4.nr41},
+      {"nr42", ch4.nr42},
+      {"nr43", ch4.nr43},
+      {"nr44", ch4.nr44},
+      {"timer", ch4.timer},
+      {"length", ch4.length},
+      {"volume", ch4.volume},
+      {"envelopeTimer", ch4.envelopeTimer},
+      {"lfsr", ch4.lfsr},
+      {"output", ch4.output},
+  };
+}
+
+void from_json(const nlohmann::json& j, APUState& state) {
+  j.at("channel1").get_to(state.channel1);
+  j.at("channel2").get_to(state.channel2);
+  j.at("channel3").get_to(state.channel3);
+  j.at("channel4").get_to(state.channel4);
+
+  j.at("audioEnabled").get_to(state.audioEnabled);
+  j.at("frameStep").get_to(state.frameStep);
+  j.at("frameTimer").get_to(state.frameTimer);
+
+  j.at("nr50").get_to(state.nr50);
+  j.at("nr51").get_to(state.nr51);
+}
+
+void from_json(const nlohmann::json& j, Channel1& ch1) {
+  j.at("enabled").get_to(ch1.enabled);
+  j.at("nr10").get_to(ch1.nr10);
+  j.at("nr11").get_to(ch1.nr11);
+  j.at("nr12").get_to(ch1.nr12);
+  j.at("nr13").get_to(ch1.nr13);
+  j.at("nr14").get_to(ch1.nr14);
+  j.at("timer").get_to(ch1.timer);
+  j.at("duty").get_to(ch1.duty);
+  j.at("length").get_to(ch1.length);
+  j.at("volume").get_to(ch1.volume);
+  j.at("envelopeTimer").get_to(ch1.envelopeTimer);
+  j.at("sweepEnabled").get_to(ch1.sweepEnabled);
+  j.at("output").get_to(ch1.output);
+}
+
+void from_json(const nlohmann::json& j, Channel2& ch2) {
+  j.at("enabled").get_to(ch2.enabled);
+  j.at("nr21").get_to(ch2.nr21);
+  j.at("nr22").get_to(ch2.nr22);
+  j.at("nr23").get_to(ch2.nr23);
+  j.at("nr24").get_to(ch2.nr24);
+  j.at("timer").get_to(ch2.timer);
+  j.at("duty").get_to(ch2.duty);
+  j.at("length").get_to(ch2.length);
+  j.at("volume").get_to(ch2.volume);
+  j.at("envelopeTimer").get_to(ch2.envelopeTimer);
+  j.at("output").get_to(ch2.output);
+}
+
+void from_json(const nlohmann::json& j, Channel3& ch3) {
+  j.at("enabled").get_to(ch3.enabled);
+  j.at("nr30").get_to(ch3.nr30);
+  j.at("nr31").get_to(ch3.nr31);
+  j.at("nr32").get_to(ch3.nr32);
+  j.at("nr33").get_to(ch3.nr33);
+  j.at("nr34").get_to(ch3.nr34);
+  j.at("timer").get_to(ch3.timer);
+  j.at("position").get_to(ch3.position);
+  j.at("length").get_to(ch3.length);
+  j.at("waveTable").get_to(ch3.waveTable);
+  j.at("output").get_to(ch3.output);
+}
+
+void from_json(const nlohmann::json& j, Channel4& ch4) {
+  j.at("enabled").get_to(ch4.enabled);
+  j.at("nr41").get_to(ch4.nr41);
+  j.at("nr42").get_to(ch4.nr42);
+  j.at("nr43").get_to(ch4.nr43);
+  j.at("nr44").get_to(ch4.nr44);
+  j.at("timer").get_to(ch4.timer);
+  j.at("length").get_to(ch4.length);
+  j.at("volume").get_to(ch4.volume);
+  j.at("envelopeTimer").get_to(ch4.envelopeTimer);
+  j.at("lfsr").get_to(ch4.lfsr);
+  j.at("output").get_to(ch4.output);
+}
 
 void APU::setState(const APUState& state) {
   channel1 = state.channel1;

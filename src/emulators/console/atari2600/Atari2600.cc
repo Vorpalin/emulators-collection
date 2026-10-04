@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
 
@@ -205,24 +206,20 @@ void Atari2600::setState(const Atari2600State& state) {
   mono_.clear();
 }
 
-void saveState(const std::string& path) {
+std::string Atari2600::saveState() const {
   const Atari2600State state = getState();
   nlohmann::json json = state;
-
-  std::ofstream file(path);
-  if (!file) {
-    throw std::runtime_error("Failed to open save state file");
-  }
-
-  file << json.dump(4);
+  return json.dump(4);
 }
 
-void loadState(const std::string& path) {
-  std::ifstream file(path);
-  if (!file) {
-    throw std::runtime_error("Failed to open load state file");
+bool Atari2600::loadState(std::string const& json) {
+  try {
+    const nlohmann::json j = nlohmann::json::parse(json);
+    this->setState(j.get<Atari2600State>());
+    return true;
+  } catch (const std::exception& e) {
+    std::cerr << "Failed to parse JSON for loading state: " << e.what()
+              << std::endl;
+    return false;
   }
-  json j;
-  file >> j;
-  this->setState(j.get<Atari2600State>());
 }

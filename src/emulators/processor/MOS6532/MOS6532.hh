@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 /**
  * @file MOS6532.hh
@@ -18,6 +19,9 @@ struct MOS6532State {
   int timer_interval = 1;
   bool timer_expired = false;
 };
+
+void to_json(nlohmann::json& j, const MOS6532State& state);
+void from_json(const nlohmann::json& j, MOS6532State& state);
 
 /**
  * @class MOS6532

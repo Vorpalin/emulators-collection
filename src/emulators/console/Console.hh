@@ -3,9 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
 
 /**
  * @file Console.hh
@@ -89,13 +86,14 @@ class Console {
 
   /**
    * @brief Save the current state of the emulator to a stream.
-   * @param filename Name of the file to write the state to.
+   * @return A string containing the serialized state.
    */
-  virtual void saveState(const std::string& filename) const = 0;
+  virtual std::string saveState() const = 0;
 
   /**
    * @brief Load the state of the emulator from a stream.
-   * @param filename Name of the file to read the state from.
+   * @param json A string containing the serialized state.
+   * @return true if the state was successfully loaded, false otherwise.
    */
-  virtual void loadState(const std::string& filename) = 0;
+  virtual bool loadState(const std::string& json) = 0;
 };

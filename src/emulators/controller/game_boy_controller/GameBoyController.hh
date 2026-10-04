@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 #include "emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.hh"
 
@@ -13,6 +14,9 @@ struct GameBoyControllerState {
   uint8_t buttons;
   uint8_t selectBits;
 };
+
+void to_json(nlohmann::json& j, const GameBoyControllerState& state);
+void from_json(const nlohmann::json& j, GameBoyControllerState& state);
 
 /**
  * @class GameBoyController

@@ -2,6 +2,55 @@
 
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+void to_json(nlohmann::json &j, const GameBoyCartridgeState &state) {
+  j = {
+      {"romData", state.romData},
+      {"ramData", state.ramData},
+
+      {"ramEnabled", state.ramEnabled},
+
+      {"mbc1RomBankLow", state.mbc1RomBankLow},
+      {"mbc1BankHigh", state.mbc1BankHigh},
+      {"mbc1Mode1", state.mbc1Mode1},
+
+      {"mbc2RomBank", state.mbc2RomBank},
+
+      {"mbc3RomBank", state.mbc3RomBank},
+      {"mbc3RamBank", state.mbc3RamBank},
+      {"rtcRegs", state.rtcRegs},
+      {"rtcLatchedRegs", state.rtcLatchedRegs},
+      {"rtcLatchState", state.rtcLatchState},
+
+      {"mbc5RomBank", state.mbc5RomBank},
+      {"mbc5RamBank", state.mbc5RamBank},
+  };
+}
+
+void from_json(const nlohmann::json &j, GameBoyCartridgeState &state) {
+  j.at("romData").get_to(state.romData);
+  j.at("ramData").get_to(state.ramData);
+
+  j.at("ramEnabled").get_to(state.ramEnabled);
+
+  j.at("mbc1RomBankLow").get_to(state.mbc1RomBankLow);
+  j.at("mbc1BankHigh").get_to(state.mbc1BankHigh);
+  j.at("mbc1Mode1").get_to(state.mbc1Mode1);
+
+  j.at("mbc2RomBank").get_to(state.mbc2RomBank);
+
+  j.at("mbc3RomBank").get_to(state.mbc3RomBank);
+  j.at("mbc3RamBank").get_to(state.mbc3RamBank);
+  j.at("rtcRegs").get_to(state.rtcRegs);
+  j.at("rtcLatchedRegs").get_to(state.rtcLatchedRegs);
+  j.at("rtcLatchState").get_to(state.rtcLatchState);
+
+  j.at("mbc5RomBank").get_to(state.mbc5RomBank);
+  j.at("mbc5RamBank").get_to(state.mbc5RamBank);
+}
 
 void GameBoyCartridge::setState(const GameBoyCartridgeState &state) {
   romData = state.romData;

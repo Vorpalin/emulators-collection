@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <nlohmann/json.hpp>
@@ -609,25 +610,19 @@ void Chip8::setState(const Chip8State& state) {
   audio_.clear();
 }
 
-void Chip8::saveState(const std::string& filename) const {
+std::string Chip8::saveState() const {
   json j = this->getState();
-  std::ofstream file(filename);
-  if (!file) {
-    std::cerr << "Failed to open file for saving state: " << filename
-              << std::endl;
-    return;
-  }
-  file << j.dump(4);
+  return j.dump(4);
 }
 
-void Chip8::loadState(const std::string& filename) {
-  std::ifstream file(filename);
-  if (!file) {
-    std::cerr << "Failed to open file for loading state: " << filename
+bool Chip8::loadState(const std::string& json) {
+  try {
+    const nlohmann::json j = nlohmann::json::parse(json);
+    this->setState(j.get<Chip8State>());
+    return true;
+  } catch (const std::exception& e) {
+    std::cerr << "Failed to parse JSON for loading state: " << e.what()
               << std::endl;
-    return;
+    return false;
   }
-  json j;
-  file >> j;
-  this->setState(j.get<Chip8State>());
 }

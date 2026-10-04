@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "emulators/audio/APU/APU.hh"
@@ -36,6 +37,9 @@ struct GameBoyBusState {
 
   bool dmaActive;
 };
+
+void to_json(nlohmann::json& j, const GameBoyBusState& state);
+void from_json(const nlohmann::json& j, GameBoyBusState& state);
 
 /**
  * @class GameBoyBus

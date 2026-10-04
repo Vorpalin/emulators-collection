@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "emulators/bus/Bus.hh"
@@ -23,6 +24,9 @@ struct Atari2600BusState {
   TIA1AState tia;
   Atari2600CartridgeState cartridge;
 };
+
+void to_json(nlohmann::json& j, const Atari2600BusState& state);
+void from_json(const nlohmann::json& j, Atari2600BusState& state);
 
 /**
  * @class Atari2600Bus

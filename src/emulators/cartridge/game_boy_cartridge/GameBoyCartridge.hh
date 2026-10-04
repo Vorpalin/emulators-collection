@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -35,6 +36,9 @@ struct GameBoyCartridgeState {
   uint8_t mbc5RamBank = 0;
 };
 
+void to_json(nlohmann::json& j, const GameBoyCartridgeState& state);
+void from_json(const nlohmann::json& j, GameBoyCartridgeState& state);
+
 /**
  * @class GameBoyCartridge
  * @brief Cartridge with memory bank controller (MBC) emulation.
@@ -53,7 +57,7 @@ class GameBoyCartridge {
    * @brief Loads a ROM file and configures the MBC from its header.
    * @param filename Path to the ROM file.
    */
-  void loadROM(std::string &filename);
+  void loadROM(std::string& filename);
 
   /**
    * @brief Load a ROM image from memory (no file system needed).
@@ -61,7 +65,7 @@ class GameBoyCartridge {
    * @param size Number of bytes (must at least cover the 0x150-byte header).
    * @return false if the image is too small to be a Game Boy ROM.
    */
-  bool loadROM(const uint8_t *data, std::size_t size);
+  bool loadROM(const uint8_t* data, std::size_t size);
 
   /** @brief Resets all MBC registers and banks to their power-on values. */
   void reset();
@@ -92,7 +96,7 @@ class GameBoyCartridge {
    */
   int getCurrentRomBank() const { return currentRomBank(); }
 
-  void setState(const GameBoyCartridgeState &state);
+  void setState(const GameBoyCartridgeState& state);
   GameBoyCartridgeState getState() const;
 
  private:

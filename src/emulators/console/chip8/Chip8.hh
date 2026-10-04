@@ -77,8 +77,8 @@ class Chip8 : public Console {
   std::size_t audioFrameCount() const override { return audio_.size() / 2; }
   const float* audioSamples() const override { return audio_.data(); }
 
-  void loadState(const std::string& filename) override;
-  void saveState(const std::string& filename) const override;
+  bool loadState(const std::string& json) override;
+  std::string saveState() const override;
 
  private:
   /// CPU instructions executed per 60 Hz frame (~720 instructions/second).

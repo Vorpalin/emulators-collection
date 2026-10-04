@@ -1,11 +1,15 @@
 #pragma once
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 struct GameBoyInterruptControllerState {
   uint8_t ifReg;
   uint8_t ieReg;
 };
+
+void to_json(nlohmann::json& j, const GameBoyInterruptControllerState& state);
+void from_json(const nlohmann::json& j, GameBoyInterruptControllerState& state);
 
 class GameBoyInterruptController {
  public:

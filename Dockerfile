@@ -27,6 +27,7 @@ WORKDIR /src
 RUN emcmake cmake \
         -S . \
         -B build-wasm \
+        -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
     && cmake --build build-wasm -j"$(nproc)" \
     && mkdir -p web/src/wasm \

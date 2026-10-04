@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 /**
  * @file TIA1A.hh
@@ -35,7 +36,11 @@ struct TIA1AState {
 
   std::array<uint8_t, 2> colup{};
   uint8_t colupf = 0;
+  uint8_t colubk = 0;
 };
+
+void to_json(nlohmann::json& j, const TIA1AState& state);
+void from_json(const nlohmann::json& j, TIA1AState& state);
 
 /**
  * @class TIA1A

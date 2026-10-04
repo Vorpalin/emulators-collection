@@ -2,6 +2,21 @@
 
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+void to_json(nlohmann::json &j, const Atari2600CartridgeState &state) {
+  j = {
+      {"romData", state.romData},
+      {"bank", state.bank},
+  };
+}
+
+void from_json(const nlohmann::json &j, Atari2600CartridgeState &state) {
+  j.at("romData").get_to(state.romData);
+  j.at("bank").get_to(state.bank);
+}
 
 void Atari2600Cartridge::setState(const Atari2600CartridgeState &state) {
   romData = state.romData;

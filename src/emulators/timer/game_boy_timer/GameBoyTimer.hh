@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 #include "emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.hh"
 
@@ -12,6 +13,9 @@ struct GameBoyTimerState {
   uint16_t timerCycles;     // Internal counter for timer ticks
   uint32_t dividerCounter;  // Internal counter for divider ticks
 };
+
+void to_json(nlohmann::json& j, const GameBoyTimerState& state);
+void from_json(const nlohmann::json& j, GameBoyTimerState& state);
 
 class GameBoyTimer {
  public:

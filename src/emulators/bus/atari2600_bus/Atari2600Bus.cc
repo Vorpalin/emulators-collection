@@ -1,21 +1,40 @@
 #include "emulators/bus/atari2600_bus/Atari2600Bus.hh"
 
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
+
+using json = nlohmann::json;
+
+void to_json(nlohmann::json& j, const Atari2600BusState& state) {
+  j = {
+      {"cpu", state.cpu},
+      {"riot", state.riot},
+      {"tia", state.tia},
+      {"cartridge", state.cartridge},
+  };
+}
+
+void from_json(const nlohmann::json& j, Atari2600BusState& state) {
+  j.at("cpu").get_to(state.cpu);
+  j.at("riot").get_to(state.riot);
+  j.at("tia").get_to(state.tia);
+  j.at("cartridge").get_to(state.cartridge);
+}
 
 Atari2600BusState Atari2600Bus::getState() const {
   return {
       .cpu = cpu.getState(),
-      .riot = riot.getState(),
-      .tia = tia.getState(),
+      .riot = mos6532.getState(),
+      .tia = tia1a.getState(),
       .cartridge = cartridge.getState(),
   };
 }
 
 void Atari2600Bus::setState(const Atari2600BusState& state) {
   cpu.setState(state.cpu);
-  riot.setState(state.riot);
-  tia.setState(state.tia);
+  mos6532.setState(state.riot);
+  tia1a.setState(state.tia);
   cartridge.setState(state.cartridge);
 }
 
