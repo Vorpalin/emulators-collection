@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -12,6 +13,31 @@
  *        header (0x0147-0x0149) to detect the cartridge type and the
  *        ROM/RAM sizes.
  */
+
+struct GameBoyCartridgeState {
+  std::vector<uint8_t> romData;
+  std::vector<uint8_t> ramData;
+
+  bool ramEnabled = false;
+
+  uint8_t mbc1RomBankLow = 1;
+  uint8_t mbc1BankHigh = 0;
+  bool mbc1Mode1 = false;
+
+  uint8_t mbc2RomBank = 1;
+
+  uint8_t mbc3RomBank = 1;
+  uint8_t mbc3RamBank = 0;
+  uint8_t rtcRegs[5] = {0};
+  uint8_t rtcLatchedRegs[5] = {0};
+  uint8_t rtcLatchState = 0xFF;
+
+  uint16_t mbc5RomBank = 1;
+  uint8_t mbc5RamBank = 0;
+};
+
+void to_json(nlohmann::json& j, const GameBoyCartridgeState& state);
+void from_json(const nlohmann::json& j, GameBoyCartridgeState& state);
 
 /**
  * @class GameBoyCartridge
@@ -31,7 +57,7 @@ class GameBoyCartridge {
    * @brief Loads a ROM file and configures the MBC from its header.
    * @param filename Path to the ROM file.
    */
-  void loadROM(std::string &filename);
+  void loadROM(std::string& filename);
 
   /**
    * @brief Load a ROM image from memory (no file system needed).
@@ -39,7 +65,7 @@ class GameBoyCartridge {
    * @param size Number of bytes (must at least cover the 0x150-byte header).
    * @return false if the image is too small to be a Game Boy ROM.
    */
-  bool loadROM(const uint8_t *data, std::size_t size);
+  bool loadROM(const uint8_t* data, std::size_t size);
 
   /** @brief Resets all MBC registers and banks to their power-on values. */
   void reset();
@@ -69,6 +95,9 @@ class GameBoyCartridge {
    * @note Intended for debugging.
    */
   int getCurrentRomBank() const { return currentRomBank(); }
+
+  void setState(const GameBoyCartridgeState& state);
+  GameBoyCartridgeState getState() const;
 
  private:
   /** @brief Supported memory bank controller types. */

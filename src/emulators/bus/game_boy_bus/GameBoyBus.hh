@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "emulators/audio/APU/APU.hh"
@@ -18,6 +19,27 @@
  * @file GameBoyBus.hh
  * @brief Game Boy system bus: memory map and component wiring.
  */
+
+struct GameBoyBusState {
+  LR35902State cpu;
+  GameBoyInterruptControllerState interrupts;
+  APUState apu;
+  GameBoyCartridgeState cartridge;
+  GameBoyPPUState ppu;
+  GameBoyTimerState timer;
+  GameBoyControllerState joypad;
+
+  std::array<uint8_t, 0x2000> wram;
+  std::array<uint8_t, 0x7F> hram;
+
+  uint8_t serialData;
+  uint8_t serialControl;
+
+  bool dmaActive;
+};
+
+void to_json(nlohmann::json& j, const GameBoyBusState& state);
+void from_json(const nlohmann::json& j, GameBoyBusState& state);
 
 /**
  * @class GameBoyBus
@@ -128,6 +150,9 @@ class GameBoyBus : public Bus {
   /// Interrupt controller (IF at 0xFF0F, IE at 0xFFFF). Public so that the
   /// CPU and peripherals can request/query interrupts.
   GameBoyInterruptController interrupts;
+
+  void setState(const GameBoyBusState& state);
+  GameBoyBusState getState() const;
 
  private:
   /**

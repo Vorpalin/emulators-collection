@@ -1,11 +1,74 @@
 #include "emulators/ppu/game_boy_ppu/GameBoyPPU.hh"
 
 #include <algorithm>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 constexpr int CYCLES_OAM_SCAN = 80;
 constexpr int CYCLES_DRAWING = 172;
 constexpr int CYCLES_LINE = 456;
 constexpr int LINES_VBLANK_END = 153;
+
+void to_json(nlohmann::json& j, const PPURegisters& regs) {
+  j = {
+      {"lcdc", regs.lcdc}, {"stat", regs.stat}, {"scy", regs.scy},
+      {"scx", regs.scx},   {"ly", regs.ly},     {"lyc", regs.lyc},
+      {"dma", regs.dma},   {"bgp", regs.bgp},   {"obp0", regs.obp0},
+      {"obp1", regs.obp1}, {"wy", regs.wy},     {"wx", regs.wx},
+  };
+}
+
+void from_json(const nlohmann::json& j, PPURegisters& regs) {
+  j.at("lcdc").get_to(regs.lcdc);
+  j.at("stat").get_to(regs.stat);
+  j.at("scy").get_to(regs.scy);
+  j.at("scx").get_to(regs.scx);
+  j.at("ly").get_to(regs.ly);
+  j.at("lyc").get_to(regs.lyc);
+  j.at("dma").get_to(regs.dma);
+  j.at("bgp").get_to(regs.bgp);
+  j.at("obp0").get_to(regs.obp0);
+  j.at("obp1").get_to(regs.obp1);
+  j.at("wy").get_to(regs.wy);
+  j.at("wx").get_to(regs.wx);
+}
+
+void to_json(nlohmann::json& j, const GameBoyPPUState& state) {
+  j = {
+      {"regs", state.regs},
+      {"vram", state.vram},
+      {"oam", state.oam},
+      {"framebuffer", state.framebuffer},
+      {"dotCounter", state.dotCounter},
+  };
+}
+
+void from_json(const nlohmann::json& j, GameBoyPPUState& state) {
+  j.at("regs").get_to(state.regs);
+  j.at("vram").get_to(state.vram);
+  j.at("oam").get_to(state.oam);
+  j.at("framebuffer").get_to(state.framebuffer);
+  j.at("dotCounter").get_to(state.dotCounter);
+}
+
+void GameBoyPPU::setState(const GameBoyPPUState& state) {
+  regs_ = state.regs;
+  vram = state.vram;
+  oam = state.oam;
+  framebuffer_ = state.framebuffer;
+  dotCounter_ = state.dotCounter;
+}
+
+GameBoyPPUState GameBoyPPU::getState() const {
+  GameBoyPPUState state;
+  state.regs = regs_;
+  state.vram = vram;
+  state.oam = oam;
+  state.framebuffer = framebuffer_;
+  state.dotCounter = dotCounter_;
+  return state;
+}
 
 GameBoyPPU::GameBoyPPU() { reset(); }
 

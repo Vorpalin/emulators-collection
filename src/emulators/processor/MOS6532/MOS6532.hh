@@ -2,12 +2,26 @@
 
 #include <array>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 /**
  * @file MOS6532.hh
  * @brief MOS 6532 RIOT (RAM-I/O-Timer) emulation, as used by the Atari 2600
  *        for its 128 bytes of RAM, I/O ports and interval timer.
  */
+
+struct MOS6532State {
+  std::array<uint8_t, 128> ram{};
+  std::array<uint8_t, 2> io_ports{};
+  std::array<uint8_t, 2> ddrs{};
+
+  uint32_t timer_counter = 0;
+  int timer_interval = 1;
+  bool timer_expired = false;
+};
+
+void to_json(nlohmann::json& j, const MOS6532State& state);
+void from_json(const nlohmann::json& j, MOS6532State& state);
 
 /**
  * @class MOS6532
@@ -63,6 +77,9 @@ class MOS6532 {
    * @param v Port B input value.
    */
   void setSwchb(uint8_t v);
+
+  void setState(const MOS6532State& state);
+  MOS6532State getState() const;
 
  private:
   std::array<uint8_t, 128> ram;     ///< 128 bytes of RAM.

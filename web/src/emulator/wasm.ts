@@ -11,6 +11,8 @@ export interface EmulatorInstance {
   audioFrameCount(): number;
   audioPtr(): number;
   delete(): void;
+  loadState(state: string): boolean;
+  saveState(): string;
 }
 
 export interface EmulatorModule {

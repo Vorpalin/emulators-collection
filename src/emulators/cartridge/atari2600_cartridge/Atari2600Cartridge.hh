@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -9,6 +10,14 @@
  * @file Atari2600Cartridge.hh
  * @brief Atari 2600 cartridge (ROM) emulation, including bank switching.
  */
+
+struct Atari2600CartridgeState {
+  std::vector<uint8_t> romData;
+  uint8_t bank = 0;
+};
+
+void to_json(nlohmann::json& j, const Atari2600CartridgeState& state);
+void from_json(const nlohmann::json& j, Atari2600CartridgeState& state);
 
 /**
  * @class Atari2600Cartridge
@@ -26,7 +35,7 @@ class Atari2600Cartridge {
    * @brief Load a ROM image from disk into memory.
    * @param filename Path to the ROM file to load.
    */
-  void loadROM(std::string &filename);
+  void loadROM(std::string& filename);
 
   /**
    * @brief Load a ROM image from memory (no file system needed).
@@ -35,7 +44,7 @@ class Atari2600Cartridge {
    * @return false if the image is empty or larger than 8K (unsupported
    *         bank-switching scheme); the previous ROM is then kept.
    */
-  bool loadROM(const uint8_t *data, std::size_t size);
+  bool loadROM(const uint8_t* data, std::size_t size);
 
   /**
    * @brief Reset cartridge state (e.g. current bank) to its default.
@@ -57,6 +66,9 @@ class Atari2600Cartridge {
    *                bank-switching scheme).
    */
   void write(uint16_t address, uint8_t value);
+
+  void setState(const Atari2600CartridgeState& state);
+  Atari2600CartridgeState getState() const;
 
  private:
   std::vector<uint8_t> romData;  ///< Raw ROM image data.

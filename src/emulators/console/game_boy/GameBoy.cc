@@ -1,11 +1,58 @@
 #include "emulators/console/game_boy/GameBoy.hh"
 
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
 namespace {
 
 // Same grey shades as the former SDL renderer (R = G = B).
 constexpr uint8_t kShades[4] = {0xFF, 0xAA, 0x55, 0x00};
 
 }  // namespace
+
+GameBoyState GameBoy::getState() const {
+  return {
+      .bus = bus.getState(),
+      .cyclesPerSample = cyclesPerSample_,
+      .phase = phase_,
+      .sumL = sumL_,
+      .sumR = sumR_,
+      .weight = weight_,
+  };
+}
+
+void GameBoy::setState(const GameBoyState& state) {
+  bus.setState(state.bus);
+
+  cyclesPerSample_ = state.cyclesPerSample;
+  phase_ = state.phase;
+  sumL_ = state.sumL;
+  sumR_ = state.sumR;
+  weight_ = state.weight;
+
+  audio_.clear();
+
+  convertFrame();
+}
+
+void to_json(nlohmann::json& j, const GameBoyState& state) {
+  j = {
+      {"bus", state.bus},     {"cyclesPerSample", state.cyclesPerSample},
+      {"phase", state.phase}, {"sumL", state.sumL},
+      {"sumR", state.sumR},   {"weight", state.weight},
+  };
+}
+
+void from_json(const nlohmann::json& j, GameBoyState& state) {
+  j.at("bus").get_to(state.bus);
+  j.at("cyclesPerSample").get_to(state.cyclesPerSample);
+  j.at("phase").get_to(state.phase);
+  j.at("sumL").get_to(state.sumL);
+  j.at("sumR").get_to(state.sumR);
+  j.at("weight").get_to(state.weight);
+}
 
 GameBoy::GameBoy() : bus() {
   audio_.reserve(4096);
@@ -82,4 +129,21 @@ void GameBoy::stepFrame() {
   }
 
   this->convertFrame();
+}
+
+std::string GameBoy::saveState() const {
+  const nlohmann::json j = getState();
+  return j.dump(4);
+}
+
+bool GameBoy::loadState(const std::string& json) {
+  try {
+    const nlohmann::json j = nlohmann::json::parse(json);
+    this->setState(j.get<GameBoyState>());
+    return true;
+  } catch (const std::exception& e) {
+    std::cerr << "Failed to parse JSON for loading state: " << e.what()
+              << std::endl;
+    return false;
+  }
 }

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
 
 /**
  * @file Console.hh
@@ -82,4 +83,17 @@ class Console {
    *        audioFrameCount() * 2 floats. Valid until the next stepFrame().
    */
   virtual const float* audioSamples() const = 0;
+
+  /**
+   * @brief Save the current state of the emulator to a stream.
+   * @return A string containing the serialized state.
+   */
+  virtual std::string saveState() const = 0;
+
+  /**
+   * @brief Load the state of the emulator from a stream.
+   * @param json A string containing the serialized state.
+   * @return true if the state was successfully loaded, false otherwise.
+   */
+  virtual bool loadState(const std::string& json) = 0;
 };

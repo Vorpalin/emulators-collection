@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <nlohmann/json.hpp>
+
 /**
  * @file TIAAudio.hh
  * @brief Minimal TIA sound emulation (2 channels), platform independent.
@@ -14,7 +17,20 @@
  * no SDL dependency here.
  */
 
-#include <cstdint>
+struct TIAAudioState {
+  uint8_t regs[6] = {};  ///< AUDC0, AUDC1, AUDF0, AUDF1, AUDV0, AUDV1.
+  int div[2] = {};       ///< AUDF divider counters.
+  int pos31[2] = {};     ///< Position in the 31-step pattern.
+  int pos6[2] = {};      ///< Position in the 6-step pattern.
+  int sub[2] = {};       ///< Extra /3 stage for modes 14 and 15.
+  uint8_t p4[2] = {};    ///< 4-bit LFSR state.
+  uint8_t p5[2] = {};    ///< 5-bit LFSR state.
+  uint16_t p9[2] = {};   ///< 9-bit LFSR state (white noise).
+  bool out[2] = {};      ///< Current output level of each channel.
+};
+
+void to_json(nlohmann::json& j, const TIAAudioState& state);
+void from_json(const nlohmann::json& j, TIAAudioState& state);
 
 /**
  * @class TIAAudio
@@ -58,6 +74,9 @@ class TIAAudio {
    * @param count Number of samples to generate.
    */
   void generate(float* out, int count);
+
+  void setState(const TIAAudioState& state);
+  TIAAudioState getState() const;
 
  private:
   /// @brief Per-channel waveform generator state.

@@ -1,5 +1,30 @@
 #include "emulators/controller/game_boy_controller/GameBoyController.hh"
 
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+void to_json(nlohmann::json& j, const GameBoyControllerState& state) {
+  j = {
+      {"buttons", state.buttons},
+      {"selectBits", state.selectBits},
+  };
+}
+
+void from_json(const nlohmann::json& j, GameBoyControllerState& state) {
+  j.at("buttons").get_to(state.buttons);
+  j.at("selectBits").get_to(state.selectBits);
+}
+
+void GameBoyController::setState(const GameBoyControllerState& state) {
+  buttons = state.buttons;
+  selectBits = state.selectBits;
+}
+
+GameBoyControllerState GameBoyController::getState() const {
+  return {buttons, selectBits};
+}
+
 void GameBoyController::reset() {
   buttons = 0x00;
   selectBits = 0x30;

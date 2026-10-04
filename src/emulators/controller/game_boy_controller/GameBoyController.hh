@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 #include "emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.hh"
 
@@ -8,6 +9,14 @@
  * @file GameBoyController.hh
  * @brief Game Boy joypad emulation (register P1/JOYP at 0xFF00).
  */
+
+struct GameBoyControllerState {
+  uint8_t buttons;
+  uint8_t selectBits;
+};
+
+void to_json(nlohmann::json& j, const GameBoyControllerState& state);
+void from_json(const nlohmann::json& j, GameBoyControllerState& state);
 
 /**
  * @class GameBoyController
@@ -80,6 +89,9 @@ class GameBoyController {
    * @param value Value written by the CPU.
    */
   void write(uint8_t value);
+
+  void setState(const GameBoyControllerState& state);
+  GameBoyControllerState getState() const;
 
  private:
   GameBoyInterruptController*

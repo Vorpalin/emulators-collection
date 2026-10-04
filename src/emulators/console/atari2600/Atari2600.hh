@@ -15,6 +15,18 @@
  *        and synthesizing the TIA audio, without any platform dependency.
  */
 
+struct Atari2600State {
+  Atari2600BusState bus;
+
+  std::array<bool, 7> keys{};
+
+  double sampleRate;
+  double sampleAcc;
+
+  // État nécessaire uniquement à la continuité de l'audio.
+  TIAAudioState audio;
+};
+
 /**
  * @class Atari2600
  * @brief Emulates an Atari 2600 console: owns the system bus (CPU, RIOT,
@@ -59,7 +71,13 @@ class Atari2600 : public Console {
   std::size_t audioFrameCount() const override { return audio_.size() / 2; }
   const float* audioSamples() const override { return audio_.data(); }
 
+  std::string saveState() const override;
+  bool loadState(const std::string& filename) override;
+
  private:
+  Atari2600State getState() const;
+  void setState(const Atari2600State& state);
+
   /// Safety cap on bus ticks per frame (a normal frame needs ~7000).
   static constexpr int kMaxTicksPerFrame = 50000;
   /// NTSC frame rate used to size each frame's audio, as in the SDL version.

@@ -1,8 +1,75 @@
 #include "emulators/cpu/CPU65/CPU65.hh"
 
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 #include "emulators/cpu/CPU65/opcodes.hh"
+
+using json = nlohmann::json;
+
+void to_json(nlohmann::json &j, const CPU65State &state) {
+  j = {
+      {"A", state.A},           {"X", state.X},   {"Y", state.Y},
+      {"SP", state.SP},         {"PC", state.PC}, {"C", state.C},
+      {"Z", state.Z},           {"I", state.I},   {"D", state.D},
+      {"B", state.B},           {"V", state.V},   {"N", state.N},
+      {"halted", state.halted},
+  };
+}
+
+void from_json(const nlohmann::json &j, CPU65State &state) {
+  j.at("A").get_to(state.A);
+  j.at("X").get_to(state.X);
+  j.at("Y").get_to(state.Y);
+  j.at("SP").get_to(state.SP);
+  j.at("PC").get_to(state.PC);
+  j.at("C").get_to(state.C);
+  j.at("Z").get_to(state.Z);
+  j.at("I").get_to(state.I);
+  j.at("D").get_to(state.D);
+  j.at("B").get_to(state.B);
+  j.at("V").get_to(state.V);
+  j.at("N").get_to(state.N);
+  j.at("halted").get_to(state.halted);
+}
+
+void CPU65::setState(const CPU65State &state) {
+  A = state.A;
+  X = state.X;
+  Y = state.Y;
+  SP = state.SP;
+  PC = state.PC;
+
+  C = state.C;
+  Z = state.Z;
+  I = state.I;
+  D = state.D;
+  B = state.B;
+  V = state.V;
+  N = state.N;
+
+  halted = state.halted;
+}
+
+CPU65State CPU65::getState() const {
+  CPU65State state;
+  state.A = A;
+  state.X = X;
+  state.Y = Y;
+  state.SP = SP;
+  state.PC = PC;
+
+  state.C = C;
+  state.Z = Z;
+  state.I = I;
+  state.D = D;
+  state.B = B;
+  state.V = V;
+  state.N = N;
+
+  state.halted = halted;
+  return state;
+}
 
 CPU65::CPU65(Bus *bus) : bus(bus) { resetCPU(); }
 

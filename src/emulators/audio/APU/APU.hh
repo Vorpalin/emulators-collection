@@ -25,6 +25,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <nlohmann/json.hpp>
 
 /**
  * @brief State of sound Channel 1 (square wave with frequency sweep).
@@ -210,6 +211,31 @@ struct Channel4 {
   uint8_t output = 0;
 };
 
+struct APUState {
+  Channel1 channel1;
+  Channel2 channel2;
+  Channel3 channel3;
+  Channel4 channel4;
+
+  bool audioEnabled;
+  int frameStep;
+  int frameTimer;
+
+  uint8_t nr50;
+  uint8_t nr51;
+};
+
+void to_json(nlohmann::json& j, const APUState& state);
+void to_json(nlohmann::json& j, const Channel1& ch1);
+void to_json(nlohmann::json& j, const Channel2& ch2);
+void to_json(nlohmann::json& j, const Channel3& ch3);
+void to_json(nlohmann::json& j, const Channel4& ch4);
+void from_json(const nlohmann::json& j, APUState& state);
+void from_json(const nlohmann::json& j, Channel1& ch1);
+void from_json(const nlohmann::json& j, Channel2& ch2);
+void from_json(const nlohmann::json& j, Channel3& ch3);
+void from_json(const nlohmann::json& j, Channel4& ch4);
+
 /**
  * @brief Game Boy Audio Processing Unit.
  *
@@ -284,6 +310,9 @@ class APU {
    *        scaled according to NR50/NR51.
    */
   void getStereoSample(float& left, float& right);  ///< per-side mix
+
+  void setState(const APUState& state);
+  APUState getState() const;
 
  private:
   /// Master audio power state (NR52 bit 7). When false, all channels are

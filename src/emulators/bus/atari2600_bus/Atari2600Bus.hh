@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "emulators/bus/Bus.hh"
@@ -16,6 +17,16 @@
  * @brief System bus wiring together the Atari 2600's CPU, cartridge,
  *        RIOT and TIA into a single addressable machine.
  */
+
+struct Atari2600BusState {
+  CPU65State cpu;
+  MOS6532State riot;
+  TIA1AState tia;
+  Atari2600CartridgeState cartridge;
+};
+
+void to_json(nlohmann::json& j, const Atari2600BusState& state);
+void from_json(const nlohmann::json& j, Atari2600BusState& state);
 
 /**
  * @class Atari2600Bus
@@ -106,6 +117,9 @@ class Atari2600Bus : public Bus {
   void setAudioWriteHook(std::function<void(uint16_t, uint8_t)> hook) {
     onAudioWrite = std::move(hook);
   }
+
+  Atari2600BusState getState() const;
+  void setState(const Atari2600BusState& state);
 
  private:
   Atari2600Cartridge cartridge;  ///< Loaded ROM and bank-switching state.

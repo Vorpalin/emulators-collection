@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "emulators/ppu/game_boy_ppu/mode.hh"
@@ -79,6 +80,19 @@ struct PPURegisters {
   bool coincidenceFlag() const { return stat & 0x04; }  ///< Bit 2: LY == LYC.
   /// @}
 };
+
+struct GameBoyPPUState {
+  PPURegisters regs;
+  std::array<uint8_t, 0x2000> vram;
+  std::array<uint8_t, 0xA0> oam;
+  std::array<uint8_t, SCREEN_WIDTH * SCREEN_HEIGHT> framebuffer;
+  int dotCounter;
+};
+
+void to_json(nlohmann::json& j, const GameBoyPPUState& state);
+void to_json(nlohmann::json& j, const PPURegisters& regs);
+void from_json(const nlohmann::json& j, GameBoyPPUState& state);
+void from_json(const nlohmann::json& j, PPURegisters& regs);
 
 /**
  * @struct Sprite
@@ -183,6 +197,9 @@ class GameBoyPPU {
 
   /** @brief Read-only access to the PPU registers. */
   const PPURegisters& registers() const { return regs_; }
+
+  void setState(const GameBoyPPUState& state);
+  GameBoyPPUState getState() const;
 
  private:
   PPURegisters regs_;                ///< LCD registers.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
@@ -12,6 +13,27 @@
  * @brief MOS 6502-family CPU core (as used by the Atari 2600), including
  *        support for the common undocumented/"illegal" opcodes.
  */
+
+struct CPU65State {
+  uint8_t A;
+  uint8_t X;
+  uint8_t Y;
+  uint16_t SP;
+  uint16_t PC;
+
+  bool C;
+  bool Z;
+  bool I;
+  bool D;
+  bool B;
+  bool V;
+  bool N;
+
+  bool halted;
+};
+
+void to_json(nlohmann::json &j, const CPU65State &state);
+void from_json(const nlohmann::json &j, CPU65State &state);
 
 /**
  * @class CPU65
@@ -66,6 +88,9 @@ class CPU65 : public CPU {
    * @param value   Byte value to write.
    */
   void write(uint16_t address, uint8_t value);
+
+  void setState(const CPU65State &state);
+  CPU65State getState() const;
 
  private:
   Bus *bus;  ///< Pointer to the bus for memory access (not owned).

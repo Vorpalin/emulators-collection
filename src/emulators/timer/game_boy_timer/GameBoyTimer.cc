@@ -1,5 +1,49 @@
 #include "emulators/timer/game_boy_timer/GameBoyTimer.hh"
 
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+void to_json(nlohmann::json& j, const GameBoyTimerState& state) {
+  j = {
+      {"divider", state.divider},
+      {"timerCounter", state.timerCounter},
+      {"timerModulo", state.timerModulo},
+      {"timerControl", state.timerControl},
+      {"timerCycles", state.timerCycles},
+      {"dividerCounter", state.dividerCounter},
+  };
+}
+
+void from_json(const nlohmann::json& j, GameBoyTimerState& state) {
+  j.at("divider").get_to(state.divider);
+  j.at("timerCounter").get_to(state.timerCounter);
+  j.at("timerModulo").get_to(state.timerModulo);
+  j.at("timerControl").get_to(state.timerControl);
+  j.at("timerCycles").get_to(state.timerCycles);
+  j.at("dividerCounter").get_to(state.dividerCounter);
+}
+
+void GameBoyTimer::setState(const GameBoyTimerState& state) {
+  divider = state.divider;
+  timerCounter = state.timerCounter;
+  timerModulo = state.timerModulo;
+  timerControl = state.timerControl;
+  timerCycles = state.timerCycles;
+  dividerCounter = state.dividerCounter;
+}
+
+GameBoyTimerState GameBoyTimer::getState() const {
+  GameBoyTimerState state;
+  state.divider = divider;
+  state.timerCounter = timerCounter;
+  state.timerModulo = timerModulo;
+  state.timerControl = timerControl;
+  state.timerCycles = timerCycles;
+  state.dividerCounter = dividerCounter;
+  return state;
+}
+
 GameBoyTimer::GameBoyTimer() {
   interrupts = nullptr;
   reset();
