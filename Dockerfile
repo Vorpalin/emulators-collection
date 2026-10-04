@@ -2,8 +2,6 @@ FROM emscripten/emsdk:6.0.10
 
 WORKDIR /src
 
-RUN npm install -g npm@11.6.2
-
 # Tools needed by the project
 RUN apt-get update \
     && apt-get upgrade -y \
