@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 
-Atari2600Bus::Atari2600Bus() : cpu(this), cartridge(), mos6532(), tia1a() {
+Atari2600Bus::Atari2600Bus() : cartridge(), mos6532(), tia1a(), cpu(this) {
   // Initialize the Atari 2600 bus
 }
 
