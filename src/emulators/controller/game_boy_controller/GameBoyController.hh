@@ -9,6 +9,11 @@
  * @brief Game Boy joypad emulation (register P1/JOYP at 0xFF00).
  */
 
+struct GameBoyControllerState {
+  uint8_t buttons;
+  uint8_t selectBits;
+};
+
 /**
  * @class GameBoyController
  * @brief Emulates the joypad register at 0xFF00.
@@ -80,6 +85,9 @@ class GameBoyController {
    * @param value Value written by the CPU.
    */
   void write(uint8_t value);
+
+  void setState(const GameBoyControllerState& state);
+  GameBoyControllerState getState() const;
 
  private:
   GameBoyInterruptController*

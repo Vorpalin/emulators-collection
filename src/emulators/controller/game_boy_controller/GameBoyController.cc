@@ -1,5 +1,14 @@
 #include "emulators/controller/game_boy_controller/GameBoyController.hh"
 
+void GameBoyController::setState(const GameBoyControllerState& state) {
+  buttons = state.buttons;
+  selectBits = state.selectBits;
+}
+
+GameBoyControllerState GameBoyController::getState() const {
+  return {buttons, selectBits};
+}
+
 void GameBoyController::reset() {
   buttons = 0x00;
   selectBits = 0x30;

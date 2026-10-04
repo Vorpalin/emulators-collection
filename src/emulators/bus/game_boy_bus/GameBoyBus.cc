@@ -2,6 +2,44 @@
 
 #include <iostream>
 
+void GameBoyBus::setState(const GameBoyBusState& state) {
+  cpu.setState(state.cpu);
+  interrupts.setState(state.interrupts);
+  apu.setState(state.apu);
+  cartridge.setState(state.cartridge);
+  ppu.setState(state.ppu);
+  timer.setState(state.timer);
+  joypad.setState(state.joypad);
+
+  wram = state.wram;
+  hram = state.hram;
+
+  serialData = state.serialData;
+  serialControl = state.serialControl;
+
+  dmaActive = state.dmaActive;
+}
+
+GameBoyBusState GameBoyBus::getState() const {
+  return {
+      .cpu = cpu.getState(),
+      .interrupts = interrupts.getState(),
+      .apu = apu.getState(),
+      .cartridge = cartridge.getState(),
+      .ppu = ppu.getState(),
+      .timer = timer.getState(),
+      .joypad = joypad.getState(),
+
+      .wram = wram,
+      .hram = hram,
+
+      .serialData = serialData,
+      .serialControl = serialControl,
+
+      .dmaActive = dmaActive,
+  };
+}
+
 GameBoyBus::GameBoyBus()
     : cpu(this), cartridge(), ppu(), timer(&interrupts), joypad(&interrupts) {
   for (auto& byte : wram) {

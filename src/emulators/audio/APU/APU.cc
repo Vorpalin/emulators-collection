@@ -7,6 +7,37 @@ static const uint8_t DUTY_CYCLES[4][8] = {
     {0, 1, 1, 1, 1, 1, 1, 0}   // -25%
 };
 
+void APU::setState(const APUState& state) {
+  channel1 = state.channel1;
+  channel2 = state.channel2;
+  channel3 = state.channel3;
+  channel4 = state.channel4;
+
+  audioEnabled = state.audioEnabled;
+  frameStep = state.frameStep;
+  frameTimer = state.frameTimer;
+
+  nr50 = state.nr50;
+  nr51 = state.nr51;
+}
+
+APUState APU::getState() const {
+  APUState state;
+  state.channel1 = channel1;
+  state.channel2 = channel2;
+  state.channel3 = channel3;
+  state.channel4 = channel4;
+
+  state.audioEnabled = audioEnabled;
+  state.frameStep = frameStep;
+  state.frameTimer = frameTimer;
+
+  state.nr50 = nr50;
+  state.nr51 = nr51;
+
+  return state;
+}
+
 APU::APU() { reset(); }
 
 APU::~APU() {}

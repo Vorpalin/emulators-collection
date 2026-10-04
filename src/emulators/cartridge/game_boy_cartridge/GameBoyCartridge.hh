@@ -13,6 +13,28 @@
  *        ROM/RAM sizes.
  */
 
+struct GameBoyCartridgeState {
+  std::vector<uint8_t> romData;
+  std::vector<uint8_t> ramData;
+
+  bool ramEnabled = false;
+
+  uint8_t mbc1RomBankLow = 1;
+  uint8_t mbc1BankHigh = 0;
+  bool mbc1Mode1 = false;
+
+  uint8_t mbc2RomBank = 1;
+
+  uint8_t mbc3RomBank = 1;
+  uint8_t mbc3RamBank = 0;
+  uint8_t rtcRegs[5] = {0};
+  uint8_t rtcLatchedRegs[5] = {0};
+  uint8_t rtcLatchState = 0xFF;
+
+  uint16_t mbc5RomBank = 1;
+  uint8_t mbc5RamBank = 0;
+};
+
 /**
  * @class GameBoyCartridge
  * @brief Cartridge with memory bank controller (MBC) emulation.
@@ -69,6 +91,9 @@ class GameBoyCartridge {
    * @note Intended for debugging.
    */
   int getCurrentRomBank() const { return currentRomBank(); }
+
+  void setState(const GameBoyCartridgeState &state);
+  GameBoyCartridgeState getState() const;
 
  private:
   /** @brief Supported memory bank controller types. */

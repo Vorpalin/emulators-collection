@@ -12,6 +12,15 @@
 
 class GameBoyBus;
 
+struct LR35902State {
+  uint8_t A, B, C, D, E, H, L;
+  uint16_t PC, SP;
+  uint8_t F;
+  bool IME;
+  uint8_t imeDelay;
+  bool halted;
+};
+
 /**
  * @class LR35902
  * @brief Emulates the Sharp LR35902, the Game Boy's Z80-like 8-bit CPU.
@@ -92,6 +101,9 @@ class LR35902 : public CPU {
 
   /** @brief Returns the current program counter (for debugging). */
   uint16_t getPC() { return PC; };
+
+  void setState(const LR35902State &state);
+  LR35902State getState() const;
 
  private:
   /// @name Registers

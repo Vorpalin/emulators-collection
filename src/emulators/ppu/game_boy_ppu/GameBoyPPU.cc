@@ -7,6 +7,24 @@ constexpr int CYCLES_DRAWING = 172;
 constexpr int CYCLES_LINE = 456;
 constexpr int LINES_VBLANK_END = 153;
 
+void GameBoyPPU::setState(const GameBoyPPUState& state) {
+  regs_ = state.regs;
+  vram = state.vram;
+  oam = state.oam;
+  framebuffer_ = state.framebuffer;
+  dotCounter_ = state.dotCounter;
+}
+
+GameBoyPPUState GameBoyPPU::getState() const {
+  GameBoyPPUState state;
+  state.regs = regs_;
+  state.vram = vram;
+  state.oam = oam;
+  state.framebuffer = framebuffer_;
+  state.dotCounter = dotCounter_;
+  return state;
+}
+
 GameBoyPPU::GameBoyPPU() { reset(); }
 
 void GameBoyPPU::reset() {

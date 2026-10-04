@@ -2,6 +2,11 @@
 
 #include <cstdint>
 
+struct GameBoyInterruptControllerState {
+  uint8_t ifReg;
+  uint8_t ieReg;
+};
+
 class GameBoyInterruptController {
  public:
   enum Flag : uint8_t {
@@ -25,6 +30,9 @@ class GameBoyInterruptController {
   // Interrupts that are both requested and enabled; the CPU services the
   // lowest-numbered bit set here and clears it via writeIF.
   uint8_t pending() const;
+
+  void setState(const GameBoyInterruptControllerState& state);
+  GameBoyInterruptControllerState getState() const;
 
  private:
   uint8_t ifReg = 0x00;

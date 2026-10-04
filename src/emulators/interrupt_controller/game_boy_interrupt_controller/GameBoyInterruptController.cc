@@ -1,5 +1,18 @@
 #include "emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.hh"
 
+void GameBoyInterruptController::setState(
+    const GameBoyInterruptControllerState& state) {
+  ifReg = state.ifReg;
+  ieReg = state.ieReg;
+}
+
+GameBoyInterruptControllerState GameBoyInterruptController::getState() const {
+  return {
+      .ifReg = ifReg,
+      .ieReg = ieReg,
+  };
+}
+
 void GameBoyInterruptController::reset() {
   ifReg = 0x00;
   ieReg = 0x00;

@@ -1,5 +1,25 @@
 #include "emulators/timer/game_boy_timer/GameBoyTimer.hh"
 
+void GameBoyTimer::setState(const GameBoyTimerState& state) {
+  divider = state.divider;
+  timerCounter = state.timerCounter;
+  timerModulo = state.timerModulo;
+  timerControl = state.timerControl;
+  timerCycles = state.timerCycles;
+  dividerCounter = state.dividerCounter;
+}
+
+GameBoyTimerState GameBoyTimer::getState() const {
+  GameBoyTimerState state;
+  state.divider = divider;
+  state.timerCounter = timerCounter;
+  state.timerModulo = timerModulo;
+  state.timerControl = timerControl;
+  state.timerCycles = timerCycles;
+  state.dividerCounter = dividerCounter;
+  return state;
+}
+
 GameBoyTimer::GameBoyTimer() {
   interrupts = nullptr;
   reset();

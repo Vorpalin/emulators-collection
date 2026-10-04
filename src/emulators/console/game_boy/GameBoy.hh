@@ -13,6 +13,16 @@
  * @brief Top-level Game Boy emulator, platform independent.
  */
 
+struct GameBoyState {
+  GameBoyBusState bus;
+
+  double cyclesPerSample;
+  double phase;
+  double sumL;
+  double sumR;
+  double weight;
+};
+
 /**
  * @class GameBoy
  * @brief Top-level Game Boy system.
@@ -56,6 +66,12 @@ class GameBoy : public Console {
 
   /** @brief Gives access to the system bus (useful for debugging/tests). */
   GameBoyBus& getBus() { return bus; }
+
+  GameBoyState getState() const;
+  void setState(const GameBoyState& state);
+
+  void saveState(const std::string& filename) const override;
+  void loadState(const std::string& filename) override;
 
  private:
   static constexpr int kWidth = 160;

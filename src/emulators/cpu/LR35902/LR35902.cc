@@ -6,6 +6,40 @@
 #include "emulators/cpu/LR35902/opcodes.hh"
 #include "emulators/cpu/LR35902/opcodesPrefix.hh"
 
+void LR35902::setState(const LR35902State &state) {
+  A = state.A;
+  B = state.B;
+  C = state.C;
+  D = state.D;
+  E = state.E;
+  H = state.H;
+  L = state.L;
+  PC = state.PC;
+  SP = state.SP;
+  F = state.F;
+  IME = state.IME;
+  imeDelay = state.imeDelay;
+  halted = state.halted;
+}
+
+LR35902State LR35902::getState() const {
+  return {
+      .A = A,
+      .B = B,
+      .C = C,
+      .D = D,
+      .E = E,
+      .H = H,
+      .L = L,
+      .PC = PC,
+      .SP = SP,
+      .F = F,
+      .IME = IME,
+      .imeDelay = imeDelay,
+      .halted = halted,
+  };
+}
+
 LR35902::LR35902(GameBoyBus *bus) : CPU() {
   // Initialize registers and flags
   A = 0x1;

@@ -15,6 +15,14 @@
 constexpr int SCREEN_WIDTH = 160;   ///< LCD width in pixels.
 constexpr int SCREEN_HEIGHT = 144;  ///< LCD height in pixels.
 
+struct GameBoyPPUState {
+  PPURegisters regs;
+  std::array<uint8_t, 0x2000> vram;
+  std::array<uint8_t, 0xA0> oam;
+  std::array<uint8_t, SCREEN_WIDTH * SCREEN_HEIGHT> framebuffer;
+  int dotCounter;
+};
+
 /**
  * @struct PPURegisters
  * @brief PPU I/O registers (0xFF40-0xFF4B) with bit-field helpers.
@@ -183,6 +191,9 @@ class GameBoyPPU {
 
   /** @brief Read-only access to the PPU registers. */
   const PPURegisters& registers() const { return regs_; }
+
+  void setState(const GameBoyPPUState& state);
+  GameBoyPPUState getState() const;
 
  private:
   PPURegisters regs_;                ///< LCD registers.

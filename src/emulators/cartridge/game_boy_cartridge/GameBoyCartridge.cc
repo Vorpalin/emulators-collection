@@ -3,6 +3,59 @@
 #include <fstream>
 #include <iostream>
 
+void GameBoyCartridge::setState(const GameBoyCartridgeState &state) {
+  romData = state.romData;
+  ramData = state.ramData;
+
+  ramEnabled = state.ramEnabled;
+
+  mbc1RomBankLow = state.mbc1RomBankLow;
+  mbc1BankHigh = state.mbc1BankHigh;
+  mbc1Mode1 = state.mbc1Mode1;
+
+  mbc2RomBank = state.mbc2RomBank;
+
+  mbc3RomBank = state.mbc3RomBank;
+  mbc3RamBank = state.mbc3RamBank;
+  for (int i = 0; i < 5; i++) {
+    rtcRegs[i] = state.rtcRegs[i];
+    rtcLatchedRegs[i] = state.rtcLatchedRegs[i];
+  }
+  rtcLatchState = state.rtcLatchState;
+
+  mbc5RomBank = state.mbc5RomBank;
+  mbc5RamBank = state.mbc5RamBank;
+
+  detectMBC();
+}
+
+GameBoyCartridgeState GameBoyCartridge::getState() const {
+  GameBoyCartridgeState state;
+  state.romData = romData;
+  state.ramData = ramData;
+
+  state.ramEnabled = ramEnabled;
+
+  state.mbc1RomBankLow = mbc1RomBankLow;
+  state.mbc1BankHigh = mbc1BankHigh;
+  state.mbc1Mode1 = mbc1Mode1;
+
+  state.mbc2RomBank = mbc2RomBank;
+
+  state.mbc3RomBank = mbc3RomBank;
+  state.mbc3RamBank = mbc3RamBank;
+  for (int i = 0; i < 5; i++) {
+    state.rtcRegs[i] = rtcRegs[i];
+    state.rtcLatchedRegs[i] = rtcLatchedRegs[i];
+  }
+  state.rtcLatchState = rtcLatchState;
+
+  state.mbc5RomBank = mbc5RomBank;
+  state.mbc5RamBank = mbc5RamBank;
+
+  return state;
+}
+
 GameBoyCartridge::GameBoyCartridge() { reset(); }
 
 void GameBoyCartridge::reset() {

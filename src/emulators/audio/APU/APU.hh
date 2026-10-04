@@ -26,6 +26,20 @@
 #include <cstdint>
 #include <memory>
 
+struct APUState {
+  Channel1 channel1;
+  Channel2 channel2;
+  Channel3 channel3;
+  Channel4 channel4;
+
+  bool audioEnabled;
+  int frameStep;
+  int frameTimer;
+
+  uint8_t nr50;
+  uint8_t nr51;
+}
+
 /**
  * @brief State of sound Channel 1 (square wave with frequency sweep).
  *
@@ -284,6 +298,9 @@ class APU {
    *        scaled according to NR50/NR51.
    */
   void getStereoSample(float& left, float& right);  ///< per-side mix
+
+  void setState(const APUState& state);
+  APUState getState() const;
 
  private:
   /// Master audio power state (NR52 bit 7). When false, all channels are

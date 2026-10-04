@@ -19,6 +19,24 @@
  * @brief Game Boy system bus: memory map and component wiring.
  */
 
+struct GameBoyBusState {
+  LR35902State cpu;
+  GameBoyInterruptControllerState interrupts;
+  APUState apu;
+  GameBoyCartridgeState cartridge;
+  GameBoyPPUState ppu;
+  GameBoyTimerState timer;
+  GameBoyControllerState joypad;
+
+  std::array<uint8_t, 0x2000> wram;
+  std::array<uint8_t, 0x7F> hram;
+
+  uint8_t serialData;
+  uint8_t serialControl;
+
+  bool dmaActive;
+};
+
 /**
  * @class GameBoyBus
  * @brief Connects the CPU to memory and I/O and drives component timing.
@@ -128,6 +146,9 @@ class GameBoyBus : public Bus {
   /// Interrupt controller (IF at 0xFF0F, IE at 0xFFFF). Public so that the
   /// CPU and peripherals can request/query interrupts.
   GameBoyInterruptController interrupts;
+
+  void setState(const GameBoyBusState& state);
+  GameBoyBusState getState() const;
 
  private:
   /**
