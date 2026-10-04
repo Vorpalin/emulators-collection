@@ -136,9 +136,9 @@ Complete emulator systems implement a common interface.
 Conceptually:
 
 ```cpp
-class Emulator {
+class Console {
 public:
-    virtual ~Emulator() = default;
+    virtual ~Console() = default;
 
     virtual void reset() = 0;
     virtual void loadRom(...) = 0;
@@ -151,6 +151,9 @@ public:
 
     virtual int width() const = 0;
     virtual int height() const = 0;
+
+    virtual std::string saveState() const = 0;
+    virtual bool loadState(const std::string &json) const = 0;
 };
 ```
 
