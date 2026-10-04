@@ -108,10 +108,10 @@ class Atari2600Bus : public Bus {
   }
 
  private:
-  CPU65 cpu;                     ///< CPU core driving the Atari 2600.
   Atari2600Cartridge cartridge;  ///< Loaded ROM and bank-switching state.
   MOS6532 mos6532;               ///< RAM, I/O ports and timer.
   TIA1A tia1a;  ///< Video generation and CPU-halt (WSYNC) signaling.
+  CPU65 cpu;    ///< CPU core driving the Atari 2600.
   std::function<void(uint16_t, uint8_t)>
       onAudioWrite;  ///< Optional hook fired on TIA audio-register writes.
 };
