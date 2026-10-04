@@ -9,6 +9,34 @@
  *        detection, rendered line-by-line into a framebuffer.
  */
 
+struct TIA1AState {
+  std::array<uint8_t, 2> p_grp{};
+  std::array<uint8_t, 2> p_nusiz{};
+  std::array<bool, 2> p_reflect{};
+  std::array<bool, 2> p_vdel{};
+  std::array<int, 2> p_pos{};
+  std::array<int8_t, 2> p_hm{};
+
+  std::array<bool, 2> m_enabled{};
+  std::array<bool, 2> m_resetToPlayer{};
+  std::array<int, 2> m_pos{};
+  std::array<int8_t, 2> m_hm{};
+
+  bool bl_enabled = false;
+  bool bl_enabledOld = false;
+  bool bl_vdel = false;
+  int bl_pos = 0;
+  int8_t bl_hm = 0;
+
+  uint8_t pf0 = 0;
+  uint8_t pf1 = 0;
+  uint8_t pf2 = 0;
+  uint8_t ctrlpf = 0;
+
+  std::array<uint8_t, 2> colup{};
+  uint8_t colupf = 0;
+};
+
 /**
  * @class TIA1A
  * @brief Emulates the Atari 2600's TIA video chip. Advances one color
@@ -86,6 +114,9 @@ class TIA1A {
    * @param pressed True if the fire button is currently pressed.
    */
   void setFire(int player, bool pressed);
+
+  void setState(const TIA1AState& state);
+  TIA1AState getState() const;
 
  private:
   /// @brief Per-player sprite state (player graphics register).

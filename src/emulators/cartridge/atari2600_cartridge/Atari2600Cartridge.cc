@@ -3,6 +3,18 @@
 #include <fstream>
 #include <iostream>
 
+void Atari2600Cartridge::setState(const Atari2600CartridgeState &state) {
+  romData = state.romData;
+  bank = state.bank;
+}
+
+Atari2600CartridgeState Atari2600Cartridge::getState() const {
+  Atari2600CartridgeState state;
+  state.romData = romData;
+  state.bank = bank;
+  return state;
+}
+
 Atari2600Cartridge::Atari2600Cartridge() { reset(); }
 
 void Atari2600Cartridge::reset() { bank = 1; }

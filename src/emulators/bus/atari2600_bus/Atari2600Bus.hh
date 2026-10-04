@@ -17,6 +17,13 @@
  *        RIOT and TIA into a single addressable machine.
  */
 
+struct Atari2600BusState {
+  CPU65State cpu;
+  MOS6532State riot;
+  TIA1AState tia;
+  Atari2600CartridgeState cartridge;
+};
+
 /**
  * @class Atari2600Bus
  * @brief Concrete Bus implementation for the Atari 2600: decodes CPU
@@ -106,6 +113,9 @@ class Atari2600Bus : public Bus {
   void setAudioWriteHook(std::function<void(uint16_t, uint8_t)> hook) {
     onAudioWrite = std::move(hook);
   }
+
+  Atari2600BusState getState() const;
+  void setState(const Atari2600BusState& state);
 
  private:
   Atari2600Cartridge cartridge;  ///< Loaded ROM and bank-switching state.

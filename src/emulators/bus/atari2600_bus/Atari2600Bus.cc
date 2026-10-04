@@ -3,11 +3,27 @@
 #include <iostream>
 #include <string>
 
+Atari2600BusState Atari2600Bus::getState() const {
+  return {
+      .cpu = cpu.getState(),
+      .riot = riot.getState(),
+      .tia = tia.getState(),
+      .cartridge = cartridge.getState(),
+  };
+}
+
+void Atari2600Bus::setState(const Atari2600BusState& state) {
+  cpu.setState(state.cpu);
+  riot.setState(state.riot);
+  tia.setState(state.tia);
+  cartridge.setState(state.cartridge);
+}
+
 Atari2600Bus::Atari2600Bus() : cartridge(), mos6532(), tia1a(), cpu(this) {
   // Initialize the Atari 2600 bus
 }
 
-void Atari2600Bus::loadROM(std::string &filename) {
+void Atari2600Bus::loadROM(std::string& filename) {
   cartridge.loadROM(filename);
 }
 

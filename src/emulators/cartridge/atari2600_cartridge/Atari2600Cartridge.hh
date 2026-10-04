@@ -10,6 +10,11 @@
  * @brief Atari 2600 cartridge (ROM) emulation, including bank switching.
  */
 
+struct Atari2600CartridgeState {
+  std::vector<uint8_t> romData;
+  uint8_t bank = 0;
+};
+
 /**
  * @class Atari2600Cartridge
  * @brief Holds a loaded ROM image and services CPU reads/writes into the
@@ -57,6 +62,9 @@ class Atari2600Cartridge {
    *                bank-switching scheme).
    */
   void write(uint16_t address, uint8_t value);
+
+  void setState(const Atari2600CartridgeState &state);
+  Atari2600CartridgeState getState() const;
 
  private:
   std::vector<uint8_t> romData;  ///< Raw ROM image data.

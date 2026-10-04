@@ -1,5 +1,35 @@
 #include "emulators/audio/TIA1A/TIAAudio.hh"
 
+void TIAAudio::setState(const TIAAudioState& state) {
+  for (int i = 0; i < 6; ++i) regs_[i] = state.regs[i];
+  for (int c = 0; c < 2; ++c) {
+    ch_[c].div = state.div[c];
+    ch_[c].pos31 = state.pos31[c];
+    ch_[c].pos6 = state.pos6[c];
+    ch_[c].sub = state.sub[c];
+    ch_[c].p4 = state.p4[c];
+    ch_[c].p5 = state.p5[c];
+    ch_[c].p9 = state.p9[c];
+    ch_[c].out = state.out[c];
+  }
+}
+
+TIAAudioState TIAAudio::getState() const {
+  TIAAudioState state;
+  for (int i = 0; i < 6; ++i) state.regs[i] = regs_[i];
+  for (int c = 0; c < 2; ++c) {
+    state.div[c] = ch_[c].div;
+    state.pos31[c] = ch_[c].pos31;
+    state.pos6[c] = ch_[c].pos6;
+    state.sub[c] = ch_[c].sub;
+    state.p4[c] = ch_[c].p4;
+    state.p5[c] = ch_[c].p5;
+    state.p9[c] = ch_[c].p9;
+    state.out[c] = ch_[c].out;
+  }
+  return state;
+}
+
 void TIAAudio::reset() {
   for (auto& r : regs_) r = 0;
   ch_[0] = Channel{};

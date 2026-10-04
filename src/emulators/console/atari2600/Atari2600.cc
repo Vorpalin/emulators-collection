@@ -4,6 +4,9 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 namespace {
 
@@ -43,6 +46,24 @@ std::array<uint32_t, 128> buildPalette() {
 const std::array<uint32_t, 128> kPalette = buildPalette();
 
 }  // namespace
+
+inline void to_json(json& j, const Atari2600State& state) {
+  j = {
+      {"bus", state.bus},
+      {"keys", state.keys},
+      {"sampleRate", state.sampleRate},
+      {"sampleAcc", state.sampleAcc},
+      {"audio", state.audio},
+  };
+}
+
+inline void from_json(const json& j, Atari2600State& state) {
+  j.at("bus").get_to(state.bus);
+  j.at("keys").get_to(state.keys);
+  j.at("sampleRate").get_to(state.sampleRate);
+  j.at("sampleAcc").get_to(state.sampleAcc);
+  j.at("audio").get_to(state.audio);
+}
 
 Atari2600::Atari2600()
     : bus(),
@@ -143,4 +164,65 @@ void Atari2600::stepFrame() {
 
   this->convertFrame();
   this->generateAudio();
+}
+
+Atari2600State Atari2600::getState() const {
+  return {
+      .bus = bus.getState(),
+      .keys =
+          {
+              keys_[0],
+              keys_[1],
+              keys_[2],
+              keys_[3],
+              keys_[4],
+              keys_[5],
+              keys_[6],
+          },
+      .sampleRate = sampleRate_,
+      .sampleAcc = sampleAcc_,
+      .audio = audio.getState(),
+  };
+}
+
+void Atari2600::setState(const Atari2600State& state) {
+  bus.setState(state.bus);
+
+  for (std::size_t i = 0; i < state.keys.size(); ++i) {
+    keys_[i] = state.keys[i];
+  }
+
+  sampleRate_ = state.sampleRate;
+  sampleAcc_ = state.sampleAcc;
+
+  audio.setState(state.audio);
+
+  updateInput();
+
+  convertFrame();
+
+  audio_.clear();
+  mono_.clear();
+}
+
+void saveState(const std::string& path) {
+  const Atari2600State state = getState();
+  nlohmann::json json = state;
+
+  std::ofstream file(path);
+  if (!file) {
+    throw std::runtime_error("Failed to open save state file");
+  }
+
+  file << json.dump(4);
+}
+
+void loadState(const std::string& path) {
+  std::ifstream file(path);
+  if (!file) {
+    throw std::runtime_error("Failed to open load state file");
+  }
+  json j;
+  file >> j;
+  this->setState(j.get<Atari2600State>());
 }

@@ -4,6 +4,44 @@
 
 #include "emulators/cpu/CPU65/opcodes.hh"
 
+void CPU65::setState(const CPU65State &state) {
+  A = state.A;
+  X = state.X;
+  Y = state.Y;
+  SP = state.SP;
+  PC = state.PC;
+
+  C = state.C;
+  Z = state.Z;
+  I = state.I;
+  D = state.D;
+  B = state.B;
+  V = state.V;
+  N = state.N;
+
+  halted = state.halted;
+}
+
+CPU65State CPU65::getState() const {
+  CPU65State state;
+  state.A = A;
+  state.X = X;
+  state.Y = Y;
+  state.SP = SP;
+  state.PC = PC;
+
+  state.C = C;
+  state.Z = Z;
+  state.I = I;
+  state.D = D;
+  state.B = B;
+  state.V = V;
+  state.N = N;
+
+  state.halted = halted;
+  return state;
+}
+
 CPU65::CPU65(Bus *bus) : bus(bus) { resetCPU(); }
 
 void CPU65::resetCPU() {

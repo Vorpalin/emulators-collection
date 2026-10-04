@@ -1,5 +1,25 @@
 #include "emulators/processor/MOS6532/MOS6532.hh"
 
+void MOS6532::setState(const MOS6532State& state) {
+  ram = state.ram;
+  io_ports = state.io_ports;
+  ddrs = state.ddrs;
+  timer_counter = state.timer_counter;
+  timer_interval = state.timer_interval;
+  timer_expired = state.timer_expired;
+}
+
+MOS6532State MOS6532::getState() const {
+  MOS6532State state;
+  state.ram = ram;
+  state.io_ports = io_ports;
+  state.ddrs = ddrs;
+  state.timer_counter = timer_counter;
+  state.timer_interval = timer_interval;
+  state.timer_expired = timer_expired;
+  return state;
+}
+
 MOS6532::MOS6532() { reset(); }
 
 void MOS6532::reset() {

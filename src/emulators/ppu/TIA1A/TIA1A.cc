@@ -23,6 +23,88 @@ inline int mod160(int v) {
 
 }  // namespace
 
+void TIA1A::setState(const TIA1AState& state) {
+  p_[0].grp = state.p_grp[0];
+  p_[1].grp = state.p_grp[1];
+  p_[0].nusiz = state.p_nusiz[0];
+  p_[1].nusiz = state.p_nusiz[1];
+  p_[0].reflect = state.p_reflect[0];
+  p_[1].reflect = state.p_reflect[1];
+  p_[0].vdel = state.p_vdel[0];
+  p_[1].vdel = state.p_vdel[1];
+  p_[0].pos = state.p_pos[0];
+  p_[1].pos = state.p_pos[1];
+  p_[0].hm = state.p_hm[0];
+  p_[1].hm = state.p_hm[1];
+
+  m_[0].enabled = state.m_enabled[0];
+  m_[1].enabled = state.m_enabled[1];
+  m_[0].resetToPlayer = state.m_resetToPlayer[0];
+  m_[1].resetToPlayer = state.m_resetToPlayer[1];
+  m_[0].pos = state.m_pos[0];
+  m_[1].pos = state.m_pos[1];
+  m_[0].hm = state.m_hm[0];
+  m_[1].hm = state.m_hm[1];
+
+  bl_.enabled = state.bl_enabled;
+  bl_.enabledOld = state.bl_enabledOld;
+  bl_.vdel = state.bl_vdel;
+  bl_.pos = state.bl_pos;
+  bl_.hm = state.bl_hm;
+
+  pf0_ = state.pf0;
+  pf1_ = state.pf1;
+  pf2_ = state.pf2;
+  ctrlpf_ = state.ctrlpf;
+
+  colup_[0] = state.colup[0];
+  colup_[1] = state.colup[1];
+  colupf_ = state.colupf;
+}
+
+TIA1AState TIA1A::getState() const {
+  TIA1AState state;
+  state.p_grp[0] = p_[0].grp;
+  state.p_grp[1] = p_[1].grp;
+  state.p_nusiz[0] = p_[0].nusiz;
+  state.p_nusiz[1] = p_[1].nusiz;
+  state.p_reflect[0] = p_[0].reflect;
+  state.p_reflect[1] = p_[1].reflect;
+  state.p_vdel[0] = p_[0].vdel;
+  state.p_vdel[1] = p_[1].vdel;
+  state.p_pos[0] = p_[0].pos;
+  state.p_pos[1] = p_[1].pos;
+  state.p_hm[0] = p_[0].hm;
+  state.p_hm[1] = p_[1].hm;
+
+  state.m_enabled[0] = m_[0].enabled;
+  state.m_enabled[1] = m_[1].enabled;
+  state.m_resetToPlayer[0] = m_[0].resetToPlayer;
+  state.m_resetToPlayer[1] = m_[1].resetToPlayer;
+  state.m_pos[0] = m_[0].pos;
+  state.m_pos[1] = m_[1].pos;
+  state.m_hm[0] = m_[0].hm;
+  state.m_hm[1] = m_[1].hm;
+
+  state.bl_enabled = bl_.enabled;
+  state.bl_enabledOld = bl_.enabledOld;
+  state.bl_vdel = bl_.vdel;
+  state.bl_pos = bl_.pos;
+  state.bl_hm = bl_.hm;
+
+  state.pf0 = pf0_;
+  state.pf1 = pf1_;
+  state.pf2 = pf2_;
+  state.ctrlpf = ctrlpf_;
+
+  state.colup[0] = colup_[0];
+  state.colup[1] = colup_[1];
+  state.colupf = colupf_;
+  state.colubk = colubk_;
+
+  return state;
+}
+
 void TIA1A::reset() {
   p_[0] = p_[1] = Player{};
   m_[0] = m_[1] = Missile{};

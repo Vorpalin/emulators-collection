@@ -9,6 +9,16 @@
  *        for its 128 bytes of RAM, I/O ports and interval timer.
  */
 
+struct MOS6532State {
+  std::array<uint8_t, 128> ram{};
+  std::array<uint8_t, 2> io_ports{};
+  std::array<uint8_t, 2> ddrs{};
+
+  uint32_t timer_counter = 0;
+  int timer_interval = 1;
+  bool timer_expired = false;
+};
+
 /**
  * @class MOS6532
  * @brief Emulates the MOS 6532 RIOT chip: 128 bytes of RAM, two 8-bit
@@ -63,6 +73,9 @@ class MOS6532 {
    * @param v Port B input value.
    */
   void setSwchb(uint8_t v);
+
+  void setState(const MOS6532State& state);
+  MOS6532State getState() const;
 
  private:
   std::array<uint8_t, 128> ram;     ///< 128 bytes of RAM.

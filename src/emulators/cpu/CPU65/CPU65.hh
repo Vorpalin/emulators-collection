@@ -13,6 +13,24 @@
  *        support for the common undocumented/"illegal" opcodes.
  */
 
+struct CPU65State {
+  uint8_t A;
+  uint8_t X;
+  uint8_t Y;
+  uint16_t SP;
+  uint16_t PC;
+
+  bool C;
+  bool Z;
+  bool I;
+  bool D;
+  bool B;
+  bool V;
+  bool N;
+
+  bool halted;
+};
+
 /**
  * @class CPU65
  * @brief Emulates a MOS 6502-compatible CPU: registers, status flags,
@@ -66,6 +84,9 @@ class CPU65 : public CPU {
    * @param value   Byte value to write.
    */
   void write(uint16_t address, uint8_t value);
+
+  void setState(const CPU65State &state);
+  CPU65State getState() const;
 
  private:
   Bus *bus;  ///< Pointer to the bus for memory access (not owned).
