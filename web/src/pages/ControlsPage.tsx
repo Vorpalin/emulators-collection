@@ -2,24 +2,11 @@ import { useEffect, useState } from 'react';
 import { Gamepad2, RotateCcw } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { SYSTEM_LIST, SYSTEMS, type SystemId } from '../emulator/systems';
-
-function prettyKey(code: string): string {
-  if (code.startsWith('Key')) return code.slice(3);
-  if (code.startsWith('Digit')) return code.slice(5);
-  const names: Record<string, string> = {
-    ArrowUp: '↑',
-    ArrowDown: '↓',
-    ArrowLeft: '←',
-    ArrowRight: '→',
-    Space: 'Space',
-    ShiftRight: 'Shift right',
-    ShiftLeft: 'Shift left',
-  };
-  return names[code] ?? code;
-}
+import { useKeyLabel } from '../emulator/keyboardlayout';
 
 export default function ControlsPage() {
-  const { settings, loading, update, bindingsFor } = useSettings();
+  const { settings, loading, update, bindingsFor, defaultsFor } = useSettings();
+  const keyLabel = useKeyLabel();
   const [systemId, setSystemId] = useState<SystemId>('gameboy');
   const [listening, setListening] = useState<string | null>(null);
 
@@ -89,7 +76,7 @@ export default function ControlsPage() {
           <button
             onClick={() => {
               setListening(null);
-              void save({ ...system.defaultBindings });
+              void save(defaultsFor(systemId));
             }}
             className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-1.5"
           >
@@ -117,6 +104,7 @@ export default function ControlsPage() {
               <span className="text-xs font-mono text-slate-300 font-bold">{action.label}</span>
               <button
                 disabled={loading}
+                title={bindings[action.id]}
                 onClick={() => setListening(action.id)}
                 className={`text-xs font-mono px-2.5 py-1 rounded border transition ${
                   listening === action.id
@@ -124,7 +112,7 @@ export default function ControlsPage() {
                     : 'bg-slate-800 hover:bg-slate-700 text-cyan-400 border-slate-700'
                 }`}
               >
-                {bindings[action.id] ? prettyKey(bindings[action.id]) : '—'}
+                {bindings[action.id] ? keyLabel(bindings[action.id]) : '—'}
               </button>
             </div>
           ))}
