@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <iostream>
 #include <iterator>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 namespace {
 
@@ -31,6 +34,58 @@ constexpr uint8_t kBg[3] = {18, 18, 18};
 constexpr uint8_t kFg[3] = {230, 230, 230};
 
 }  // namespace
+
+inline void to_json(json& j, const Chip8State& state) {
+  j = {
+      {"memory", state.memory},
+      {"V", state.V},
+      {"I", state.I},
+      {"pc", state.pc},
+      {"gfx", state.gfx},
+      {"draw_flag", state.draw_flag},
+      {"delay_timer", state.delay_timer},
+      {"sound_timer", state.sound_timer},
+      {"stack", state.stack},
+      {"sp", state.sp},
+      {"key", state.key},
+      {"rpl", state.rpl},
+      {"lastPressedKey", state.lastPressedKey},
+      {"halted", state.halted},
+      {"highResolutionMode", state.highResolutionMode},
+      {"rom", state.rom},
+      {"sampleRate", state.sampleRate},
+      {"sampleAcc", state.sampleAcc},
+      {"phase", state.phase},
+      {"gain", state.gain},
+      {"beepHoldFrames", state.beepHoldFrames},
+      {"beepOn", state.beepOn},
+  };
+}
+
+inline void from_json(const json& j, Chip8State& state) {
+  j.at("memory").get_to(state.memory);
+  j.at("V").get_to(state.V);
+  j.at("I").get_to(state.I);
+  j.at("pc").get_to(state.pc);
+  j.at("gfx").get_to(state.gfx);
+  j.at("draw_flag").get_to(state.draw_flag);
+  j.at("delay_timer").get_to(state.delay_timer);
+  j.at("sound_timer").get_to(state.sound_timer);
+  j.at("stack").get_to(state.stack);
+  j.at("sp").get_to(state.sp);
+  j.at("key").get_to(state.key);
+  j.at("rpl").get_to(state.rpl);
+  j.at("lastPressedKey").get_to(state.lastPressedKey);
+  j.at("halted").get_to(state.halted);
+  j.at("highResolutionMode").get_to(state.highResolutionMode);
+  j.at("rom").get_to(state.rom);
+  j.at("sampleRate").get_to(state.sampleRate);
+  j.at("sampleAcc").get_to(state.sampleAcc);
+  j.at("phase").get_to(state.phase);
+  j.at("gain").get_to(state.gain);
+  j.at("beepHoldFrames").get_to(state.beepHoldFrames);
+  j.at("beepOn").get_to(state.beepOn);
+}
 
 Chip8::Chip8() {
   this->resetState();
@@ -493,4 +548,86 @@ void Chip8::cycle() {
                     this->memory[(addr + 1) % sizeof(this->memory)];
   this->pc = static_cast<uint16_t>(addr + 2);
   this->executeOpcode(opcode);
+}
+
+Chip8State Chip8::getState() const {
+  return {
+      .memory = std::to_array(memory),
+      .V = std::to_array(V),
+      .I = I,
+      .pc = pc,
+      .gfx = std::to_array(gfx),
+      .draw_flag = draw_flag,
+      .delay_timer = delay_timer,
+      .sound_timer = sound_timer,
+      .stack = std::to_array(stack),
+      .sp = sp,
+      .key = std::to_array(key),
+      .rpl = std::to_array(rpl),
+      .lastPressedKey = lastPressedKey,
+      .halted = halted,
+      .highResolutionMode = highResolutionMode,
+      .rom = rom_,
+      .sampleRate = sampleRate_,
+      .sampleAcc = sampleAcc_,
+      .phase = phase_,
+      .gain = gain_,
+      .beepHoldFrames = beepHoldFrames_,
+      .beepOn = beepOn_,
+  };
+}
+
+void Chip8::setState(const Chip8State& state) {
+  std::copy(state.memory.begin(), state.memory.end(), std::begin(memory));
+  std::copy(state.V.begin(), state.V.end(), std::begin(V));
+  std::copy(state.gfx.begin(), state.gfx.end(), std::begin(gfx));
+  std::copy(state.stack.begin(), state.stack.end(), std::begin(stack));
+  std::copy(state.key.begin(), state.key.end(), std::begin(key));
+  std::copy(state.rpl.begin(), state.rpl.end(), std::begin(rpl));
+
+  I = state.I;
+  pc = state.pc;
+  draw_flag = state.draw_flag;
+  delay_timer = state.delay_timer;
+  sound_timer = state.sound_timer;
+  sp = state.sp;
+
+  lastPressedKey = state.lastPressedKey;
+  halted = state.halted;
+  highResolutionMode = state.highResolutionMode;
+
+  rom_ = state.rom;
+
+  sampleRate_ = state.sampleRate;
+  sampleAcc_ = state.sampleAcc;
+  phase_ = state.phase;
+  gain_ = state.gain;
+  beepHoldFrames_ = state.beepHoldFrames;
+  beepOn_ = state.beepOn;
+
+  renderFramebuffer();
+  audio_.clear();
+}
+
+void Chip8::saveState(const std::string& filename) const {
+  json j = this->getState();
+  std::ofstream file(filename);
+  if (!file) {
+    std::cerr << "Failed to open file for saving state: " << filename
+              << std::endl;
+    return;
+  }
+  file << j.dump(4);
+}
+
+void Chip8::loadState(const std::string& filename) {
+  std::ifstream file(filename);
+  if (!file) {
+    std::cerr << "Failed to open file for loading state: " << filename
+              << std::endl;
+    return;
+  }
+  json j;
+  file >> j;
+  this->setState(j.get<Chip8State>());
 }

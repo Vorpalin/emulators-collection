@@ -2,6 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 /**
  * @file Console.hh
@@ -82,4 +86,16 @@ class Console {
    *        audioFrameCount() * 2 floats. Valid until the next stepFrame().
    */
   virtual const float* audioSamples() const = 0;
+
+  /**
+   * @brief Save the current state of the emulator to a stream.
+   * @param filename Name of the file to write the state to.
+   */
+  virtual void saveState(const std::string& filename) const = 0;
+
+  /**
+   * @brief Load the state of the emulator from a stream.
+   * @param filename Name of the file to read the state from.
+   */
+  virtual void loadState(const std::string& filename) = 0;
 };

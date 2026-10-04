@@ -12,6 +12,40 @@
  * @brief CHIP-8 / Super-CHIP interpreter, implementing the Console interface.
  */
 
+struct Chip8State {
+  std::array<uint8_t, 4096> memory;
+  std::array<uint8_t, 16> V;
+
+  uint16_t I;
+  uint16_t pc;
+
+  std::array<uint8_t, 128 * 64> gfx;
+  uint8_t draw_flag;
+
+  uint8_t delay_timer;
+  uint8_t sound_timer;
+
+  std::array<uint16_t, 16> stack;
+  uint16_t sp;
+
+  std::array<uint8_t, 16> key;
+  std::array<uint8_t, 16> rpl;
+
+  int lastPressedKey;
+
+  bool halted;
+  bool highResolutionMode;
+
+  std::vector<uint8_t> rom;
+
+  double sampleRate;
+  double sampleAcc;
+  double phase;
+  float gain;
+  int beepHoldFrames;
+  bool beepOn;
+};
+
 /**
  * @class Chip8
  * @brief Emulates a CHIP-8 system: 4K memory, 16 general registers, a
@@ -43,6 +77,9 @@ class Chip8 : public Console {
   std::size_t audioFrameCount() const override { return audio_.size() / 2; }
   const float* audioSamples() const override { return audio_.data(); }
 
+  void loadState(const std::string& filename) override;
+  void saveState(const std::string& filename) const override;
+
  private:
   /// CPU instructions executed per 60 Hz frame (~720 instructions/second).
   static constexpr int kCyclesPerFrame = 12;
@@ -69,6 +106,9 @@ class Chip8 : public Console {
 
   /// Fetch, decode, and execute one instruction.
   void cycle();
+
+  Chip8State getState() const;
+  void setState(const Chip8State& state);
 
   /**
    * CHIP-8 memory map:
