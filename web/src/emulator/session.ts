@@ -40,12 +40,13 @@ export class EmulatorSession {
   }
 
   async start(rom: Uint8Array): Promise<void> {
+    this.audioCtx = new AudioContext({ latencyHint: 'interactive' });
+    void this.audioCtx.resume();
+
     this.module = await loadEmulatorModule();
     this.emu = new this.module.Emulator();
 
     // --- Audio ---
-    this.audioCtx = new AudioContext({ latencyHint: 'interactive' });
-
     await this.audioCtx.audioWorklet.addModule(`${import.meta.env.BASE_URL}emu-audio-worklet.js`);
 
     this.node = new AudioWorkletNode(this.audioCtx, 'emu-audio', {
@@ -60,7 +61,11 @@ export class EmulatorSession {
     this.applyVolume();
 
     this.node.connect(this.gain).connect(this.audioCtx.destination);
-    await this.audioCtx.resume();
+
+    await Promise.race([
+      this.audioCtx.resume(),
+      new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+    ]);
 
     // --- ROM ---
     this.emu.setSampleRate(this.audioCtx.sampleRate);
@@ -116,6 +121,14 @@ export class EmulatorSession {
 
   updateBindings(bindings: Record<string, string>): void {
     this.rebuildKeyMap(this.opts.system, bindings);
+  }
+
+  setActionPressed(actionId: string, pressed: boolean): void {
+    if (this.destroyed || !this.emu) return;
+    if (pressed && this.paused) return; // comme au clavier : pas d'appui en pause
+
+    const action = this.opts.system.actions.find((a) => a.id === actionId);
+    if (action) this.emu.setKey(action.key, pressed);
   }
 
   // ───────────── Save states ─────────────

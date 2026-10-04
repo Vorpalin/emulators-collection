@@ -16,6 +16,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { loadRom } from '../hooks/useGames';
 import { useSettings } from '../hooks/useSettings';
+import TouchControls, { useIsTouchDevice } from '../components/TouchControls';
 import { EmulatorSession } from '../emulator/session';
 import { SYSTEMS } from '../emulator/systems';
 import type { Game } from '../types';
@@ -25,6 +26,7 @@ type Status = 'loading' | 'ready' | 'playing' | 'error';
 export default function PlayerPage() {
   const { gameId } = useParams();
   const { settings, loading: settingsLoading, update, bindingsFor } = useSettings();
+  const isTouch = useIsTouchDevice();
 
   const [game, setGame] = useState<Game | null>(null);
   const [rom, setRom] = useState<Uint8Array | null>(null);
@@ -107,6 +109,9 @@ export default function PlayerPage() {
       setStatus('error');
     }
   };
+
+  const pressAction = (actionId: string, pressed: boolean) =>
+    sessionRef.current?.setActionPressed(actionId, pressed);
 
   const togglePause = () => {
     const s = sessionRef.current;
@@ -272,49 +277,56 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* Screen */}
-        <div className="relative flex items-center justify-center p-4 bg-black min-h-[320px]">
-          <div
-            className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
-            style={{
-              aspectRatio: String(aspect),
-              width: `min(100%, calc(65vh * ${aspect}))`,
-            }}
-          >
-            <canvas ref={canvasRef} className="pixelated block w-full h-full" />
+        {/* Screen (+ touch controls on mobile) */}
+        <TouchControls
+          system={system}
+          enabled={isTouch}
+          disabled={!playing || paused}
+          onAction={pressAction}
+        >
+          <div className="relative flex items-center justify-center p-4 bg-black min-h-[320px]">
+            <div
+              className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
+              style={{
+                aspectRatio: String(aspect),
+                width: `min(100%, calc(65vh * ${aspect}))`,
+              }}
+            >
+              <canvas ref={canvasRef} className="pixelated block w-full h-full" />
 
-            {playing && settings.crt_filter && (
-              <div
-                className="pointer-events-none absolute inset-0 z-20"
-                style={{
-                  background:
-                    'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06))',
-                  backgroundSize: '100% 4px, 6px 100%',
-                }}
-              />
-            )}
+              {playing && settings.crt_filter && (
+                <div
+                  className="pointer-events-none absolute inset-0 z-20"
+                  style={{
+                    background:
+                      'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06))',
+                    backgroundSize: '100% 4px, 6px 100%',
+                  }}
+                />
+              )}
 
-            {paused && (
-              <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center text-white z-30">
-                <Pause className="w-12 h-12 text-amber-400 mb-2" />
-                <span className="font-bold tracking-widest text-lg">PAUSE</span>
-              </div>
-            )}
+              {paused && (
+                <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center text-white z-30">
+                  <Pause className="w-12 h-12 text-amber-400 mb-2" />
+                  <span className="font-bold tracking-widest text-lg">PAUSE</span>
+                </div>
+              )}
 
-            {!playing && (
-              <div className="absolute inset-0 z-30 bg-slate-950 flex items-center justify-center">
-                <button
-                  onClick={() => void start()}
-                  disabled={status !== 'ready' || settingsLoading}
-                  className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition"
-                >
-                  <Play className="w-5 h-5 fill-current" />
-                  <span>{status === 'loading' || settingsLoading ? 'Loading…' : 'START'}</span>
-                </button>
-              </div>
-            )}
+              {!playing && (
+                <div className="absolute inset-0 z-30 bg-slate-950 flex items-center justify-center">
+                  <button
+                    onClick={() => void start()}
+                    disabled={status !== 'ready' || settingsLoading}
+                    className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition"
+                  >
+                    <Play className="w-5 h-5 fill-current" />
+                    <span>{status === 'loading' || settingsLoading ? 'Loading…' : 'START'}</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </TouchControls>
 
         {/* Control bar */}
         <div className="bg-slate-900 border-t border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
@@ -407,20 +419,23 @@ export default function PlayerPage() {
             </div>
 
             {/* Fullscreen */}
-            <button
-              onClick={() => void frameRef.current?.requestFullscreen()}
-              className={bar}
-              title="Fullscreen"
-            >
-              <Maximize2 className="w-4 h-4" />
-            </button>
+            {document.fullscreenEnabled && (
+              <button
+                onClick={() => void frameRef.current?.requestFullscreen?.()?.catch(() => {})}
+                className={bar}
+                title="Fullscreen"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <p className="text-xs text-slate-500">
-        The keys are configured in the « Controls » tab. Click on the screen if the keyboard does
-        not respond.
+        {isTouch
+          ? 'Use the on-screen buttons to play. Rotate your phone or use fullscreen for a bigger screen.'
+          : 'The keys are configured in the « Controls » tab. Click on the screen if the keyboard does not respond.'}
       </p>
     </div>
   );
