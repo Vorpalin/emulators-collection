@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { SYSTEMS, type SystemId } from '../emulator/systems';
-import { localizeBindings, useLayoutMap } from '../emulator/keyboardlayout';
+import { localizeBindings, useLayoutMap } from '../emulator/keyboardLayout';
 import type { Settings } from '../types';
 
 const DEFAULTS: Settings = { key_bindings: {}, crt_filter: true, volume: 80 };

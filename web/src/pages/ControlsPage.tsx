@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Gamepad2, RotateCcw } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { SYSTEM_LIST, SYSTEMS, type SystemId } from '../emulator/systems';
-import { useKeyLabel } from '../emulator/keyboardlayout';
+import { useKeyLabel } from '../emulator/keyboardLayout';
 
 export default function ControlsPage() {
   const { settings, loading, update, bindingsFor, defaultsFor } = useSettings();
