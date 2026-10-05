@@ -53,7 +53,6 @@ inline void to_json(json& j, const Chip8State& state) {
       {"lastPressedKey", state.lastPressedKey},
       {"halted", state.halted},
       {"highResolutionMode", state.highResolutionMode},
-      {"rom", state.rom},
       {"sampleRate", state.sampleRate},
       {"sampleAcc", state.sampleAcc},
       {"phase", state.phase},
@@ -79,7 +78,6 @@ inline void from_json(const json& j, Chip8State& state) {
   j.at("lastPressedKey").get_to(state.lastPressedKey);
   j.at("halted").get_to(state.halted);
   j.at("highResolutionMode").get_to(state.highResolutionMode);
-  j.at("rom").get_to(state.rom);
   j.at("sampleRate").get_to(state.sampleRate);
   j.at("sampleAcc").get_to(state.sampleAcc);
   j.at("phase").get_to(state.phase);
@@ -568,7 +566,6 @@ Chip8State Chip8::getState() const {
       .lastPressedKey = lastPressedKey,
       .halted = halted,
       .highResolutionMode = highResolutionMode,
-      .rom = rom_,
       .sampleRate = sampleRate_,
       .sampleAcc = sampleAcc_,
       .phase = phase_,
@@ -596,8 +593,6 @@ void Chip8::setState(const Chip8State& state) {
   lastPressedKey = state.lastPressedKey;
   halted = state.halted;
   highResolutionMode = state.highResolutionMode;
-
-  rom_ = state.rom;
 
   sampleRate_ = state.sampleRate;
   sampleAcc_ = state.sampleAcc;

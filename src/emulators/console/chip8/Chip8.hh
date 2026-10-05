@@ -36,8 +36,6 @@ struct Chip8State {
   bool halted;
   bool highResolutionMode;
 
-  std::vector<uint8_t> rom;
-
   double sampleRate;
   double sampleAcc;
   double phase;
