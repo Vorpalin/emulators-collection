@@ -265,12 +265,12 @@ export default function TouchControls({
   }, [onAction]);
 
   const setAction = useCallback<SetAction>((id, pressed) => {
-    if (heldRef.current.has(id) === pressed) return; // évite les doublons
+    if (heldRef.current.has(id) === pressed) return;
     if (pressed) heldRef.current.add(id);
     else heldRef.current.delete(id);
     setHeld(new Set(heldRef.current));
     onActionRef.current(id, pressed);
-    if (pressed) navigator.vibrate?.(8); // retour haptique (Android)
+    if (pressed) navigator.vibrate?.(8);
   }, []);
 
   const releaseAll = useCallback(() => {
@@ -293,58 +293,51 @@ export default function TouchControls({
     };
   }, [releaseAll]);
 
-  if (!enabled || !system) return <>{children}</>;
+  const touch = enabled && system !== null;
 
   const props = { held, setAction };
-  let left: ReactNode;
+  let left: ReactNode = null;
   let right: ReactNode = null;
 
-  if (system.id === 'chip8') {
-    left = <HexPad {...props} />;
-  } else {
-    left = <DPad {...props} />;
-    right = system.id === 'gameboy' ? <GameBoyButtons {...props} /> : <AtariButtons {...props} />;
+  if (touch && system) {
+    if (system.id === 'chip8') {
+      left = <HexPad {...props} />;
+    } else {
+      left = <DPad {...props} />;
+      right = system.id === 'gameboy' ? <GameBoyButtons {...props} /> : <AtariButtons {...props} />;
+    }
   }
 
-  const wrapper: CSSProperties = landscape
-    ? {
-        display: 'grid',
-        gridTemplateColumns: `auto minmax(0, 1fr)${right ? ' auto' : ''}`,
-        alignItems: 'center',
-        gap: 8,
-      }
-    : {
-        display: 'grid',
-        gridTemplateColumns: right ? '1fr 1fr' : '1fr',
-        gap: 12,
-      };
+  const wrapper: CSSProperties | undefined = !touch
+    ? undefined
+    : landscape
+      ? {
+          display: 'grid',
+          alignItems: 'center',
+          gap: 8,
+          gridTemplateColumns: right ? 'auto minmax(0, 1fr) auto' : 'auto minmax(0, 1fr)',
+          gridTemplateAreas: right ? '"left screen right"' : '"left screen"',
+        }
+      : {
+          display: 'grid',
+          gap: 12,
+          gridTemplateColumns: right ? '1fr 1fr' : '1fr',
+          gridTemplateAreas: right ? '"screen screen" "left right"' : '"screen" "left"',
+        };
 
-  const cluster: CSSProperties = {
+  const cluster = (area: string): CSSProperties => ({
+    gridArea: area,
     justifySelf: 'center',
     opacity: disabled ? 0.45 : 1,
     pointerEvents: disabled ? 'none' : 'auto',
     transition: 'opacity 150ms',
-  };
-
-  const screen = (
-    <div style={landscape ? { minWidth: 0 } : { gridColumn: '1 / -1' }}>{children}</div>
-  );
+  });
 
   return (
-    <div className="bg-black pb-4 px-2" style={wrapper}>
-      {landscape ? (
-        <>
-          <div style={cluster}>{left}</div>
-          {screen}
-          {right && <div style={cluster}>{right}</div>}
-        </>
-      ) : (
-        <>
-          {screen}
-          <div style={cluster}>{left}</div>
-          {right && <div style={cluster}>{right}</div>}
-        </>
-      )}
+    <div className={touch ? 'bg-black pb-4 px-2' : undefined} style={wrapper}>
+      <div style={{ gridArea: 'screen', minWidth: 0 }}>{children}</div>
+      {left && <div style={cluster('left')}>{left}</div>}
+      {right && <div style={cluster('right')}>{right}</div>}
     </div>
   );
 }

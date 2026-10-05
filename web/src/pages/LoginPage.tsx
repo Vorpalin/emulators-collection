@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Cpu, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { appUrl } from '../lib/redirect';
 
 const USERNAME_RE = /^[A-Za-z0-9_]{3,20}$/;
 const RESET_COOLDOWN_SECONDS = 60;
@@ -46,7 +47,7 @@ export default function LoginPage() {
 
     if (mode === 'forgot') {
       const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}reset-password`,
+        redirectTo: appUrl('reset-password'),
       });
 
       if (err?.status === 429) {

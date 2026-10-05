@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Download,
   FolderOpen,
+  Gamepad2,
   Maximize2,
   Pause,
   Play,
@@ -17,6 +18,7 @@ import { supabase } from '../lib/supabase';
 import { loadRom } from '../hooks/useGames';
 import { useSettings } from '../hooks/useSettings';
 import TouchControls, { useIsTouchDevice } from '../components/TouchControls';
+import { useGamepadName } from '../emulator/gamepad';
 import { EmulatorSession } from '../emulator/session';
 import { SYSTEMS } from '../emulator/systems';
 import type { Game } from '../types';
@@ -27,6 +29,7 @@ export default function PlayerPage() {
   const { gameId } = useParams();
   const { settings, loading: settingsLoading, update, bindingsFor } = useSettings();
   const isTouch = useIsTouchDevice();
+  const gamepad = useGamepadName();
 
   const [game, setGame] = useState<Game | null>(null);
   const [rom, setRom] = useState<Uint8Array | null>(null);
@@ -185,7 +188,6 @@ export default function PlayerPage() {
     const file = event.target.files?.[0];
     const session = sessionRef.current;
 
-    // Allow selecting the same file again later.
     event.target.value = '';
 
     if (!file || !session) return;
@@ -272,6 +274,16 @@ export default function PlayerPage() {
             {system && (
               <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded font-mono">
                 {system.label}
+              </span>
+            )}
+
+            {gamepad && (
+              <span
+                className="flex items-center space-x-1 text-xs text-emerald-400"
+                title={gamepad}
+              >
+                <Gamepad2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Controller</span>
               </span>
             )}
           </div>
@@ -435,7 +447,7 @@ export default function PlayerPage() {
       <p className="text-xs text-slate-500">
         {isTouch
           ? 'Use the on-screen buttons to play. Rotate your phone or use fullscreen for a bigger screen.'
-          : 'The keys are configured in the « Controls » tab. Click on the screen if the keyboard does not respond.'}
+          : 'The keys are configured in the « Controls » tab. Click on the screen if the keyboard does not respond. A controller works too: press any button to connect it.'}
       </p>
     </div>
   );
