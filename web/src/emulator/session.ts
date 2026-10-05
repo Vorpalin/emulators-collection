@@ -1,5 +1,6 @@
 import { loadEmulatorModule, type EmulatorInstance, type EmulatorModule } from './wasm';
 import type { SystemDef } from './systems';
+import { GAMEPAD_MAPPINGS, readGamepadActions } from './gamepad';
 
 const TARGET_BUFFER_SECONDS = 0.08;
 const MAX_STEPS_PER_TICK = 4;
@@ -27,6 +28,7 @@ export class EmulatorSession {
   private volume: number;
   private queuedFrames = 0;
   private pressed = new Set<string>();
+  private padPressed = new Set<string>();
 
   private keyMap = new Map<string, number>();
 
@@ -89,6 +91,7 @@ export class EmulatorSession {
     this.paused = true;
     void this.audioCtx?.suspend();
     this.releaseAll();
+    this.releasePad();
   }
 
   resume(): void {
@@ -125,7 +128,7 @@ export class EmulatorSession {
 
   setActionPressed(actionId: string, pressed: boolean): void {
     if (this.destroyed || !this.emu) return;
-    if (pressed && this.paused) return; // comme au clavier : pas d'appui en pause
+    if (pressed && this.paused) return;
 
     const action = this.opts.system.actions.find((a) => a.id === actionId);
     if (action) this.emu.setKey(action.key, pressed);
@@ -158,15 +161,8 @@ export class EmulatorSession {
       return false;
     }
 
-    /*
-     * Audio generated before the state was loaded no longer corresponds
-     * to the emulator state, so discard the buffered audio.
-     */
     this.queuedFrames = 0;
 
-    /*
-     * Force a redraw immediately instead of waiting for the next frame.
-     */
     this.draw();
 
     return true;
@@ -197,6 +193,8 @@ export class EmulatorSession {
     }
 
     if (!this.paused) {
+      this.pollGamepad();
+
       const target = this.audioCtx.sampleRate * TARGET_BUFFER_SECONDS;
       let steps = 0;
 
@@ -305,6 +303,31 @@ export class EmulatorSession {
 
     this.pressed.clear();
   };
+
+  // ───────────── Gamepad ─────────────
+
+  private pollGamepad(): void {
+    const next = readGamepadActions(GAMEPAD_MAPPINGS[this.opts.system.id]);
+
+    for (const id of next) {
+      if (!this.padPressed.has(id)) this.setActionPressed(id, true);
+    }
+    for (const id of this.padPressed) {
+      if (!next.has(id)) this.setActionPressed(id, false);
+    }
+
+    this.padPressed = next;
+  }
+
+  private releasePad(): void {
+    if (this.emu) {
+      for (const id of this.padPressed) {
+        const action = this.opts.system.actions.find((a) => a.id === id);
+        if (action) this.emu.setKey(action.key, false);
+      }
+    }
+    this.padPressed.clear();
+  }
 
   private applyVolume(): void {
     if (this.gain) {
