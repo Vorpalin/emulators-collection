@@ -17,6 +17,9 @@
  * no SDL dependency here.
  */
 
+/**
+ * @brief State of the TIA audio engine, for serialization/debugging.
+ */
 struct TIAAudioState {
   uint8_t regs[6] = {};  ///< AUDC0, AUDC1, AUDF0, AUDF1, AUDV0, AUDV1.
   int div[2] = {};       ///< AUDF divider counters.
@@ -29,7 +32,17 @@ struct TIAAudioState {
   bool out[2] = {};      ///< Current output level of each channel.
 };
 
+/**
+ * @brief JSON serialization for TIAAudioState.
+ * @param j The JSON object to populate.
+ * @param state The TIAAudioState to serialize.
+ */
 void to_json(nlohmann::json& j, const TIAAudioState& state);
+/**
+ * @brief JSON deserialization for TIAAudioState.
+ * @param j The JSON object to read from.
+ * @param state The TIAAudioState to populate.
+ */
 void from_json(const nlohmann::json& j, TIAAudioState& state);
 
 /**
@@ -75,7 +88,16 @@ class TIAAudio {
    */
   void generate(float* out, int count);
 
+  /**
+   * @brief Returns the current TIA audio state for serialization/debugging.
+   * @return Current state of both channels and their generator state.
+   */
   void setState(const TIAAudioState& state);
+
+  /**
+   * @brief Sets the current TIA audio state from a serialized representation.
+   * @param state The TIA audio state to restore.
+   */
   TIAAudioState getState() const;
 
  private:

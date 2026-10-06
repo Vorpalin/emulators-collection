@@ -20,6 +20,11 @@
  * @brief Game Boy system bus: memory map and component wiring.
  */
 
+/**
+ * @brief State of the Game Boy bus, for serialization/deserialization.
+ * @details This structure holds the state of all components in the Game Boy bus
+ *          for the purpose of saving and loading the emulator's state.
+ */
 struct GameBoyBusState {
   LR35902State cpu;
   GameBoyInterruptControllerState interrupts;
@@ -37,7 +42,17 @@ struct GameBoyBusState {
   bool dmaActive;
 };
 
+/**
+ * @brief Serialize the GameBoyBusState to JSON.
+ * @param j     JSON object to populate.
+ * @param state State to serialize.
+ */
 void to_json(nlohmann::json& j, const GameBoyBusState& state);
+/**
+ * @brief Deserialize the GameBoyBusState from JSON.
+ * @param j     JSON object to read from.
+ * @param state State to populate.
+ */
 void from_json(const nlohmann::json& j, GameBoyBusState& state);
 
 /**
@@ -150,7 +165,16 @@ class GameBoyBus : public Bus {
   /// CPU and peripherals can request/query interrupts.
   GameBoyInterruptController interrupts;
 
+  /**
+   * @brief Set the current state of the bus from a previously saved state.
+   * @param state State to restore.
+   */
   void setState(const GameBoyBusState& state);
+
+  /**
+   * @brief Get the current state of the bus for serialization/debugging.
+   * @return Current state of the bus.
+   */
   GameBoyBusState getState() const;
 
  private:

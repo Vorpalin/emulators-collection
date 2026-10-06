@@ -3,21 +3,43 @@ import { Plus, Upload, X } from 'lucide-react';
 import { ACCEPTED_EXTENSIONS, SYSTEM_LIST, detectSystem, type SystemId } from '../emulator/systems';
 import { validateRomFile, type NewGame } from '../hooks/useGames';
 
+/**
+ * Props interface defines the properties for the AddGameForm component.
+ * @property onSubmit - A function to handle form submission.
+ * @property onCancel - A function to handle form cancellation.
+ */
 interface Props {
+  /** A function to handle form submission. */
   onSubmit: (game: NewGame) => Promise<void>;
+  /** A function to handle form cancellation. */
   onCancel: () => void;
 }
 
+/**
+ * Generates a title from the given file name by removing its extension.
+ * @param name The name of the file from which to generate the title.
+ * @returns The generated title.
+ */
 function titleFromFile(name: string): string {
   return name.replace(/\.[^/.]+$/, '');
 }
 
+/**
+ * Formats the given size in bytes into a human-readable string.
+ * @param bytes The size in bytes to format.
+ * @returns The formatted size.
+ */
 function formatSize(bytes: number): string {
   return bytes < 1024 * 1024
     ? `${(bytes / 1024).toFixed(1)} KB`
     : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+/**
+ * AddGameForm component allows users to add a new game by uploading a ROM file, specifying a title, and selecting a system.
+ * @param param0  The properties for the AddGameForm component.
+ * @returns The AddGameForm component.
+ */
 export default function AddGameForm({ onSubmit, onCancel }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');

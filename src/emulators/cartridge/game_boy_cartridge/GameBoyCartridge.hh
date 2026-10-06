@@ -14,6 +14,12 @@
  *        ROM/RAM sizes.
  */
 
+/**
+ * @struct GameBoyCartridgeState
+ * @brief Serializable state of a Game Boy cartridge.
+ * @details This structure holds the state of the cartridge for the purpose of
+ *          saving and loading the emulator's state.
+ */
 struct GameBoyCartridgeState {
   std::vector<uint8_t> romData;
   std::vector<uint8_t> ramData;
@@ -36,7 +42,18 @@ struct GameBoyCartridgeState {
   uint8_t mbc5RamBank = 0;
 };
 
+/**
+ * @brief Serializes a GameBoyCartridgeState to JSON.
+ * @param j The JSON object to populate.
+ * @param state The GameBoyCartridgeState to serialize.
+ */
 void to_json(nlohmann::json& j, const GameBoyCartridgeState& state);
+
+/**
+ * @brief Deserializes a GameBoyCartridgeState from JSON.
+ * @param j The JSON object to read from.
+ * @param state The GameBoyCartridgeState to populate.
+ */
 void from_json(const nlohmann::json& j, GameBoyCartridgeState& state);
 
 /**
@@ -96,7 +113,16 @@ class GameBoyCartridge {
    */
   int getCurrentRomBank() const { return currentRomBank(); }
 
+  /**
+   * @brief Returns the external RAM bank currently mapped at 0xA000-0xBFFF.
+   * @note Intended for debugging.
+   */
   void setState(const GameBoyCartridgeState& state);
+
+  /**
+   * @brief Returns the current state of the cartridge for serialization.
+   * @return A GameBoyCartridgeState object representing the current state.
+   */
   GameBoyCartridgeState getState() const;
 
  private:

@@ -13,6 +13,12 @@
  * @brief Top-level Game Boy emulator, platform independent.
  */
 
+/**
+ * @struct GameBoyState
+ * @brief Serializable state of a Game Boy emulator.
+ * @details This structure holds the state of the emulator for the purpose of
+ *          saving and loading the emulator's state.
+ */
 struct GameBoyState {
   GameBoyBusState bus;
 

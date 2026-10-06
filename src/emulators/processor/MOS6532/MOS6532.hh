@@ -10,6 +10,12 @@
  *        for its 128 bytes of RAM, I/O ports and interval timer.
  */
 
+/**
+ * @struct MOS6532State
+ * @brief Serializable state of the MOS6532.
+ * @details This structure holds the state of the MOS6532 for the purpose of
+ *          saving and loading the MOS6532's state.
+ */
 struct MOS6532State {
   std::array<uint8_t, 128> ram{};
   std::array<uint8_t, 2> io_ports{};
@@ -20,7 +26,17 @@ struct MOS6532State {
   bool timer_expired = false;
 };
 
+/**
+ * @brief Serializes a MOS6532State to JSON.
+ * @param j The JSON object to serialize into.
+ * @param state The MOS6532State to serialize.
+ */
 void to_json(nlohmann::json& j, const MOS6532State& state);
+/**
+ * @brief Deserializes a MOS6532State from JSON.
+ * @param j The JSON object to deserialize from.
+ * @param state The MOS6532State to populate.
+ */
 void from_json(const nlohmann::json& j, MOS6532State& state);
 
 /**
@@ -78,7 +94,17 @@ class MOS6532 {
    */
   void setSwchb(uint8_t v);
 
+  /**
+   * @brief Set the state of the MOS6532 from a serializable structure.
+   * @param state The state to set.
+   * @return The current MOS6532 state.
+   */
   void setState(const MOS6532State& state);
+
+  /**
+   * @brief Get the current MOS6532 state as a serializable structure.
+   * @return The current MOS6532 state.
+   */
   MOS6532State getState() const;
 
  private:

@@ -10,6 +10,10 @@ const RESET_COOLDOWN_SECONDS = 60;
 
 type Mode = 'signin' | 'signup' | 'forgot';
 
+/**
+ * LoginPage component provides a user interface for signing in, signing up, and resetting passwords. It manages the state of the form inputs, handles form submission, and displays appropriate messages based on the user's actions and server responses.
+ * @returns A React component that renders the login page for user authentication.
+ */
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const location = useLocation();

@@ -15,6 +15,12 @@
  *        and synthesizing the TIA audio, without any platform dependency.
  */
 
+/**
+ * @struct Atari2600State
+ * @brief Serializable state of an Atari 2600 emulator.
+ * @details This structure holds the state of the emulator for the purpose of
+ *          saving and loading the emulator's state.
+ */
 struct Atari2600State {
   Atari2600BusState bus;
 

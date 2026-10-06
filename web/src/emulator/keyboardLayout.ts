@@ -2,7 +2,17 @@ import { useEffect, useState } from 'react';
 
 export type LayoutMap = ReadonlyMap<string, string>;
 
+/**
+ * Represents a keyboard with a layout map.
+ * This interface extends the EventTarget and provides a method to get the layout map.
+ * @interface KeyboardWithLayout
+ * @extends {Partial<EventTarget>}
+ */
 interface KeyboardWithLayout extends Partial<EventTarget> {
+  /**
+   * Returns a promise that resolves to the layout map of the keyboard.
+   * @returns {Promise<LayoutMap>} A promise that resolves to the layout map.
+   */
   getLayoutMap(): Promise<LayoutMap>;
 }
 
@@ -23,10 +33,18 @@ const SPECIAL_NAMES: Record<string, string> = {
   AltRight: 'Alt right',
 };
 
+/**
+ * Returns the keyboard object with layout information if available.
+ * @returns {KeyboardWithLayout | undefined} The keyboard object or undefined if not available.
+ */
 function getKeyboard(): KeyboardWithLayout | undefined {
   return (navigator as Navigator & { keyboard?: KeyboardWithLayout }).keyboard;
 }
 
+/**
+ * A custom React hook that returns the current keyboard layout map, or null if not available.
+ * @returns {LayoutMap | null} The current keyboard layout map or null if not available.
+ */
 export function useLayoutMap(): LayoutMap | null {
   const [layout, setLayout] = useState<LayoutMap | null>(null);
 
@@ -59,6 +77,12 @@ export function useLayoutMap(): LayoutMap | null {
   return layout;
 }
 
+/**
+ * Returns a human-readable label for a given keyboard code, using the provided layout map if available.
+ * @param code The keyboard code to get the label for.
+ * @param layout The layout map to use for localization, or null if not available.
+ * @returns The human-readable label for the given keyboard code.
+ */
 export function keyLabelFor(code: string, layout: LayoutMap | null): string {
   if (SPECIAL_NAMES[code]) return SPECIAL_NAMES[code];
 
@@ -71,11 +95,21 @@ export function keyLabelFor(code: string, layout: LayoutMap | null): string {
   return code;
 }
 
+/**
+ * A custom React hook that returns a function to get the human-readable label for a given keyboard code.
+ * @returns A function that takes a keyboard code and returns its human-readable label.
+ */
 export function useKeyLabel(): (code: string) => string {
   const layout = useLayoutMap();
   return (code) => keyLabelFor(code, layout);
 }
 
+/**
+ * Localizes a keyboard binding code based on the provided layout map.
+ * @param code The keyboard binding code to localize.
+ * @param layout The layout map to use for localization, or null if not available.
+ * @returns The localized keyboard binding code.
+ */
 export function localizeBinding(code: string, layout: LayoutMap | null): string {
   if (!layout || !code.startsWith('Key')) return code;
   const letter = code.slice(3).toLowerCase();
@@ -85,6 +119,12 @@ export function localizeBinding(code: string, layout: LayoutMap | null): string 
   return code;
 }
 
+/**
+ * Localizes a set of keyboard bindings based on the provided layout map.
+ * @param bindings A record of keyboard binding codes to localize.
+ * @param layout The layout map to use for localization, or null if not available.
+ * @returns A record of the localized keyboard binding codes.
+ */
 export function localizeBindings(
   bindings: Record<string, string>,
   layout: LayoutMap | null,

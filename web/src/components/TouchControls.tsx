@@ -9,6 +9,11 @@ import {
 } from 'react';
 import type { SystemDef } from '../emulator/systems';
 
+/**
+ * Custom hook to determine if the current device matches a given media query.
+ * @param query - The media query string to evaluate.
+ * @returns A boolean indicating whether the media query matches the current device.
+ */
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(query).matches,
@@ -25,9 +30,22 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
+/**
+ * Custom hook to determine if the current device is a touch device.
+ * @returns A boolean indicating whether the current device is a touch device.
+ */
 export const useIsTouchDevice = () => useMediaQuery('(pointer: coarse)');
 
+/**
+ * SetAction type defines a function that sets the action state for a given control ID.
+ * @param id - The ID of the control to set the action for.
+ * @param pressed - A boolean indicating whether the control is pressed or released.
+ */
 type SetAction = (id: string, pressed: boolean) => void;
+
+/**
+ * Held type defines a read-only set of strings representing the currently held control IDs.
+ */
 type Held = ReadonlySet<string>;
 
 const noGestures: CSSProperties = {
@@ -40,6 +58,15 @@ const noGestures: CSSProperties = {
 const idle = 'bg-slate-700 text-slate-200';
 const active = 'bg-cyan-400 text-slate-950';
 
+/**
+ * PadButton component renders a button for a gamepad control.
+ * @param id - The ID of the control.
+ * @param label - The label to display on the button.
+ * @param held - A set of currently held control IDs.
+ * @param setAction - A function to set the action state for the control.
+ * @param className - Additional CSS classes to apply to the button.
+ * @returns The rendered PadButton component.
+ */
 function PadButton({
   id,
   label,
@@ -80,6 +107,12 @@ function PadButton({
 
 const DIRECTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT'] as const;
 
+/**
+ * DPad component renders a directional pad for game controls.
+ * @param held - A set of currently held control IDs.
+ * @param setAction - A function to set the action state for the control.
+ * @returns The rendered DPad component.
+ */
 function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
   const ref = useRef<HTMLDivElement>(null);
   const pointer = useRef<number | null>(null);
@@ -147,6 +180,13 @@ function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
   );
 }
 
+/**
+ * Pills component renders a set of pill-shaped buttons.
+ * @param ids - An array of objects defining the IDs and labels for each pill.
+ * @param held - A set of currently held control IDs.
+ * @param setAction - A function to set the action state for the control.
+ * @returns The rendered Pills component.
+ */
 function Pills({
   ids,
   held,
@@ -172,6 +212,11 @@ function Pills({
   );
 }
 
+/**
+ * GameBoyButtons component renders the buttons for a Game Boy-style controller.
+ * @param props - The properties for the GameBoyButtons component.
+ * @returns The rendered GameBoyButtons component.
+ */
 function GameBoyButtons(props: { held: Held; setAction: SetAction }) {
   return (
     <div className="space-y-4">
@@ -200,6 +245,11 @@ function GameBoyButtons(props: { held: Held; setAction: SetAction }) {
   );
 }
 
+/**
+ * AtariButtons component renders the buttons for an Atari-style controller.
+ * @param props - The properties for the AtariButtons component.
+ * @returns The rendered AtariButtons component.
+ */
 function AtariButtons(props: { held: Held; setAction: SetAction }) {
   return (
     <div className="space-y-4">
@@ -224,6 +274,11 @@ function AtariButtons(props: { held: Held; setAction: SetAction }) {
 
 const HEX_LAYOUT = ['1', '2', '3', 'C', '4', '5', '6', 'D', '7', '8', '9', 'E', 'A', '0', 'B', 'F'];
 
+/**
+ * HexPad component renders a hexadecimal pad for game controls.
+ * @param props - The properties for the HexPad component.
+ * @returns The rendered HexPad component.
+ */
 function HexPad(props: { held: Held; setAction: SetAction }) {
   return (
     <div className="grid grid-cols-4 gap-2">
@@ -240,14 +295,37 @@ function HexPad(props: { held: Held; setAction: SetAction }) {
   );
 }
 
+/**
+ * Props interface defines the properties for the TouchControls component.
+ * @property system - The system definition for which the touch controls are being rendered.
+ * @property enabled - A boolean indicating whether the touch controls are enabled.
+ * @property disabled - An optional boolean indicating whether the touch controls are disabled.
+ * @property onAction - A callback function that is called when a control action occurs.
+ * @property children - The child elements to be rendered within the touch controls layout.
+ */
 interface Props {
+  /** The system definition for which the touch controls are being rendered. */
   system: SystemDef | null;
+  /** A boolean indicating whether the touch controls are enabled. */
   enabled: boolean;
+  /** An optional boolean indicating whether the touch controls are disabled. */
   disabled?: boolean;
+  /** A callback function that is called when a control action occurs. */
   onAction: (actionId: string, pressed: boolean) => void;
+  /** The child elements to be rendered within the touch controls layout. */
   children: ReactNode;
 }
 
+/**
+ * TouchControls component renders the touch controls layout for a given system, including directional pads and buttons.
+ * It handles user interactions and invokes the provided onAction callback when control actions occur.
+ * @param system - The system definition for which the touch controls are being rendered.
+ * @param enabled - A boolean indicating whether the touch controls are enabled.
+ * @param disabled - An optional boolean indicating whether the touch controls are disabled.
+ * @param onAction - A callback function that is called when a control action occurs.
+ * @param children - The child elements to be rendered within the touch controls layout.
+ * @returns The rendered TouchControls component.
+ */
 export default function TouchControls({
   system,
   enabled,

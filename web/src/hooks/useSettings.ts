@@ -7,6 +7,10 @@ import type { Settings } from '../types';
 
 const DEFAULTS: Settings = { key_bindings: {}, crt_filter: true, volume: 80 };
 
+/**
+ * A custom React hook for managing the user's settings.
+ * @returns An object containing the user's settings, a loading state, an update function, and functions to get default and current key bindings for a given system.
+ */
 export function useSettings() {
   const { user } = useAuth();
   const [settings, setSettings] = useState<Settings>(DEFAULTS);

@@ -1,6 +1,10 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 
+/**
+ * A route that requires authentication. If the user is not authenticated, they will be redirected to the login page.
+ * @returns The protected route component.
+ */
 export default function ProtectedRoute() {
   const { user, loading } = useAuth();
   const location = useLocation();

@@ -3,12 +3,24 @@ import { Play, Trash2 } from 'lucide-react';
 import { SYSTEMS, type SystemId } from '../emulator/systems';
 import type { Game } from '../types';
 
+/**
+ * GameCard component displays a card for a game with its details and actions.
+ * @param {Object} props - The component props.
+ * @param {Game} props.game - The game object to display.
+ * @param {Function} props.onDelete - Callback function to handle game deletion.
+ * @returns {JSX.Element} The rendered GameCard component.
+ */
 const GRADIENTS: Record<SystemId, string> = {
   chip8: 'from-emerald-900/70 to-slate-950',
   atari2600: 'from-amber-900/70 to-slate-950',
   gameboy: 'from-purple-900/70 to-slate-950',
 };
 
+/**
+ * Returns the host of a given URL.
+ * @param url - The URL string to extract the host from.
+ * @returns The host of the URL, or '?' if the URL is invalid.
+ */
 function hostOf(url: string): string {
   try {
     return new URL(url).host;
@@ -17,18 +29,34 @@ function hostOf(url: string): string {
   }
 }
 
+/**
+ * Formats a size in bytes to a human-readable string.
+ * @param bytes - The size in bytes.
+ * @returns A formatted string representing the size in KB or MB.
+ */
 function formatSize(bytes: number): string {
   return bytes < 1024 * 1024
     ? `${(bytes / 1024).toFixed(1)} KB`
     : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+/**
+ * Returns a label for the source of a game, either its size or the host of its ROM URL.
+ * @param game - The game object to get the source label for.
+ * @returns The source label for the game.
+ */
 function sourceLabel(game: Game): string {
   if (game.size_bytes != null) return formatSize(game.size_bytes);
   if (game.rom_url) return hostOf(game.rom_url);
   return '';
 }
 
+/**
+ * GameCard component displays a card for a game with its details and actions.
+ * @param game - The game object to display.
+ * @param onDelete - Callback function to handle game deletion.
+ * @returns
+ */
 export default function GameCard({ game, onDelete }: { game: Game; onDelete: (g: Game) => void }) {
   const system = SYSTEMS[game.system];
 

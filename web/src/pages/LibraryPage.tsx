@@ -6,6 +6,11 @@ import { useGames } from '../hooks/useGames';
 import { ACCEPTED_EXTENSIONS, SYSTEM_LIST, type SystemId } from '../emulator/systems';
 import type { Game } from '../types';
 
+/**
+ * LibraryPage component allows users to manage their personal game library. It provides a user interface to view, filter, search, add, and remove games. The component handles the state of the library and interacts with the user's settings to persist changes.
+ * It also displays appropriate messages when the library is empty or when no games match the current filter or search query.
+ * @returns A React component that renders the library page for managing games.
+ */
 export default function LibraryPage() {
   const { games, loading, error, add, remove } = useGames();
   const [filter, setFilter] = useState<SystemId | 'all'>('all');

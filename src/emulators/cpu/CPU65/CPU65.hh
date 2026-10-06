@@ -14,6 +14,12 @@
  *        support for the common undocumented/"illegal" opcodes.
  */
 
+/**
+ * @struct CPU65State
+ * @brief Serializable state of a CPU65.
+ * @details This structure holds the state of the CPU for the purpose of
+ *          saving and loading the CPU's state.
+ */
 struct CPU65State {
   uint8_t A;
   uint8_t X;
@@ -89,7 +95,16 @@ class CPU65 : public CPU {
    */
   void write(uint16_t address, uint8_t value);
 
+  /**
+   * @brief Get the current CPU state as a serializable structure.
+   * @return The current CPU state.
+   */
   void setState(const CPU65State &state);
+
+  /**
+   * @brief Get the current CPU state as a serializable structure.
+   * @return The current CPU state.
+   */
   CPU65State getState() const;
 
  private:

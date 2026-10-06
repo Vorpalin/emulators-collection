@@ -13,6 +13,10 @@ import UpdatePrompt from './components/UpdatePrompt';
 
 const isNative = Capacitor.isNativePlatform();
 
+/**
+ * Main application component.
+ * @returns The main application component.
+ */
 export default function App() {
   useEffect(() => {
     if (!isNative) return;

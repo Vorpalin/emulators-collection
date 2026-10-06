@@ -1,18 +1,12 @@
 import { VitePWA } from 'vite-plugin-pwa';
 
 /**
- * Configuration PWA. À utiliser dans vite.config.ts :
- *
- *   import { pwaPlugin } from './vite-pwa';
- *   export default defineConfig({ plugins: [react(), pwaPlugin()] });
- *
- * Le service worker n'est actif que dans le build de production
- * (`npm run build && npm run preview`), pas avec `npm run dev`.
+ * Configure the Vite PWA plugin for the Emulators Collection web application. This function sets up the PWA manifest, including app name, description, theme colors, icons, and workbox settings for caching assets.
+ * It ensures that the application can be installed as a Progressive Web App and provides offline capabilities.
+ * @returns A configured VitePWA plugin instance for use in the Vite build process.
  */
 export function pwaPlugin() {
   return VitePWA({
-    // 'prompt' : une nouvelle version n'est appliquée que quand l'utilisateur accepte
-    // (voir UpdatePrompt.tsx), pour ne jamais recharger la page en pleine partie.
     registerType: 'prompt',
 
     includeAssets: ['icons/apple-touch-icon.png'],
@@ -39,14 +33,10 @@ export function pwaPlugin() {
     },
 
     workbox: {
-      // Met en cache l'application et le module WebAssembly de l'émulateur
       globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm,woff2}'],
       maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       cleanupOutdatedCaches: true,
-      // Navigation SPA : /reset-password, /controls... renvoient index.html hors ligne
       navigateFallback: 'index.html',
-      // Aucun cache d'exécution (runtimeCaching) volontairement : les requêtes vers
-      // Supabase (authentification, jeux, ROMs, réglages) passent toujours par le réseau.
     },
   });
 }

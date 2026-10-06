@@ -10,6 +10,12 @@
  *        detection, rendered line-by-line into a framebuffer.
  */
 
+/**
+ * @struct TIA1AState
+ * @brief Serializable state of the TIA1A.
+ * @details This structure holds the state of the TIA1A for the purpose of
+ *          saving and loading the TIA1A's state.
+ */
 struct TIA1AState {
   std::array<uint8_t, 2> p_grp{};
   std::array<uint8_t, 2> p_nusiz{};
@@ -39,7 +45,17 @@ struct TIA1AState {
   uint8_t colubk = 0;
 };
 
+/**
+ * @brief Serializes a TIA1AState to JSON.
+ * @param j The JSON object to serialize into.
+ * @param state The TIA1AState to serialize.
+ */
 void to_json(nlohmann::json& j, const TIA1AState& state);
+/**
+ * @brief Deserializes a TIA1AState from JSON.
+ * @param j The JSON object to deserialize from.
+ * @param state The TIA1AState to populate.
+ */
 void from_json(const nlohmann::json& j, TIA1AState& state);
 
 /**
@@ -120,7 +136,17 @@ class TIA1A {
    */
   void setFire(int player, bool pressed);
 
+  /**
+   * @brief Get the current TIA state as a serializable structure.
+   * @return The current TIA state.
+   */
   void setState(const TIA1AState& state);
+
+  /**
+   * @brief Sets the TIA state from a serializable structure.
+   * @param state The state to set.
+   * @return The current TIA state.
+   */
   TIA1AState getState() const;
 
  private:

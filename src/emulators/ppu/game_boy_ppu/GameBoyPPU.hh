@@ -81,6 +81,12 @@ struct PPURegisters {
   /// @}
 };
 
+/**
+ * @struct GameBoyPPUState
+ * @brief Serializable state of the Game Boy PPU.
+ * @details This structure holds the state of the PPU for the purpose of
+ *          saving and loading the PPU's state.
+ */
 struct GameBoyPPUState {
   PPURegisters regs;
   std::array<uint8_t, 0x2000> vram;
@@ -89,9 +95,32 @@ struct GameBoyPPUState {
   int dotCounter;
 };
 
+/**
+ * @brief Serializes a GameBoyPPUState to JSON.
+ * @param j The JSON object to serialize into.
+ * @param state The GameBoyPPUState to serialize.
+ */
 void to_json(nlohmann::json& j, const GameBoyPPUState& state);
+
+/**
+ * @brief Serializes a PPURegisters to JSON.
+ * @param j The JSON object to serialize into.
+ * @param regs The PPURegisters to serialize.
+ */
 void to_json(nlohmann::json& j, const PPURegisters& regs);
+
+/**
+ * @brief Deserializes a GameBoyPPUState from JSON.
+ * @param j The JSON object to deserialize from.
+ * @param state The GameBoyPPUState to populate.
+ */
 void from_json(const nlohmann::json& j, GameBoyPPUState& state);
+
+/**
+ * @brief Deserializes a PPURegisters from JSON.
+ * @param j The JSON object to deserialize from.
+ * @param regs The PPURegisters to populate.
+ */
 void from_json(const nlohmann::json& j, PPURegisters& regs);
 
 /**
@@ -198,7 +227,15 @@ class GameBoyPPU {
   /** @brief Read-only access to the PPU registers. */
   const PPURegisters& registers() const { return regs_; }
 
+  /**
+   * @brief Sets the PPU state from a serializable structure.
+   * @param state The state to set.
+   */
   void setState(const GameBoyPPUState& state);
+  /**
+   * @brief Gets the current PPU state as a serializable structure.
+   * @return The current PPU state.
+   */
   GameBoyPPUState getState() const;
 
  private:

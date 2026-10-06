@@ -153,7 +153,7 @@ public:
     virtual int height() const = 0;
 
     virtual std::string saveState() const = 0;
-    virtual bool loadState(const std::string &json) const = 0;
+    virtual bool loadState(const std::string &json) = 0;
 };
 ```
 

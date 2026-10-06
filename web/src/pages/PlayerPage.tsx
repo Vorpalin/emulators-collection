@@ -25,6 +25,10 @@ import type { Game } from '../types';
 
 type Status = 'loading' | 'ready' | 'playing' | 'error';
 
+/**
+ * PlayerPage component is responsible for rendering the game player interface. It manages the state of the game, including loading the ROM, handling user input, and controlling the emulator session. The component provides controls for pausing, muting, saving/loading states, and adjusting volume.
+ * @returns A React component that renders the player page for playing games in the emulator.
+ */
 export default function PlayerPage() {
   const { gameId } = useParams();
   const { settings, loading: settingsLoading, update, bindingsFor } = useSettings();

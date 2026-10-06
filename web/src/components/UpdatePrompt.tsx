@@ -2,6 +2,10 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 
 const CHECK_EVERY_MS = 60 * 60 * 1000;
 
+/**
+ * Checks if the application is installed as a Progressive Web App (PWA).
+ * @returns {boolean} True if the app is installed as a PWA, false otherwise.
+ */
 function isInstalledPWA(): boolean {
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
@@ -10,6 +14,10 @@ function isInstalledPWA(): boolean {
   );
 }
 
+/**
+ * UpdatePrompt component displays a prompt to the user when a new version of the app is available or when the app is ready to work offline.
+ * @returns {JSX.Element | null} The rendered UpdatePrompt component or null if no prompt is needed.
+ */
 export default function UpdatePrompt() {
   const {
     needRefresh: [needRefresh, setNeedRefresh],

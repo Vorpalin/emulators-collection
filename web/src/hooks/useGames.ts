@@ -6,12 +6,33 @@ import type { Game } from '../types';
 
 const BUCKET = 'roms';
 
+/**
+ * Represents a new game to be added to the collection.
+ * @interface NewGame
+ * @property {string} title - The title of the game.
+ * @property {SystemId} system - The system the game is for.
+ * @property {File} file - The ROM file of the game.
+ */
 export interface NewGame {
+  /**
+   * The title of the game.
+   */
   title: string;
+  /**
+   * The system the game is for.
+   */
   system: SystemId;
+  /**
+   * The ROM file of the game.
+   */
   file: File;
 }
 
+/**
+ * Validates a ROM file based on its size.
+ * @param file - The ROM file to validate.
+ * @returns A string error message if the file is invalid, or null if the file is valid.
+ */
 export function validateRomFile(file: File): string | null {
   if (file.size === 0) return 'The file is empty.';
   if (file.size > MAX_ROM_BYTES) {
@@ -20,6 +41,13 @@ export function validateRomFile(file: File): string | null {
   return null;
 }
 
+/**
+ * A custom React hook for managing games in the application.
+ * It provides functionalities to fetch, add, and remove games from the Supabase database.
+ * It also handles loading and error states.
+ *
+ * @returns An object containing the list of games, loading state, error state, and functions to add, remove, and refresh games.
+ */
 export function useGames() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +118,11 @@ export function useGames() {
   return { games, loading, error, add, remove, refresh };
 }
 
+/**
+ * Loads the ROM data for a given game.
+ * @param game - The game object containing information about the ROM.
+ * @returns A promise that resolves to a Uint8Array containing the ROM data.
+ */
 export async function loadRom(game: Game): Promise<Uint8Array> {
   if (game.rom_path) {
     const { data, error } = await supabase.storage.from(BUCKET).download(game.rom_path);

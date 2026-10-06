@@ -1,5 +1,11 @@
 export const MAX_ROM_BYTES = 16 * 1024 * 1024;
 
+/**
+ * Fetch a ROM from a URL and return it as a Uint8Array.
+ * Throws an error if the ROM is too large or if the fetch fails.
+ * @param url The URL of the ROM to fetch.
+ * @returns A promise that resolves to a Uint8Array containing the ROM data.
+ */
 export async function fetchRom(url: string): Promise<Uint8Array> {
   let res: Response;
   try {
@@ -48,6 +54,10 @@ export async function fetchRom(url: string): Promise<Uint8Array> {
   return out;
 }
 
+/**
+ * Create an error indicating that the ROM is too large.
+ * @returns An Error object with a message about the ROM size limit.
+ */
 function tooLarge(): Error {
   return new Error(`ROM too large (maximum ${MAX_ROM_BYTES / 1024 / 1024} Mo).`);
 }

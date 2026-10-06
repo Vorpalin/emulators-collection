@@ -11,12 +11,28 @@
  * @brief Atari 2600 cartridge (ROM) emulation, including bank switching.
  */
 
+/**
+ * @brief State of the Atari 2600 cartridge, for serialization/deserialization.
+ * @details This structure holds the state of the cartridge for the purpose of
+ *          saving and loading the emulator's state.
+ */
 struct Atari2600CartridgeState {
   std::vector<uint8_t> romData;
   uint8_t bank = 0;
 };
 
+/**
+ * @brief Serialize Atari2600CartridgeState to JSON.
+ * @param j JSON object to populate.
+ * @param state Cartridge state to serialize.
+ */
 void to_json(nlohmann::json& j, const Atari2600CartridgeState& state);
+
+/**
+ * @brief Deserialize Atari2600CartridgeState from JSON.
+ * @param j JSON object to read from.
+ * @param state State to populate.
+ */
 void from_json(const nlohmann::json& j, Atari2600CartridgeState& state);
 
 /**
@@ -67,7 +83,16 @@ class Atari2600Cartridge {
    */
   void write(uint16_t address, uint8_t value);
 
+  /**
+   * @brief Set the current state of the cartridge for deserialization.
+   * @param state The state to set the cartridge to.
+   */
   void setState(const Atari2600CartridgeState& state);
+
+  /**
+   * @brief Get the current state of the cartridge for serialization.
+   * @return The current state of the cartridge.
+   */
   Atari2600CartridgeState getState() const;
 
  private:

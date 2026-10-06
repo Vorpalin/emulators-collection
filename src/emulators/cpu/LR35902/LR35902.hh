@@ -13,6 +13,12 @@
 
 class GameBoyBus;
 
+/**
+ * @struct LR35902State
+ * @brief Serializable state of an LR35902 CPU.
+ * @details This structure holds the state of the CPU for the purpose of
+ *          saving and loading the CPU's state.
+ */
 struct LR35902State {
   uint8_t A, B, C, D, E, H, L;
   uint16_t PC, SP;
@@ -22,7 +28,17 @@ struct LR35902State {
   bool halted;
 };
 
+/**
+ * @brief Serializes a LR35902State to JSON.
+ * @param j The JSON object to serialize into.
+ * @param state The LR35902State to serialize.
+ */
 void to_json(nlohmann::json &j, const LR35902State &state);
+/**
+ * @brief Deserializes a LR35902State from JSON.
+ * @param j The JSON object to deserialize from.
+ * @param state The LR35902State to populate.
+ */
 void from_json(const nlohmann::json &j, LR35902State &state);
 
 /**
@@ -106,7 +122,16 @@ class LR35902 : public CPU {
   /** @brief Returns the current program counter (for debugging). */
   uint16_t getPC() { return PC; };
 
+  /**
+   * @brief Sets the CPU state from a serializable structure.
+   * @param state The state to set.
+   */
   void setState(const LR35902State &state);
+
+  /**
+   * @brief Gets the current CPU state as a serializable structure.
+   * @return The current CPU state.
+   */
   LR35902State getState() const;
 
  private:

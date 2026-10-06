@@ -1,0 +1,15 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.stories.tsx", "**/node_modules/**"],
+  "tsconfig": "tsconfig.json",
+  "plugin": ["typedoc-plugin-markdown"],
+  "out": "../build/wiki/web",
+  "readme": "none",
+  "entryFileName": "Web-API",
+  "hideBreadcrumbs": true,
+  "hidePageHeader": true,
+  "excludePrivate": true,
+  "excludeInternal": true
+}

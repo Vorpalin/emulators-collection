@@ -12,6 +12,12 @@
  * @brief CHIP-8 / Super-CHIP interpreter, implementing the Console interface.
  */
 
+/**
+ * @struct Chip8State
+ * @brief Serializable state of a CHIP-8 emulator.
+ * @details This structure holds the state of the emulator for the purpose of
+ *          saving and loading the emulator's state.
+ */
 struct Chip8State {
   std::array<uint8_t, 4096> memory;
   std::array<uint8_t, 16> V;

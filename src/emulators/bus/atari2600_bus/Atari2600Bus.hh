@@ -18,13 +18,27 @@
  *        RIOT and TIA into a single addressable machine.
  */
 
+/**
+ * @brief State of the Atari 2600 bus, for serialization/deserialization.
+ */
 struct Atari2600BusState {
   CPU65State cpu;
   MOS6532State riot;
   TIA1AState tia;
 };
 
+/**
+ * @brief Serialize the Atari2600BusState to JSON.
+ * @param j     JSON object to populate.
+ * @param state State to serialize.
+ */
 void to_json(nlohmann::json& j, const Atari2600BusState& state);
+
+/**
+ * @brief Deserialize the Atari2600BusState from JSON.
+ * @param j     JSON object to read from.
+ * @param state State to populate.
+ */
 void from_json(const nlohmann::json& j, Atari2600BusState& state);
 
 /**
@@ -117,7 +131,16 @@ class Atari2600Bus : public Bus {
     onAudioWrite = std::move(hook);
   }
 
+  /**
+   * @brief Get the current state of the bus for serialization/debugging.
+   * @return Current state of the bus.
+   */
   Atari2600BusState getState() const;
+
+  /**
+   * @brief Set the current state of the bus from a previously saved state.
+   * @param state State to restore.
+   */
   void setState(const Atari2600BusState& state);
 
  private:

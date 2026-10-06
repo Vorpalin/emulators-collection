@@ -4,6 +4,10 @@ import { useSettings } from '../hooks/useSettings';
 import { SYSTEM_LIST, SYSTEMS, type SystemId } from '../emulator/systems';
 import { useKeyLabel } from '../emulator/keyboardLayout';
 
+/**
+ * ControlsPage component allows users to view and modify key bindings for different gaming systems. It provides a user interface to select a system, view its actions, and reassign keys. The component also handles saving the updated key bindings to the user's settings.
+ * @returns A React component that renders the controls page for managing key bindings.
+ */
 export default function ControlsPage() {
   const { settings, loading, update, bindingsFor, defaultsFor } = useSettings();
   const keyLabel = useKeyLabel();

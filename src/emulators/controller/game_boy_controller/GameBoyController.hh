@@ -10,12 +10,29 @@
  * @brief Game Boy joypad emulation (register P1/JOYP at 0xFF00).
  */
 
+/**
+ * @struct GameBoyControllerState
+ * @brief Serializable state of a Game Boy controller.
+ * @details This structure holds the state of the controller for the purpose of
+ *          saving and loading the controller's state.
+ */
 struct GameBoyControllerState {
   uint8_t buttons;
   uint8_t selectBits;
 };
 
+/**
+ * @brief Serializes a GameBoyControllerState to JSON.
+ * @param j The JSON object to serialize into.
+ * @param state The GameBoyControllerState to serialize.
+ */
 void to_json(nlohmann::json& j, const GameBoyControllerState& state);
+
+/**
+ * @brief Deserializes a GameBoyControllerState from JSON.
+ * @param j The JSON object to deserialize from.
+ * @param state The GameBoyControllerState to populate.
+ */
 void from_json(const nlohmann::json& j, GameBoyControllerState& state);
 
 /**
@@ -90,7 +107,17 @@ class GameBoyController {
    */
   void write(uint8_t value);
 
+  /**
+   * @brief Sets the controller state from a GameBoyControllerState object.
+   * @param state The GameBoyControllerState to set.
+   */
   void setState(const GameBoyControllerState& state);
+
+  /**
+   * @brief Gets the current controller state as a GameBoyControllerState
+   * object.
+   * @return The current GameBoyControllerState.
+   */
   GameBoyControllerState getState() const;
 
  private:

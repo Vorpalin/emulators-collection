@@ -3,6 +3,11 @@ import { Cpu, FolderOpen, Gamepad2, LogOut } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useProfile } from '../hooks/useProfile';
 
+/**
+ * Returns the CSS class for a navigation tab based on its active state.
+ * @param isActive - A boolean indicating whether the tab is active.
+ * @returns The CSS class string for the tab.
+ */
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
     isActive
@@ -10,6 +15,11 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
   }`;
 
+/**
+ * Layout component that provides the main structure of the application, including the header, navigation, and footer.
+ * It uses the authentication context to display user information and sign-out functionality.
+ * @returns The Layout component with header, navigation, and footer.
+ */
 export default function Layout() {
   const { user, signOut } = useAuth();
   const { username } = useProfile();

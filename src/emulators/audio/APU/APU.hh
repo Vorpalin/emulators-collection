@@ -211,6 +211,10 @@ struct Channel4 {
   uint8_t output = 0;
 };
 
+/**
+ * @brief Complete state of the APU, including all four channels and the
+ *        global mixing registers.
+ */
 struct APUState {
   Channel1 channel1;
   Channel2 channel2;
@@ -225,16 +229,33 @@ struct APUState {
   uint8_t nr51;
 };
 
-void to_json(nlohmann::json& j, const APUState& state);
-void to_json(nlohmann::json& j, const Channel1& ch1);
-void to_json(nlohmann::json& j, const Channel2& ch2);
-void to_json(nlohmann::json& j, const Channel3& ch3);
-void to_json(nlohmann::json& j, const Channel4& ch4);
-void from_json(const nlohmann::json& j, APUState& state);
-void from_json(const nlohmann::json& j, Channel1& ch1);
-void from_json(const nlohmann::json& j, Channel2& ch2);
-void from_json(const nlohmann::json& j, Channel3& ch3);
-void from_json(const nlohmann::json& j, Channel4& ch4);
+/// @name JSON serialization
+/// @{
+void to_json(nlohmann::json& j,
+             const APUState& state);  ///< JSON serialization for APUState
+void to_json(nlohmann::json& j,
+             const Channel1& ch1);  ///< JSON serialization for Channel1
+void to_json(nlohmann::json& j,
+             const Channel2& ch2);  ///< JSON serialization for Channel2
+void to_json(nlohmann::json& j,
+             const Channel3& ch3);  ///< JSON serialization for Channel3
+void to_json(nlohmann::json& j,
+             const Channel4& ch4);  ///< JSON serialization for Channel4
+/// @}
+
+/// @name JSON deserialization
+/// @{
+void from_json(const nlohmann::json& j,
+               APUState& state);  ///< JSON deserialization for APUState
+void from_json(const nlohmann::json& j,
+               Channel1& ch1);  ///< JSON deserialization for Channel1
+void from_json(const nlohmann::json& j,
+               Channel2& ch2);  ///< JSON deserialization for Channel2
+void from_json(const nlohmann::json& j,
+               Channel3& ch3);  ///< JSON deserialization for Channel3
+void from_json(const nlohmann::json& j,
+               Channel4& ch4);  ///< JSON deserialization for Channel4
+/// @}
 
 /**
  * @brief Game Boy Audio Processing Unit.
@@ -311,7 +332,17 @@ class APU {
    */
   void getStereoSample(float& left, float& right);  ///< per-side mix
 
+  /**
+   * @brief Sets the current APU state from a serialized representation.
+   * @param state The APU state to restore.
+   */
   void setState(const APUState& state);
+
+  /**
+   * @brief Returns the current APU state for serialization/debugging.
+   * @return Current state of all four channels and the global mixing
+   *         registers.
+   */
   APUState getState() const;
 
  private:

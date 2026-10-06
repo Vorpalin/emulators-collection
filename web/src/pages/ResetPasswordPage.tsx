@@ -3,6 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Cpu, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+/**
+ * ResetPasswordPage component provides a user interface for users to reset their password. It verifies the validity of the reset link, allows users to enter a new password, and handles the submission of the new password to update the user's account.
+ * It also manages the state of the form inputs, displays appropriate messages based on the link validity and submission status, and redirects users upon successful password update.
+ * @returns A React component that renders the reset password page.
+ */
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
 

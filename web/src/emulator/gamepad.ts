@@ -3,8 +3,19 @@ import type { SystemId } from './systems';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 
+/**
+ * Represents the mapping of a gamepad for a specific system.
+ * @property directions - A record mapping each direction to its corresponding action string.
+ * @property buttons - A record mapping each button action to an array of button indices.
+ */
 export interface PadMapping {
+  /**
+   * A record mapping each direction to its corresponding action string.
+   */
   directions: Record<Direction, string>;
+  /**
+   * A record mapping each button action to an array of button indices.
+   */
   buttons: Record<string, number[]>;
 }
 
@@ -18,6 +29,11 @@ const GB_LIKE_DIRECTIONS: Record<Direction, string> = {
   right: 'RIGHT',
 };
 
+/**
+ * A record that defines the gamepad mappings for different systems.
+ * Each system has its own mapping of directions and buttons.
+ * @type {Record<SystemId, PadMapping>}
+ */
 export const GAMEPAD_MAPPINGS: Record<SystemId, PadMapping> = {
   gameboy: {
     directions: GB_LIKE_DIRECTIONS,
@@ -44,6 +60,11 @@ export const GAMEPAD_MAPPINGS: Record<SystemId, PadMapping> = {
   },
 };
 
+/**
+ * Reads the actions from a gamepad based on its mapping.
+ * @param mapping The gamepad mapping to use.
+ * @returns A set of strings representing the currently pressed actions.
+ */
 export function readGamepadActions(mapping: PadMapping): Set<string> {
   const pressed = new Set<string>();
   if (typeof navigator.getGamepads !== 'function') return pressed;
@@ -68,6 +89,10 @@ export function readGamepadActions(mapping: PadMapping): Set<string> {
   return pressed;
 }
 
+/**
+ * A custom React hook that returns the name of the first connected gamepad, or null if no gamepad is connected.
+ * @returns The name of the first connected gamepad, or null if no gamepad is connected.
+ */
 export function useGamepadName(): string | null {
   const [name, setName] = useState<string | null>(null);
 
