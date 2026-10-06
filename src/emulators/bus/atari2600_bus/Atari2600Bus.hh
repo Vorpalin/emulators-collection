@@ -22,7 +22,6 @@ struct Atari2600BusState {
   CPU65State cpu;
   MOS6532State riot;
   TIA1AState tia;
-  Atari2600CartridgeState cartridge;
 };
 
 void to_json(nlohmann::json& j, const Atari2600BusState& state);

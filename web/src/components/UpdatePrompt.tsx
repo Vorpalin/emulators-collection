@@ -2,6 +2,14 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 
 const CHECK_EVERY_MS = 60 * 60 * 1000;
 
+function isInstalledPWA(): boolean {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    ('standalone' in navigator &&
+      (navigator as Navigator & { standalone?: boolean }).standalone === true)
+  );
+}
+
 export default function UpdatePrompt() {
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -9,11 +17,17 @@ export default function UpdatePrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
-      if (registration) setInterval(() => void registration.update(), CHECK_EVERY_MS);
+      if (registration) {
+        setInterval(() => void registration.update(), CHECK_EVERY_MS);
+      }
     },
   });
 
-  if (!needRefresh && !offlineReady) return null;
+  const installedPWA = isInstalledPWA();
+
+  if (!needRefresh && !(offlineReady && installedPWA)) {
+    return null;
+  }
 
   const close = () => {
     setNeedRefresh(false);
@@ -23,7 +37,9 @@ export default function UpdatePrompt() {
   return (
     <div
       className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pointer-events-none"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
+      style={{
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)',
+      }}
     >
       <div
         role="status"
@@ -32,7 +48,7 @@ export default function UpdatePrompt() {
         <span className="flex-1">
           {needRefresh
             ? 'A new version is available.'
-            : 'Ready to work offline. The app is installed on this device.'}
+            : 'Emulators Collection is ready to work offline.'}
         </span>
 
         {needRefresh && (

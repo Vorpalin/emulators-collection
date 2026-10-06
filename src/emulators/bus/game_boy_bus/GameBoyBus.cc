@@ -10,7 +10,6 @@ void to_json(nlohmann::json& j, const GameBoyBusState& state) {
       {"cpu", state.cpu},
       {"interrupts", state.interrupts},
       {"apu", state.apu},
-      {"cartridge", state.cartridge},
       {"ppu", state.ppu},
       {"timer", state.timer},
       {"joypad", state.joypad},
@@ -29,7 +28,6 @@ void from_json(const nlohmann::json& j, GameBoyBusState& state) {
   j.at("cpu").get_to(state.cpu);
   j.at("interrupts").get_to(state.interrupts);
   j.at("apu").get_to(state.apu);
-  j.at("cartridge").get_to(state.cartridge);
   j.at("ppu").get_to(state.ppu);
   j.at("timer").get_to(state.timer);
   j.at("joypad").get_to(state.joypad);
@@ -47,7 +45,6 @@ void GameBoyBus::setState(const GameBoyBusState& state) {
   cpu.setState(state.cpu);
   interrupts.setState(state.interrupts);
   apu.setState(state.apu);
-  cartridge.setState(state.cartridge);
   ppu.setState(state.ppu);
   timer.setState(state.timer);
   joypad.setState(state.joypad);
@@ -66,7 +63,6 @@ GameBoyBusState GameBoyBus::getState() const {
       .cpu = cpu.getState(),
       .interrupts = interrupts.getState(),
       .apu = apu.getState(),
-      .cartridge = cartridge.getState(),
       .ppu = ppu.getState(),
       .timer = timer.getState(),
       .joypad = joypad.getState(),

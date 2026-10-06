@@ -24,7 +24,6 @@ struct GameBoyBusState {
   LR35902State cpu;
   GameBoyInterruptControllerState interrupts;
   APUState apu;
-  GameBoyCartridgeState cartridge;
   GameBoyPPUState ppu;
   GameBoyTimerState timer;
   GameBoyControllerState joypad;
