@@ -17,9 +17,11 @@
     "@capacitor/core": "^8.5.2",
     "@supabase/supabase-js": "^2.45.0",
     "lucide-react": "^0.468.0",
+    "postcss-selector-parser": "^7.1.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "source-map-js": "^1.2.2"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.3",
