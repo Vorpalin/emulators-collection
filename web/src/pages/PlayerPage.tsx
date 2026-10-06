@@ -7,6 +7,7 @@ import {
   FolderOpen,
   Gamepad2,
   Maximize2,
+  Minimize2,
   Pause,
   Play,
   RotateCcw,
@@ -44,6 +45,7 @@ export default function PlayerPage() {
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState<number | null>(null);
   const [stateLoading, setStateLoading] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -94,6 +96,13 @@ export default function PlayerPage() {
     },
     [],
   );
+
+  useEffect(() => {
+    const onChange = () => setFullscreen(document.fullscreenElement === frameRef.current);
+
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
 
   const start = async () => {
     if (!game || !rom || !canvasRef.current) return;
@@ -224,6 +233,16 @@ export default function PlayerPage() {
     } finally {
       setStateLoading(false);
     }
+  };
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await frameRef.current?.requestFullscreen();
+      }
+    } catch {}
   };
 
   if (status === 'error') {
@@ -437,11 +456,11 @@ export default function PlayerPage() {
             {/* Fullscreen */}
             {document.fullscreenEnabled && (
               <button
-                onClick={() => void frameRef.current?.requestFullscreen?.()?.catch(() => {})}
+                onClick={() => void toggleFullscreen()}
                 className={bar}
-                title="Fullscreen"
+                title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
               >
-                <Maximize2 className="w-4 h-4" />
+                {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </button>
             )}
           </div>
