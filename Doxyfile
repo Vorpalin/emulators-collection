@@ -1,46 +1,46 @@
-PROJECT_NAME           = "Emulator Collection"
-PROJECT_BRIEF          = "A collection of emulators written in C++"
+PROJECT_NAME = "Emulators Collection"
+PROJECT_BRIEF = "A collection of emulators written in C++"
 
-INPUT                  = src
-RECURSIVE              = YES
+INPUT = src
+RECURSIVE = YES
 
-FILE_PATTERNS          = *.h \
-                         *.hh \
-                         *.hpp \
-                         *.hxx \
-                         *.c \
-                         *.cc \
-                         *.cpp \
-                         *.cxx
+FILE_PATTERNS = *.h \
+                *.hh \
+                *.hpp \
+                *.hxx \
+                *.c \
+                *.cc \
+                *.cpp \
+                *.cxx
 
-EXTRACT_ALL            = YES
-EXTRACT_PRIVATE        = YES
-EXTRACT_STATIC         = YES
-EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_ALL = YES
+EXTRACT_PRIVATE = YES
+EXTRACT_STATIC = YES
+EXTRACT_LOCAL_CLASSES = YES
 
-WARN_IF_UNDOCUMENTED   = NO
-WARN_IF_DOC_ERROR      = YES
+WARN_IF_UNDOCUMENTED = NO
+WARN_IF_DOC_ERROR = YES
 
-OUTPUT_DIRECTORY       = build/doxygen
+OUTPUT_DIRECTORY = build/doxygen
 
-GENERATE_HTML          = NO
-GENERATE_LATEX         = NO
-GENERATE_XML           = YES
-XML_OUTPUT             = xml
+GENERATE_HTML = NO
+GENERATE_LATEX = NO
+GENERATE_XML = YES
+XML_OUTPUT = xml
 
-SOURCE_BROWSER         = YES
-INLINE_SOURCES         = NO
+SOURCE_BROWSER = YES
+INLINE_SOURCES = NO
 
-ENABLE_PREPROCESSING   = YES
-MACRO_EXPANSION        = YES
-EXPAND_ONLY_PREDEF     = NO
+ENABLE_PREPROCESSING = YES
+MACRO_EXPANSION = YES
+EXPAND_ONLY_PREDEF = NO
 
-HAVE_DOT               = YES
-COLLABORATION_GRAPH    = YES
-GROUP_GRAPHS           = YES
-UML_LOOK               = YES
+HAVE_DOT = YES
+COLLABORATION_GRAPH = YES
+GROUP_GRAPHS = YES
+UML_LOOK = YES
 
-QUIET                  = NO
-WARNINGS               = YES
+QUIET = NO
+WARNINGS = YES
 
-INPUT_ENCODING         = UTF-8
+INPUT_ENCODING = UTF-8
