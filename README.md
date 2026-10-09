@@ -729,9 +729,3 @@ See [`LICENSE`](LICENSE) for the complete license text.
 
 - GitHub: [@Vorpalin](https://github.com/Vorpalin)
 - Project: [Emulators Collection](https://github.com/Vorpalin/emulators-collection)
-
----
-
-<p align="center">
-  Built with C++20, WebAssembly, React and TypeScript.
-</p>
