@@ -10,6 +10,7 @@
 
 struct NesBusState {
   CPU65State cpu;
+  std::array<uint8_t, 0x2000> ram;  ///< NES RAM (0x0000-0x1FFF, mirrored)
 };
 
 /**
@@ -74,5 +75,6 @@ class NesBus : public Bus {
   NesBusState getState() const;
 
  private:
-  CPU65 cpu;  ///< MOS Technology 6502 CPU.
+  CPU65 cpu;                        ///< MOS Technology 6502 CPU.
+  std::array<uint8_t, 0x2000> ram;  ///< NES RAM (0x0000-0x1FFF, mirrored)
 };
