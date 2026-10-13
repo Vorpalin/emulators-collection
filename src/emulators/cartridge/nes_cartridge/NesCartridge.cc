@@ -4,12 +4,10 @@
 #include <fstream>
 #include <stdexcept>
 
-#include "emulators/cartridge/nes_cartridge/Mapper000.hh"
-#include "emulators/cartridge/nes_cartridge/Mapper001.hh"
-#include "emulators/cartridge/nes_cartridge/Mapper002.hh"
-#include "emulators/cartridge/nes_cartridge/Mapper003.hh"
-
-namespace nes {
+#include "emulators/cartridge/nes_cartridge/mapper/Mapper000.hh"
+#include "emulators/cartridge/nes_cartridge/mapper/Mapper001.hh"
+#include "emulators/cartridge/nes_cartridge/mapper/Mapper002.hh"
+#include "emulators/cartridge/nes_cartridge/mapper/Mapper003.hh"
 
 namespace {
 
@@ -114,5 +112,3 @@ void Cartridge::WriteSave(const std::string& path) const {
   f.write(reinterpret_cast<const char*>(ram.data()),
           static_cast<std::streamsize>(ram.size()));
 }
-
-}  // namespace nes

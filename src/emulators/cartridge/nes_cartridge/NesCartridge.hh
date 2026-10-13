@@ -8,10 +8,7 @@
 #include "emulators/cartridge/nes_cartridge/Mapper.hh"
 #include "emulators/cartridge/nes_cartridge/Mirroring.hh"
 
-namespace nes {
-
-// iNES / NES 2.0 loader + mapper dispatch. Throws std::runtime_error on
-// invalid or unsupported files.
+/** NES cartridge. */
 class NesCartridge {
  public:
   explicit NesCartridge();
@@ -40,5 +37,3 @@ class NesCartridge {
   int mapper_id_ = 0;
   bool has_battery_ = false;
 };
-
-}  // namespace nes
