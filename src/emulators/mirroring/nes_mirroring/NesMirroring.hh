@@ -3,7 +3,7 @@
 #include <cstdint>
 
 /** Mirroring modes for the PPU. */
-enum class Mirroring : uint8_t {
+enum class NesMirroring : uint8_t {
   kHorizontal,
   kVertical,
   kSingleLow,
@@ -15,4 +15,4 @@ enum class Mirroring : uint8_t {
  * offset in the console VRAM (2 KiB; 4 KiB for four-screen cartridges).
  * Must be called on every access: some mappers change mirroring at runtime.
  */
-inline uint16_t MirrorNametableAddress(uint16_t addr, Mirroring mode);
+inline uint16_t MirrorNametableAddress(uint16_t addr, NesMirroring mode);
