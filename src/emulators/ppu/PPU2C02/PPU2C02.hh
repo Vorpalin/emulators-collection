@@ -120,7 +120,9 @@ class PPU2C02 {
 
   void incrementVramAddr();
 
+  uint8_t readOAMData();
   uint8_t readPPUData();
+  uint8_t readPPUStatus();
 
  private:
   std::array<uint8_t, SCREEN_WIDTH * SCREEN_HEIGHT>

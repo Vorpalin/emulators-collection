@@ -38,12 +38,31 @@ uint8_t PPU2C02::readPPUData() {
   } else if (addr >= 0x3F00 && addr < 0x4000) {
     // Read from palette RAM
     uint16_t mirrored_addr = addr & 0x001F;  // Mirror down to 0x3F00-0x3F1F
-    // Implement reading from palette RAM here
+
+    if ((mirrored_addr & 0x13) == 0x10) {
+      mirrored_addr &= ~0x10;
+    }
+
+    internal_buffer_ = vram_[mirrorVramAddr(addr - 0x1000)];
+
+    return palette_table_[mirrored_addr];
   } else {
     // Invalid address range, handle as needed
   }
   return 0xFF;  // Placeholder return value
 }
+
+uint8_t PPU2C02::readPPUStatus() {
+  uint8_t data = status_;
+
+  status_ &= ~STATUS_VBLANK;
+  vram_addr_.reset_latch();
+  scroll_.reset_latch();
+
+  return data;
+}
+
+uint8_t PPU2C02::readOAMData() { return oam_data_[oam_addr_]; }
 
 uint16_t PPU2C02::mirrorVramAddr(uint16_t addr) {
   uint16_t mirrored_addr = addr & 0x2FFF;        // Mirror down to 0x2000-0x2FFF
