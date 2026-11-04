@@ -96,8 +96,31 @@ class CPU65 : public CPU {
   void write(uint16_t address, uint8_t value);
 
   /**
-   * @brief Get the current CPU state as a serializable structure.
-   * @return The current CPU state.
+   * @brief Enable or disable BCD arithmetic when the D flag is set.
+   * @details The NES CPU (Ricoh 2A03) has no decimal mode: SED/CLD still
+   *          toggle the flag but ADC/SBC always work in binary. Enabled by
+   *          default (Atari 2600, MOS 6507).
+   * @param enabled True to honour the D flag, false to ignore it.
+   */
+  void setDecimalModeEnabled(bool enabled) { decimalEnabled = enabled; }
+
+  /**
+   * @brief Service a non-maskable interrupt (vector $FFFA).
+   * @return Cycles consumed (7).
+   */
+  uint32_t nmi();
+
+  /**
+   * @brief Service a maskable interrupt (vector $FFFE) if the I flag is clear.
+   * @param ignoreMask Take the interrupt even if I is set (for callers that
+   *        emulate the one-instruction polling delay of CLI/SEI/PLP).
+   * @return Cycles consumed (7), or 0 if the interrupt is masked.
+   */
+  uint32_t irq(bool ignoreMask = false);
+
+  /**
+   * @brief Set the current CPU state from a serializable structure.
+   * @param state The state to restore.
    */
   void setState(const CPU65State &state);
 
@@ -125,6 +148,14 @@ class CPU65 : public CPU {
   uint8_t V : 1;  ///< Overflow Flag.
   uint8_t N : 1;  ///< Negative Flag.
   bool halted;    ///< True if the CPU has hit a KIL/JAM instruction.
+  bool decimalEnabled = true;  ///< False on the NES (no BCD in the 2A03).
+
+  /**
+   * @brief Push PC and status, set I and jump through an interrupt vector.
+   * @param vector Address of the 16-bit vector ($FFFA NMI, $FFFE IRQ).
+   * @return Cycles consumed.
+   */
+  uint32_t interrupt(uint16_t vector);
 
   /**
    * @brief Compute a zero-page,X address, wrapping within the zero page.
@@ -380,22 +411,22 @@ class CPU65 : public CPU {
    * @param addr High-order byte source for the unstable high-address AND.
    * @param high High byte of the effective address, used in the AND.
    */
-  void ahx(uint16_t addr, uint8_t high);
+  void ahx(uint16_t base, uint16_t addr);
   /**
    * @brief SHY: store (Y & high-byte-of-address+1) to memory.
    * @param addr Effective address to write to.
    */
-  void shy(uint16_t addr);
+  void shy(uint16_t base, uint16_t addr);
   /**
    * @brief SHX: store (X & high-byte-of-address+1) to memory.
    * @param addr Effective address to write to.
    */
-  void shx(uint16_t addr);
+  void shx(uint16_t base, uint16_t addr);
   /**
    * @brief TAS/SHS: transfer (A & X) to SP, then store (SP & high-byte+1).
    * @param addr Effective address to write to.
    */
-  void tas(uint16_t addr);
+  void tas(uint16_t base, uint16_t addr);
   /**
    * @brief XAA/ANE: unstable AND of A, X and an immediate value.
    * @param value Immediate operand.

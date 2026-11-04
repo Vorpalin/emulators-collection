@@ -93,6 +93,26 @@ void CPU65::resetCPU() {
 
 void CPU65::reset() { resetCPU(); }
 
+uint32_t CPU65::interrupt(uint16_t vector) {
+  uint32_t cycles = 0;
+  push(cycles, static_cast<uint8_t>((PC >> 8) & 0xFF));
+  push(cycles, static_cast<uint8_t>(PC & 0xFF));
+  push(cycles, getStatus(false));  // B clear: hardware interrupt, not BRK
+  I = 1;
+  const uint8_t low = read(cycles, vector);
+  const uint8_t high = read(cycles, static_cast<uint16_t>(vector + 1));
+  PC = static_cast<uint16_t>(low) | (static_cast<uint16_t>(high) << 8);
+  halted = false;
+  return 7;  // 2 internal cycles + 3 pushes + 2 vector reads
+}
+
+uint32_t CPU65::nmi() { return interrupt(0xFFFA); }
+
+uint32_t CPU65::irq(bool ignoreMask) {
+  if (I && !ignoreMask) return 0;  // masked
+  return interrupt(0xFFFE);
+}
+
 uint8_t CPU65::fetch(uint32_t &cycles) {
   uint8_t instruction = bus->read(PC);
   PC++;
@@ -117,12 +137,12 @@ void CPU65::write(uint32_t &cycles, uint16_t address, uint8_t value) {
   cycles++;
 }
 void CPU65::push(uint32_t &cycles, uint8_t v) {
-  write(cycles, 0x0100 | SP, v);
-  --SP;
+  write(cycles, 0x0100 | (SP & 0xFF), v);
+  SP = (SP - 1) & 0xFF;  // the stack pointer wraps within page 1
 }
 
 uint8_t CPU65::pull(uint32_t &cycles) {
-  ++SP;
+  SP = (SP + 1) & 0xFF;
   return read(cycles, 0x0100 | SP);
 }
 
@@ -175,14 +195,19 @@ uint16_t CPU65::absIndexed(uint32_t &cycles, uint8_t idx, bool write) {
 
   uint16_t addr = base + idx;
 
-  if (write || (base & 0xFF00) != (addr & 0xFF00)) ++cycles;
+  if (write || (base & 0xFF00) != (addr & 0xFF00)) {
+    ++cycles;
+    // The hardware reads the not-yet-corrected address first; this is
+    // observable on registers with read side effects ($2002, $2007, ...).
+    bus->read(static_cast<uint16_t>((base & 0xFF00) | (addr & 0x00FF)));
+  }
 
   return addr;
 }
 
 void CPU65::adc(uint8_t v) {
   const uint16_t bin = A + v + C;
-  if (!D) {
+  if (!D || !decimalEnabled) {
     V = (~(A ^ v) & (A ^ bin) & 0x80) != 0;
     C = bin > 0xFF;
     A = bin & 0xFF;
@@ -208,7 +233,7 @@ void CPU65::sbc(uint8_t v) {
   C = bin >= 0;
   Z = ((bin & 0xFF) == 0);
   N = (bin >> 7) & 1;
-  if (!D) {
+  if (!D || !decimalEnabled) {
     A = bin & 0xFF;
     return;
   }
@@ -307,36 +332,33 @@ void CPU65::rra(uint16_t addr, uint32_t &cycles) {
   adc(value);
 }
 
-void CPU65::ahx(uint16_t addr, uint8_t high) {
-  uint8_t value = A & X & static_cast<uint8_t>(high + 1);
-
+/// Shared tail of the "unstable" high-byte stores (SHA/SHX/SHY/TAS): the stored
+/// value is masked with (high byte of the base address + 1) and, when the
+/// indexing crosses a page, that value also replaces the address high byte.
+static void UnstableStore(Bus *bus, uint16_t base, uint16_t addr,
+                          uint8_t value) {
+  value &= static_cast<uint8_t>((base >> 8) + 1);
+  if ((base & 0xFF00) != (addr & 0xFF00)) {
+    addr = static_cast<uint16_t>((value << 8) | (addr & 0x00FF));
+  }
   bus->write(addr, value);
 }
 
-void CPU65::shy(uint16_t addr) {
-  uint8_t high = static_cast<uint8_t>(addr >> 8);
-
-  uint8_t value = Y & static_cast<uint8_t>(high + 1);
-
-  bus->write(addr, value);
+void CPU65::ahx(uint16_t base, uint16_t addr) {
+  UnstableStore(bus, base, addr, A & X);
 }
 
-void CPU65::shx(uint16_t addr) {
-  uint8_t high = static_cast<uint8_t>(addr >> 8);
-
-  uint8_t value = X & static_cast<uint8_t>(high + 1);
-
-  bus->write(addr, value);
+void CPU65::shy(uint16_t base, uint16_t addr) {
+  UnstableStore(bus, base, addr, Y);
 }
 
-void CPU65::tas(uint16_t addr) {
+void CPU65::shx(uint16_t base, uint16_t addr) {
+  UnstableStore(bus, base, addr, X);
+}
+
+void CPU65::tas(uint16_t base, uint16_t addr) {
   SP = A & X;
-
-  uint8_t high = static_cast<uint8_t>(addr >> 8);
-
-  uint8_t value = SP & static_cast<uint8_t>(high + 1);
-
-  bus->write(addr, value);
+  UnstableStore(bus, base, addr, static_cast<uint8_t>(SP));
 }
 
 void CPU65::xaa(uint8_t value) {
@@ -352,6 +374,7 @@ void CPU65::dcp(uint16_t addr, uint32_t &cycles) {
   uint8_t value = read(cycles, addr);
 
   --value;
+  ++cycles;  // read-modify-write internal cycle
 
   write(cycles, addr, value);
 
@@ -527,16 +550,14 @@ uint32_t CPU65::execute() {
     }
     case INS_ADC_ABSX:  // ADC Absolute,X
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddX(cycles, addr);
+      uint16_t addr = absIndexed(cycles, X, false);
       uint8_t value = this->read(cycles, addr);
       adc(value);
       break;
     }
     case INS_ADC_ABSY:  // ADC Absolute,Y
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddY(cycles, addr);
+      uint16_t addr = absIndexed(cycles, Y, false);
       uint8_t value = this->read(cycles, addr);
       adc(value);
       break;
@@ -601,8 +622,7 @@ uint32_t CPU65::execute() {
     }
     case INS_AND_ABSX:  // AND Absolute,X
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddX(cycles, addr);
+      uint16_t addr = absIndexed(cycles, X, false);
       uint8_t value = this->read(cycles, addr);
       A &= value;
       andSetFlags();
@@ -610,8 +630,7 @@ uint32_t CPU65::execute() {
     }
     case INS_AND_ABSY:  // AND Absolute,Y
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddY(cycles, addr);
+      uint16_t addr = absIndexed(cycles, Y, false);
       uint8_t value = this->read(cycles, addr);
       A &= value;
       andSetFlags();
@@ -663,55 +682,39 @@ uint32_t CPU65::execute() {
       this->zeroPageAddX(cycles, addr);
       addr &= 0xFF;  // Wrap around for zero page
       uint8_t value = this->read(cycles, addr);
-      A = value;
-      aslSetFlags(cycles);
-      write(cycles, addr, A);  // Write back to memory
+      ++cycles;                         // Increment cycles for the operation
+      write(cycles, addr, asl(value));  // Write back to memory
       break;
     }
     case INS_ASL_ABS:  // ASL Absolute
     {
       uint16_t addr = fetch16(cycles);
       uint8_t value = this->read(cycles, addr);
-      A = value;
-      aslSetFlags(cycles);
-      write(cycles, addr, A);  // Write back to memory
+      ++cycles;                         // Increment cycles for the operation
+      write(cycles, addr, asl(value));  // Write back to memory
       break;
     }
     case INS_ASL_ABSX:  // ASL Absolute,X
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddX(cycles, addr);
+      uint16_t addr = absIndexed(cycles, X, true);
       uint8_t value = this->read(cycles, addr);
-      A = value;
-      aslSetFlags(cycles);
-      write(cycles, addr, A);  // Write back to memory
+      ++cycles;                         // Increment cycles for the operation
+      write(cycles, addr, asl(value));  // Write back to memory
       break;
     }
     case INS_BCC:  // BCC (Branch if Carry Clear)
     {
-      int8_t offset = static_cast<int8_t>(fetch(cycles));
-      if (C == 0) {
-        PC += offset;
-        cycles++;  // Branch taken, increment cycles
-      }
+      branch(cycles, C == 0);
       break;
     }
     case INS_BCS:  // BCS (Branch if Carry Set)
     {
-      int8_t offset = static_cast<int8_t>(fetch(cycles));
-      if (C == 1) {
-        PC += offset;
-        cycles++;  // Branch taken, increment cycles
-      }
+      branch(cycles, C == 1);
       break;
     }
     case INS_BEQ:  // BEQ (Branch if Equal)
     {
-      int8_t offset = static_cast<int8_t>(fetch(cycles));
-      if (Z == 1) {
-        PC += offset;
-        cycles++;  // Branch taken, increment cycles
-      }
+      branch(cycles, Z == 1);
       break;
     }
     case INS_BIT_ZP:  // BIT Zero Page
@@ -730,29 +733,17 @@ uint32_t CPU65::execute() {
     }
     case INS_BMI:  // BMI (Branch if Minus)
     {
-      int8_t offset = static_cast<int8_t>(fetch(cycles));
-      if (N == 1) {
-        PC += offset;
-        cycles++;  // Branch taken, increment cycles
-      }
+      branch(cycles, N == 1);
       break;
     }
     case INS_BNE:  // BNE (Branch if Not Equal)
     {
-      int8_t offset = static_cast<int8_t>(fetch(cycles));
-      if (Z == 0) {
-        PC += offset;
-        cycles++;  // Branch taken, increment cycles
-      }
+      branch(cycles, Z == 0);
       break;
     }
     case INS_BPL:  // BPL (Branch if Positive)
     {
-      int8_t offset = static_cast<int8_t>(fetch(cycles));
-      if (N == 0) {
-        PC += offset;
-        cycles++;  // Branch taken, increment cycles
-      }
+      branch(cycles, N == 0);
       break;
     }
     case INS_BRK:  // BRK (Force Interrupt)
@@ -770,25 +761,18 @@ uint32_t CPU65::execute() {
       uint8_t high = read(cycles, 0xFFFF);
 
       PC = static_cast<uint16_t>(low) | (static_cast<uint16_t>(high) << 8);
+      ++cycles;  // BRK takes 7 cycles in total
 
       break;
     }
     case INS_BVC:  // BVC (Branch if Overflow Clear)
     {
-      int8_t offset = static_cast<int8_t>(fetch(cycles));
-      if (V == 0) {
-        PC += offset;
-        cycles++;  // Branch taken, increment cycles
-      }
+      branch(cycles, V == 0);
       break;
     }
     case INS_BVS:  // BVS (Branch if Overflow Set)
     {
-      int8_t offset = static_cast<int8_t>(fetch(cycles));
-      if (V == 1) {
-        PC += offset;
-        cycles++;  // Branch taken, increment cycles
-      }
+      branch(cycles, V == 1);
       break;
     }
     case INS_CLC:  // CLC (Clear Carry Flag)
@@ -957,8 +941,7 @@ uint32_t CPU65::execute() {
     }
     case INS_DEC_ABSX:  // DEC Absolute,X
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddX(cycles, addr);
+      uint16_t addr = absIndexed(cycles, X, true);
       uint8_t value = this->read(cycles, addr);
       value--;
       cycles++;  // Increment cycles for the operation
@@ -1090,8 +1073,7 @@ uint32_t CPU65::execute() {
     }
     case INS_INC_ABSX:  // INC Absolute,X
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddX(cycles, addr);
+      uint16_t addr = absIndexed(cycles, X, true);
       uint8_t value = this->read(cycles, addr);
       value++;
       ++cycles;  // Increment cycles for the operation
@@ -1257,8 +1239,7 @@ uint32_t CPU65::execute() {
     }
     case INS_LSR_ABSX:  // LSR Absolute,X
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddX(cycles, addr);
+      uint16_t addr = absIndexed(cycles, X, true);
       uint8_t value = this->read(cycles, addr);
       value = lsr(value);
       ++cycles;                    // Increment cycles for the operation
@@ -1355,10 +1336,8 @@ uint32_t CPU65::execute() {
     }
     case INS_PHP:  // PHP (Push Processor Status)
     {
-      uint8_t status = (N << 7) | (V << 6) | (1 << 5) | (B << 4) | (D << 3) |
-                       (I << 2) | (Z << 1) | C;
-      push(cycles, status);
-      ++cycles;  // Increment cycles for the operation
+      push(cycles, getStatus(true));  // PHP always pushes B and bit 5 set
+      ++cycles;                       // Increment cycles for the operation
       break;
     }
     case INS_PLA:  // PLA (Pull Accumulator)
@@ -1413,8 +1392,7 @@ uint32_t CPU65::execute() {
     }
     case INS_ROL_ABSX:  // ROL Absolute,X
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddX(cycles, addr);
+      uint16_t addr = absIndexed(cycles, X, true);
       uint8_t value = this->read(cycles, addr);
       value = rol(value);
       ++cycles;                    // Increment cycles for the operation
@@ -1457,8 +1435,7 @@ uint32_t CPU65::execute() {
     }
     case INS_ROR_ABSX:  // ROR Absolute,X
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddX(cycles, addr);
+      uint16_t addr = absIndexed(cycles, X, true);
       uint8_t value = this->read(cycles, addr);
       value = ror(value);
       ++cycles;                    // Increment cycles for the operation
@@ -1593,15 +1570,13 @@ uint32_t CPU65::execute() {
     }
     case INS_STA_ABSX:  // STA Absolute,X
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddX(cycles, addr);
+      uint16_t addr = absIndexed(cycles, X, true);
       write(cycles, addr, A);
       break;
     }
     case INS_STA_ABSY:  // STA Absolute,Y
     {
-      uint16_t addr = fetch16(cycles);
-      this->zeroPageAddY(cycles, addr);
+      uint16_t addr = absIndexed(cycles, Y, true);
       write(cycles, addr, A);
       break;
     }
@@ -1720,6 +1695,7 @@ uint32_t CPU65::execute() {
     case INS_LAX_ZPY: {
       uint8_t addr = fetch(cycles);
       addr += Y;
+      ++cycles;  // zero-page indexing
 
       uint8_t value = read(cycles, addr);
 
@@ -1759,6 +1735,7 @@ uint32_t CPU65::execute() {
       uint8_t zpAddr = fetch(cycles);
 
       uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
+      ++cycles;  // pointer indexing
 
       uint16_t addr =
           read(cycles, ptr) |
@@ -1810,6 +1787,17 @@ uint32_t CPU65::execute() {
       write(cycles, addr, A & X);
       break;
     }
+    case INS_SAX_INDX: {
+      uint8_t zpAddr = fetch(cycles);
+      uint8_t ptr = static_cast<uint8_t>(zpAddr + X);
+      ++cycles;  // pointer indexing
+      uint16_t addr =
+          read(cycles, ptr) |
+          (static_cast<uint16_t>(read(cycles, static_cast<uint8_t>(ptr + 1)))
+           << 8);
+      write(cycles, addr, A & X);
+      break;
+    }
     case INS_SAX_ABS: {
       uint16_t addr = fetch16(cycles);
       write(cycles, addr, A & X);
@@ -1818,14 +1806,14 @@ uint32_t CPU65::execute() {
     case INS_ISB_ZP: {
       uint8_t addr = fetch(cycles);
       isb(addr, cycles);
-      cycles = 6;  // Increment cycles for the operation
+      cycles = 5;
       break;
     }
     case INS_ISB_ZPX: {
       uint8_t addr = fetch(cycles);
       addr = static_cast<uint8_t>(addr + X);
-      cycles = 6;
       isb(addr, cycles);
+      cycles = 6;
       break;
     }
     case INS_ISB_ABS: {
@@ -2128,11 +2116,10 @@ uint32_t CPU65::execute() {
       uint16_t base = fetch16(cycles);
       uint16_t addr = base + Y;
 
-      uint8_t high = static_cast<uint8_t>(addr >> 8);
-
       ++cycles;  // indexed store
 
-      ahx(addr, high);
+      ahx(base, addr);
+      ++cycles;  // the write itself
       break;
     }
     case INS_AHX_INDY: {
@@ -2145,11 +2132,10 @@ uint32_t CPU65::execute() {
 
       uint16_t addr = base + Y;
 
-      uint8_t high = static_cast<uint8_t>(addr >> 8);
-
       ++cycles;  // (zp),Y store
 
-      ahx(addr, high);
+      ahx(base, addr);
+      ++cycles;  // the write itself
       break;
     }
     case INS_SHY_ABSX: {
@@ -2158,7 +2144,7 @@ uint32_t CPU65::execute() {
 
       ++cycles;  // indexed store
 
-      shy(addr);
+      shy(base, addr);
       cycles = 5;  // Increment cycles for the operation
       break;
     }
@@ -2168,7 +2154,7 @@ uint32_t CPU65::execute() {
 
       ++cycles;  // indexed store
 
-      shx(addr);
+      shx(base, addr);
       cycles = 5;  // Increment cycles for the operation
       break;
     }
@@ -2178,8 +2164,16 @@ uint32_t CPU65::execute() {
 
       ++cycles;  // indexed store
 
-      tas(addr);
+      tas(base, addr);
       cycles = 5;  // Increment cycles for the operation
+      break;
+    }
+    case INS_LXA_IMM: {
+      // Unstable on real hardware; $FF is the usual "magic" constant.
+      uint8_t value = fetch(cycles);
+      A = X = static_cast<uint8_t>((A | 0xFF) & value);
+      Z = (A == 0);
+      N = (A & 0x80) != 0;
       break;
     }
     case INS_XAA_IMM: {
@@ -2198,6 +2192,7 @@ uint32_t CPU65::execute() {
       uint8_t addr = fetch(cycles);
 
       addr = static_cast<uint8_t>(addr + X);
+      ++cycles;  // zero-page indexing
 
       dcp(addr, cycles);
 
@@ -2341,6 +2336,7 @@ uint32_t CPU65::execute() {
     case INS_NOP_ZPX_F4: {
       uint8_t addr = fetch(cycles);
       addr = static_cast<uint8_t>(addr + X);
+      ++cycles;  // zero-page indexing
 
       read(cycles, addr);
 

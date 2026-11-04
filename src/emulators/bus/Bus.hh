@@ -1,4 +1,6 @@
 #pragma once
+
+#include <cstdint>
 #include <string>
 
 /**
@@ -14,6 +16,8 @@
  */
 class Bus {
  public:
+  virtual ~Bus() = default;
+
   /**
    * @brief Load a ROM file into the system's memory.
    * @param filename Path to the ROM file to load.
