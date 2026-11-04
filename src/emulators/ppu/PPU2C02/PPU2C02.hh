@@ -67,15 +67,90 @@ struct PPU2C02State {
   std::array<uint8_t, 256> oam{};
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PpuSprite, y, tile, attr, x, lo, hi)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PPU2C02State, ctrl, mask, status, oam_addr,
-                                   v, t, fine_x, w, read_buffer, io_latch,
-                                   scanline, dot, odd_frame, nmi_line,
-                                   nmi_pending, frame_ready, nt_byte, at_byte,
-                                   pat_lo, pat_hi, bg_lo, bg_hi, at_lo, at_hi,
-                                   sprites, sprite_count, sprite0_in_line, a12,
-                                   a12_low_since, dot_counter, vram, palette,
-                                   oam)
+inline void to_json(nlohmann::json& j, const PpuSprite& v) {
+  j = nlohmann::json{{"y", v.y}, {"tile", v.tile}, {"attr", v.attr},
+                     {"x", v.x}, {"lo", v.lo},     {"hi", v.hi}};
+}
+
+inline void from_json(const nlohmann::json& j, PpuSprite& v) {
+  j.at("y").get_to(v.y);
+  j.at("tile").get_to(v.tile);
+  j.at("attr").get_to(v.attr);
+  j.at("x").get_to(v.x);
+  j.at("lo").get_to(v.lo);
+  j.at("hi").get_to(v.hi);
+}
+inline void to_json(nlohmann::json& j, const PPU2C02State& v) {
+  j = nlohmann::json{{"ctrl", v.ctrl},
+                     {"mask", v.mask},
+                     {"status", v.status},
+                     {"oam_addr", v.oam_addr},
+                     {"v", v.v},
+                     {"t", v.t},
+                     {"fine_x", v.fine_x},
+                     {"w", v.w},
+                     {"read_buffer", v.read_buffer},
+                     {"io_latch", v.io_latch},
+                     {"scanline", v.scanline},
+                     {"dot", v.dot},
+                     {"odd_frame", v.odd_frame},
+                     {"nmi_line", v.nmi_line},
+                     {"nmi_pending", v.nmi_pending},
+                     {"frame_ready", v.frame_ready},
+                     {"nt_byte", v.nt_byte},
+                     {"at_byte", v.at_byte},
+                     {"pat_lo", v.pat_lo},
+                     {"pat_hi", v.pat_hi},
+                     {"bg_lo", v.bg_lo},
+                     {"bg_hi", v.bg_hi},
+                     {"at_lo", v.at_lo},
+                     {"at_hi", v.at_hi},
+                     {"sprites", v.sprites},
+                     {"sprite_count", v.sprite_count},
+                     {"sprite0_in_line", v.sprite0_in_line},
+                     {"a12", v.a12},
+                     {"a12_low_since", v.a12_low_since},
+                     {"dot_counter", v.dot_counter},
+                     {"vram", v.vram},
+                     {"palette", v.palette},
+                     {"oam", v.oam}};
+}
+
+inline void from_json(const nlohmann::json& j, PPU2C02State& v) {
+  j.at("ctrl").get_to(v.ctrl);
+  j.at("mask").get_to(v.mask);
+  j.at("status").get_to(v.status);
+  j.at("oam_addr").get_to(v.oam_addr);
+  j.at("v").get_to(v.v);
+  j.at("t").get_to(v.t);
+  j.at("fine_x").get_to(v.fine_x);
+  j.at("w").get_to(v.w);
+  j.at("read_buffer").get_to(v.read_buffer);
+  j.at("io_latch").get_to(v.io_latch);
+  j.at("scanline").get_to(v.scanline);
+  j.at("dot").get_to(v.dot);
+  j.at("odd_frame").get_to(v.odd_frame);
+  j.at("nmi_line").get_to(v.nmi_line);
+  j.at("nmi_pending").get_to(v.nmi_pending);
+  j.at("frame_ready").get_to(v.frame_ready);
+  j.at("nt_byte").get_to(v.nt_byte);
+  j.at("at_byte").get_to(v.at_byte);
+  j.at("pat_lo").get_to(v.pat_lo);
+  j.at("pat_hi").get_to(v.pat_hi);
+  j.at("bg_lo").get_to(v.bg_lo);
+  j.at("bg_hi").get_to(v.bg_hi);
+  j.at("at_lo").get_to(v.at_lo);
+  j.at("at_hi").get_to(v.at_hi);
+  j.at("sprites").get_to(v.sprites);
+  j.at("sprite_count").get_to(v.sprite_count);
+  j.at("sprite0_in_line").get_to(v.sprite0_in_line);
+  j.at("a12").get_to(v.a12);
+  j.at("a12_low_since").get_to(v.a12_low_since);
+  j.at("dot_counter").get_to(v.dot_counter);
+  j.at("vram").get_to(v.vram);
+  j.at("palette").get_to(v.palette);
+  j.at("oam").get_to(v.oam);
+}
 
 class PPU2C02 {
  public:

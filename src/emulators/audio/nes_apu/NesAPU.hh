@@ -166,25 +166,163 @@ class NesAPU {
 };
 
 namespace nesapu {
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Envelope, start, loop, constant, period,
-                                   divider, decay)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Pulse, channel1, enabled, env, duty, seq,
-                                   timer, reload, length, sweep_enable,
-                                   sweep_negate, sweep_reload, sweep_period,
-                                   sweep_shift, sweep_divider)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Triangle, enabled, control,
-                                   linear_reload_flag, linear_reload, linear,
-                                   timer, reload, length, seq)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Noise, enabled, env, mode, timer, period,
-                                   length, shift)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Dmc, enabled, irq_enable, loop, irq, period,
-                                   timer, level, sample_addr, sample_length,
-                                   cur_addr, bytes_remaining, buffer,
-                                   buffer_empty, shifter, bits_remaining,
-                                   silence)
+inline void to_json(nlohmann::json& j, const Envelope& v) {
+  j = nlohmann::json{{"start", v.start},       {"loop", v.loop},
+                     {"constant", v.constant}, {"period", v.period},
+                     {"divider", v.divider},   {"decay", v.decay}};
+}
+
+inline void from_json(const nlohmann::json& j, Envelope& v) {
+  j.at("start").get_to(v.start);
+  j.at("loop").get_to(v.loop);
+  j.at("constant").get_to(v.constant);
+  j.at("period").get_to(v.period);
+  j.at("divider").get_to(v.divider);
+  j.at("decay").get_to(v.decay);
+}
+inline void to_json(nlohmann::json& j, const Pulse& v) {
+  j = nlohmann::json{{"channel1", v.channel1},
+                     {"enabled", v.enabled},
+                     {"env", v.env},
+                     {"duty", v.duty},
+                     {"seq", v.seq},
+                     {"timer", v.timer},
+                     {"reload", v.reload},
+                     {"length", v.length},
+                     {"sweep_enable", v.sweep_enable},
+                     {"sweep_negate", v.sweep_negate},
+                     {"sweep_reload", v.sweep_reload},
+                     {"sweep_period", v.sweep_period},
+                     {"sweep_shift", v.sweep_shift},
+                     {"sweep_divider", v.sweep_divider}};
+}
+
+inline void from_json(const nlohmann::json& j, Pulse& v) {
+  j.at("channel1").get_to(v.channel1);
+  j.at("enabled").get_to(v.enabled);
+  j.at("env").get_to(v.env);
+  j.at("duty").get_to(v.duty);
+  j.at("seq").get_to(v.seq);
+  j.at("timer").get_to(v.timer);
+  j.at("reload").get_to(v.reload);
+  j.at("length").get_to(v.length);
+  j.at("sweep_enable").get_to(v.sweep_enable);
+  j.at("sweep_negate").get_to(v.sweep_negate);
+  j.at("sweep_reload").get_to(v.sweep_reload);
+  j.at("sweep_period").get_to(v.sweep_period);
+  j.at("sweep_shift").get_to(v.sweep_shift);
+  j.at("sweep_divider").get_to(v.sweep_divider);
+}
+inline void to_json(nlohmann::json& j, const Triangle& v) {
+  j = nlohmann::json{{"enabled", v.enabled},
+                     {"control", v.control},
+                     {"linear_reload_flag", v.linear_reload_flag},
+                     {"linear_reload", v.linear_reload},
+                     {"linear", v.linear},
+                     {"timer", v.timer},
+                     {"reload", v.reload},
+                     {"length", v.length},
+                     {"seq", v.seq}};
+}
+
+inline void from_json(const nlohmann::json& j, Triangle& v) {
+  j.at("enabled").get_to(v.enabled);
+  j.at("control").get_to(v.control);
+  j.at("linear_reload_flag").get_to(v.linear_reload_flag);
+  j.at("linear_reload").get_to(v.linear_reload);
+  j.at("linear").get_to(v.linear);
+  j.at("timer").get_to(v.timer);
+  j.at("reload").get_to(v.reload);
+  j.at("length").get_to(v.length);
+  j.at("seq").get_to(v.seq);
+}
+inline void to_json(nlohmann::json& j, const Noise& v) {
+  j = nlohmann::json{{"enabled", v.enabled}, {"env", v.env},
+                     {"mode", v.mode},       {"timer", v.timer},
+                     {"period", v.period},   {"length", v.length},
+                     {"shift", v.shift}};
+}
+
+inline void from_json(const nlohmann::json& j, Noise& v) {
+  j.at("enabled").get_to(v.enabled);
+  j.at("env").get_to(v.env);
+  j.at("mode").get_to(v.mode);
+  j.at("timer").get_to(v.timer);
+  j.at("period").get_to(v.period);
+  j.at("length").get_to(v.length);
+  j.at("shift").get_to(v.shift);
+}
+inline void to_json(nlohmann::json& j, const Dmc& v) {
+  j = nlohmann::json{{"enabled", v.enabled},
+                     {"irq_enable", v.irq_enable},
+                     {"loop", v.loop},
+                     {"irq", v.irq},
+                     {"period", v.period},
+                     {"timer", v.timer},
+                     {"level", v.level},
+                     {"sample_addr", v.sample_addr},
+                     {"sample_length", v.sample_length},
+                     {"cur_addr", v.cur_addr},
+                     {"bytes_remaining", v.bytes_remaining},
+                     {"buffer", v.buffer},
+                     {"buffer_empty", v.buffer_empty},
+                     {"shifter", v.shifter},
+                     {"bits_remaining", v.bits_remaining},
+                     {"silence", v.silence}};
+}
+
+inline void from_json(const nlohmann::json& j, Dmc& v) {
+  j.at("enabled").get_to(v.enabled);
+  j.at("irq_enable").get_to(v.irq_enable);
+  j.at("loop").get_to(v.loop);
+  j.at("irq").get_to(v.irq);
+  j.at("period").get_to(v.period);
+  j.at("timer").get_to(v.timer);
+  j.at("level").get_to(v.level);
+  j.at("sample_addr").get_to(v.sample_addr);
+  j.at("sample_length").get_to(v.sample_length);
+  j.at("cur_addr").get_to(v.cur_addr);
+  j.at("bytes_remaining").get_to(v.bytes_remaining);
+  j.at("buffer").get_to(v.buffer);
+  j.at("buffer_empty").get_to(v.buffer_empty);
+  j.at("shifter").get_to(v.shifter);
+  j.at("bits_remaining").get_to(v.bits_remaining);
+  j.at("silence").get_to(v.silence);
+}
 }  // namespace nesapu
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NesAPUState, p1, p2, tri, noise, dmc,
-                                   frame_cycle, five_step, irq_inhibit,
-                                   frame_irq, odd_cycle, phase, acc, acc_count,
-                                   hp_prev_in, hp_prev_out)
+inline void to_json(nlohmann::json& j, const NesAPUState& v) {
+  j = nlohmann::json{{"p1", v.p1},
+                     {"p2", v.p2},
+                     {"tri", v.tri},
+                     {"noise", v.noise},
+                     {"dmc", v.dmc},
+                     {"frame_cycle", v.frame_cycle},
+                     {"five_step", v.five_step},
+                     {"irq_inhibit", v.irq_inhibit},
+                     {"frame_irq", v.frame_irq},
+                     {"odd_cycle", v.odd_cycle},
+                     {"phase", v.phase},
+                     {"acc", v.acc},
+                     {"acc_count", v.acc_count},
+                     {"hp_prev_in", v.hp_prev_in},
+                     {"hp_prev_out", v.hp_prev_out}};
+}
+
+inline void from_json(const nlohmann::json& j, NesAPUState& v) {
+  j.at("p1").get_to(v.p1);
+  j.at("p2").get_to(v.p2);
+  j.at("tri").get_to(v.tri);
+  j.at("noise").get_to(v.noise);
+  j.at("dmc").get_to(v.dmc);
+  j.at("frame_cycle").get_to(v.frame_cycle);
+  j.at("five_step").get_to(v.five_step);
+  j.at("irq_inhibit").get_to(v.irq_inhibit);
+  j.at("frame_irq").get_to(v.frame_irq);
+  j.at("odd_cycle").get_to(v.odd_cycle);
+  j.at("phase").get_to(v.phase);
+  j.at("acc").get_to(v.acc);
+  j.at("acc_count").get_to(v.acc_count);
+  j.at("hp_prev_in").get_to(v.hp_prev_in);
+  j.at("hp_prev_out").get_to(v.hp_prev_out);
+}

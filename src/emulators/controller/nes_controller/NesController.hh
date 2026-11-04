@@ -55,4 +55,13 @@ class NesController {
   bool strobe_ = false;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NesController, buttons_, shift_, strobe_)
+inline void to_json(nlohmann::json& j, const NesController& v) {
+  j = nlohmann::json{
+      {"buttons_", v.buttons_}, {"shift_", v.shift_}, {"strobe_", v.strobe_}};
+}
+
+inline void from_json(const nlohmann::json& j, NesController& v) {
+  j.at("buttons_").get_to(v.buttons_);
+  j.at("shift_").get_to(v.shift_);
+  j.at("strobe_").get_to(v.strobe_);
+}
