@@ -1,4 +1,4 @@
-export type SystemId = 'chip8' | 'atari2600' | 'gameboy';
+export type SystemId = 'chip8' | 'atari2600' | 'gameboy' | 'nes';
 
 /**
  * Defines the structure of an action within a system, including its unique identifier, display label, and associated key code.
@@ -101,6 +101,33 @@ export const SYSTEMS: Record<SystemId, SystemDef> = {
     label: 'Game Boy',
     extensions: ['.gb'],
     displayAspect: 160 / 144,
+    actions: [
+      { id: 'RIGHT', label: 'Right', key: 0 },
+      { id: 'LEFT', label: 'Left', key: 1 },
+      { id: 'UP', label: 'Up', key: 2 },
+      { id: 'DOWN', label: 'Down', key: 3 },
+      { id: 'A', label: 'A', key: 4 },
+      { id: 'B', label: 'B', key: 5 },
+      { id: 'SELECT', label: 'Select', key: 6 },
+      { id: 'START', label: 'Start', key: 7 },
+    ],
+    defaultBindings: {
+      RIGHT: 'ArrowRight',
+      LEFT: 'ArrowLeft',
+      UP: 'ArrowUp',
+      DOWN: 'ArrowDown',
+      A: 'KeyA',
+      B: 'KeyB',
+      SELECT: 'ShiftRight',
+      START: 'Enter',
+    },
+  },
+  nes: {
+    id: 'nes',
+    label: 'NES',
+    extensions: ['.nes'],
+    // 256x240 pixels shown with the 8:7 pixel aspect ratio of the NES.
+    displayAspect: (256 / 240) * (8 / 7),
     actions: [
       { id: 'RIGHT', label: 'Right', key: 0 },
       { id: 'LEFT', label: 'Left', key: 1 },
