@@ -107,9 +107,16 @@ export default function PlayerPage() {
   const start = async () => {
     if (!game || !rom || !canvasRef.current) return;
 
+    const system = SYSTEMS[game.system];
+    if (!system) {
+      setError(`Unsupported emulator system: ${String(game.system ?? 'unknown')}.`);
+      setStatus('error');
+      return;
+    }
+
     const session = new EmulatorSession({
       canvas: canvasRef.current,
-      system: SYSTEMS[game.system],
+      system,
       bindings: bindingsFor(game.system),
       volume: effectiveVolume,
     });
