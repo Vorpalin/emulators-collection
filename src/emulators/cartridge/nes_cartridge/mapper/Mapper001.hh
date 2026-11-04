@@ -21,6 +21,9 @@ class Mapper001 : public Mapper {
 
   void Reset() override;
 
+  void SaveState(nlohmann::json& j) const override;
+  void LoadState(const nlohmann::json& j) override;
+
  private:
   size_t ChrOffset(uint16_t addr) const;
 

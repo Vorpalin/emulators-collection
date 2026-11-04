@@ -16,6 +16,9 @@ class Mapper003 : public Mapper {
   void PpuWrite(uint16_t addr, uint8_t value) override;
   void Reset() override;
 
+  void SaveState(nlohmann::json& j) const override;
+  void LoadState(const nlohmann::json& j) override;
+
  private:
   uint8_t chr_bank_ = 0;
 };

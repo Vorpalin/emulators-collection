@@ -10,6 +10,7 @@
 #include "emulators/console/atari2600/Atari2600.hh"
 #include "emulators/console/chip8/Chip8.hh"
 #include "emulators/console/game_boy/GameBoy.hh"
+#include "emulators/console/nes/Nes.hh"
 
 using namespace emscripten;
 
@@ -34,6 +35,7 @@ using namespace emscripten;
  * - `"chip8"`: CHIP-8.
  * - `"atari2600"`: Atari 2600.
  * - `"gameboy"`: Game Boy.
+ * - `"nes"`: Nintendo Entertainment System.
  *
  * @note The pointers returned by framebufferPtr() and audioPtr() are
  *       addresses in the WebAssembly linear memory. They must be interpreted
@@ -67,6 +69,8 @@ class EmulatorWrapper {
       console_ = std::make_unique<Atari2600>();
     } else if (type == "gameboy") {
       console_ = std::make_unique<GameBoy>();
+    } else if (type == "nes") {
+      console_ = std::make_unique<Nes>();
     } else {
       return false;
     }

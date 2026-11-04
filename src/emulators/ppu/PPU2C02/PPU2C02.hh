@@ -2,140 +2,169 @@
 
 #include <array>
 #include <cstdint>
-#include <utility>
+#include <nlohmann/json.hpp>
 
-#include "emulators/mirroring/nes_mirroring/NesMirroring.hh"
+#include "emulators/cartridge/nes_cartridge/NesCartridge.hh"
 
-constexpr int SCREEN_WIDTH = 256;   ///< LCD width in pixels.
-constexpr int SCREEN_HEIGHT = 240;  ///< LCD height in pixels.
+/**
+ * @file PPU2C02.hh
+ * @brief NES picture processing unit (Ricoh 2C02), rendered dot by dot.
+ *
+ * The PPU is stepped one dot at a time (3 dots per CPU cycle). It draws the
+ * background through the "loopy" v/t/x/w scroll registers and the sprites
+ * through a per-scanline evaluation, and writes a palette-index framebuffer.
+ */
 
-// 7  bit  0
-// ---- ----
-// VPHB SINN
-// |||| ||||
-// |||| ||++- Base nametable address
-// |||| ||    (0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00)
-// |||| |+--- VRAM address increment per CPU read/write of PPUDATA
-// |||| |     (0: add 1, going across; 1: add 32, going down)
-// |||| +---- Sprite pattern table address for 8x8 sprites
-// ||||       (0: $0000; 1: $1000; ignored in 8x16 mode)
-// |||+------ Background pattern table address (0: $0000; 1: $1000)
-// ||+------- Sprite size (0: 8x8 pixels; 1: 8x16 pixels)
-// |+-------- PPU master/slave select
-// |          (0: read backdrop from EXT pins; 1: output color on EXT pins)
-// +--------- Generate an NMI at the start of the
-//            vertical blanking interval (0: off; 1: on)
-class ControlRegister {
- public:
-  enum Flag : uint8_t {
-    NAMETABLE1 = 0b00000001,
-    NAMETABLE2 = 0b00000010,
-    VRAM_ADD_INCREMENT = 0b00000100,
-    SPRITE_PATTERN_ADDR = 0b00001000,
-    BACKROUND_PATTERN_ADDR = 0b00010000,
-    SPRITE_SIZE = 0b00100000,
-    MASTER_SLAVE_SELECT = 0b01000000,
-    GENERATE_NMI = 0b10000000
-  };
-
-  ControlRegister() : bits_(0) {}
-
-  bool contains(Flag flag) const { return (bits_ & flag) == flag; }
-
-  uint8_t vram_addr_increment() const {
-    return contains(VRAM_ADD_INCREMENT) ? 32 : 1;
-  }
-
-  void update(uint8_t data) { bits_ = data; }
-
-  uint8_t bits() const { return bits_; }
-
- private:
-  uint8_t bits_;
+/** One pending sprite on the current scanline. */
+struct PpuSprite {
+  uint8_t y = 0xFF;
+  uint8_t tile = 0xFF;
+  uint8_t attr = 0xFF;
+  uint8_t x = 0xFF;
+  uint8_t lo = 0;  ///< Pattern bits, plane 0 (shifted out MSB first).
+  uint8_t hi = 0;  ///< Pattern bits, plane 1.
 };
 
-class AddrRegister {
- public:
-  AddrRegister() : value_(0, 0), hi_ptr_(true) {}
+/** Serializable PPU state. */
+struct PPU2C02State {
+  uint8_t ctrl = 0;
+  uint8_t mask = 0;
+  uint8_t status = 0;
+  uint8_t oam_addr = 0;
+  uint16_t v = 0;
+  uint16_t t = 0;
+  uint8_t fine_x = 0;
+  bool w = false;
+  uint8_t read_buffer = 0;
+  uint8_t io_latch = 0;
 
-  void update(uint8_t data) {
-    if (hi_ptr_) {
-      value_.first = data;
-    } else {
-      value_.second = data;
-    }
+  int scanline = -1;
+  int dot = 0;
+  bool odd_frame = false;
+  bool nmi_line = false;
+  bool nmi_pending = false;
+  bool frame_ready = false;
 
-    if (get() > 0x3fff) {  // mirror down addr above 0x3fff
-      set(get() & 0x3fff);
-    }
-    hi_ptr_ = !hi_ptr_;
-  }
+  uint8_t nt_byte = 0;
+  uint8_t at_byte = 0;
+  uint8_t pat_lo = 0;
+  uint8_t pat_hi = 0;
+  uint16_t bg_lo = 0;
+  uint16_t bg_hi = 0;
+  uint16_t at_lo = 0;
+  uint16_t at_hi = 0;
 
-  void increment(uint8_t inc) {
-    uint8_t lo = value_.second;
-    value_.second = static_cast<uint8_t>(value_.second + inc);
-    if (lo > value_.second) {
-      value_.first = static_cast<uint8_t>(value_.first + 1);
-    }
-    if (get() > 0x3fff) {
-      set(get() & 0x3fff);  // mirror down addr above 0x3fff
-    }
-  }
+  std::array<PpuSprite, 8> sprites;
+  uint8_t sprite_count = 0;
+  bool sprite0_in_line = false;
 
-  void reset_latch() { hi_ptr_ = true; }
+  bool a12 = false;
+  uint64_t a12_low_since = 0;
+  uint64_t dot_counter = 0;
 
-  uint16_t get() const {
-    return (static_cast<uint16_t>(value_.first) << 8) |
-           static_cast<uint16_t>(value_.second);
-  }
-
- private:
-  void set(uint16_t data) {
-    value_.first = static_cast<uint8_t>(data >> 8);
-    value_.second = static_cast<uint8_t>(data & 0xff);
-  }
-
-  std::pair<uint8_t, uint8_t> value_;
-  bool hi_ptr_;
+  std::array<uint8_t, 4096> vram{};
+  std::array<uint8_t, 32> palette{};
+  std::array<uint8_t, 256> oam{};
 };
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PpuSprite, y, tile, attr, x, lo, hi)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PPU2C02State, ctrl, mask, status, oam_addr,
+                                   v, t, fine_x, w, read_buffer, io_latch,
+                                   scanline, dot, odd_frame, nmi_line,
+                                   nmi_pending, frame_ready, nt_byte, at_byte,
+                                   pat_lo, pat_hi, bg_lo, bg_hi, at_lo, at_hi,
+                                   sprites, sprite_count, sprite0_in_line, a12,
+                                   a12_low_since, dot_counter, vram, palette,
+                                   oam)
 
 class PPU2C02 {
  public:
-  PPU2C02(NesMirroring mirroring);
-  ~PPU2C02();
+  static constexpr int kWidth = 256;
+  static constexpr int kHeight = 240;
+
+  /// Bits of the PPUCTRL register.
+  enum Ctrl : uint8_t {
+    kCtrlIncrement = 0x04,
+    kCtrlSpritePattern = 0x08,
+    kCtrlBgPattern = 0x10,
+    kCtrlSprite16 = 0x20,
+    kCtrlNmi = 0x80,
+  };
+  /// Bits of the PPUMASK register.
+  enum Mask : uint8_t {
+    kMaskGrey = 0x01,
+    kMaskBgLeft = 0x02,
+    kMaskSpritesLeft = 0x04,
+    kMaskBg = 0x08,
+    kMaskSprites = 0x10,
+  };
+  /// Bits of the PPUSTATUS register.
+  enum Status : uint8_t {
+    kStatusOverflow = 0x20,
+    kStatusSprite0 = 0x40,
+    kStatusVBlank = 0x80,
+  };
+
+  /// @param cartridge Cartridge providing CHR and mirroring (not owned).
+  explicit PPU2C02(NesCartridge* cartridge);
 
   void reset();
-  void step(int cycles);
 
+  /// Advance the PPU by one dot.
+  void step();
+
+  /// Read a CPU-visible register ($2000-$3FFF, mirrors included).
   uint8_t readRegister(uint16_t addr);
+  /// Write a CPU-visible register ($2000-$3FFF, mirrors included).
   void writeRegister(uint16_t addr, uint8_t value);
 
-  const std::array<uint8_t, SCREEN_WIDTH * SCREEN_HEIGHT>& getFrameBuffer()
-      const {
-    return chr_rom_;
+  /// One byte of an OAM DMA transfer (same effect as a write to $2004).
+  void oamDmaWrite(uint8_t value) { writeRegister(0x2004, value); }
+
+  /// True once per NMI edge; clears the pending flag.
+  bool pollNmi() {
+    const bool p = s_.nmi_pending;
+    s_.nmi_pending = false;
+    return p;
   }
 
-  void writePPUAddr(uint8_t data);
-  void writePPUCtrl(uint8_t data);
+  /// True once per completed frame (set when vertical blanking starts).
+  bool consumeFrameReady() {
+    const bool r = s_.frame_ready;
+    s_.frame_ready = false;
+    return r;
+  }
 
-  void incrementVramAddr();
+  /// Color indices (bits 0-5) with the emphasis bits in bits 6-8.
+  const std::array<uint16_t, kWidth * kHeight>& frameBuffer() const {
+    return frame_;
+  }
 
-  uint8_t readOAMData();
-  uint8_t readPPUData();
-  uint8_t readPPUStatus();
+  const PPU2C02State& getState() const { return s_; }
+  void setState(const PPU2C02State& s) { s_ = s; }
 
  private:
-  std::array<uint8_t, SCREEN_WIDTH * SCREEN_HEIGHT>
-      chr_rom_;                      ///< Character ROM (pattern tables).
-  std::array<uint8_t, 32> palette_;  ///< Palette RAM (color information).
-  std::array<uint8_t, 2048>
-      vram_;  ///< Video RAM (name tables and attribute tables).
-  std::array<uint8_t, 256> oam_data_;
-  NesMirroring mirroring_;   ///< Mirroring type for name tables.
-  AddrRegister vram_addr_;   ///< Current VRAM address (15 bits).
-  ControlRegister control_;  ///< Control register (PPUCTRL).
+  uint8_t read(uint16_t addr);
+  void write(uint16_t addr, uint8_t value);
+  uint8_t fetchPattern(uint16_t addr);
+  void trackA12(uint16_t addr);
+  static uint8_t paletteIndex(uint16_t addr);
 
-  uint8_t internal_buffer_;  ///< Internal buffer for PPU data reads.
+  bool renderingEnabled() const {
+    return (s_.mask & (kMaskBg | kMaskSprites)) != 0;
+  }
+  void updateNmiLine();
 
-  uint16_t mirrorVramAddr(uint16_t addr);
+  void incrementX();
+  void incrementY();
+  void copyX();
+  void copyY();
+  void loadBgShifters();
+  void evaluateSprites();
+  void fetchSprite(int slot, bool high);
+  void renderPixel();
+
+  PPU2C02State s_;
+  NesCartridge* cart_;
+  std::array<uint16_t, kWidth * kHeight> frame_{};
 };

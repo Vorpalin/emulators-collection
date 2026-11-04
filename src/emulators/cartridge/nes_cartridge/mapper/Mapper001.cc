@@ -1,6 +1,6 @@
 #include "emulators/cartridge/nes_cartridge/mapper/Mapper001.hh"
 
-uint8_t Mapper001::CpuRead(uint16_t addr) override {
+uint8_t Mapper001::CpuRead(uint16_t addr) {
   uint8_t v = 0;
   if (ReadPrgRam(addr, &v)) return v;
   if (addr < 0x8000) return 0;
@@ -22,7 +22,7 @@ uint8_t Mapper001::CpuRead(uint16_t addr) override {
   }
 }
 
-void Mapper001::CpuWrite(uint16_t addr, uint8_t value) override {
+void Mapper001::CpuWrite(uint16_t addr, uint8_t value) {
   if (WritePrgRam(addr, value)) return;
   if (addr < 0x8000) return;
 
@@ -52,14 +52,12 @@ void Mapper001::CpuWrite(uint16_t addr, uint8_t value) override {
   }
 }
 
-uint8_t Mapper001::PpuRead(uint16_t addr) override {
-  return ReadChr(ChrOffset(addr));
-}
-void Mapper001::PpuWrite(uint16_t addr, uint8_t value) override {
+uint8_t Mapper001::PpuRead(uint16_t addr) { return ReadChr(ChrOffset(addr)); }
+void Mapper001::PpuWrite(uint16_t addr, uint8_t value) {
   WriteChr(ChrOffset(addr), value);
 }
 
-NesMirroring Mapper001::GetMirroring() const override {
+NesMirroring Mapper001::GetMirroring() const {
   switch (control_ & 3) {
     case 0:
       return NesMirroring::kSingleLow;
@@ -72,7 +70,7 @@ NesMirroring Mapper001::GetMirroring() const override {
   }
 }
 
-void Mapper001::Reset() override {
+void Mapper001::Reset() {
   shift_ = 0x10;
   control_ = 0x0C;
   chr0_ = chr1_ = prg_ = 0;
@@ -87,4 +85,22 @@ size_t Mapper001::ChrOffset(uint16_t addr) const {
   }
   // 8 KiB mode: low bit of chr0 ignored
   return ((chr0_ & ~size_t{1}) % banks4k) * 0x1000 + addr;
+}
+
+void Mapper001::SaveState(nlohmann::json& j) const {
+  Mapper::SaveState(j);
+  j["shift"] = shift_;
+  j["control"] = control_;
+  j["chr0"] = chr0_;
+  j["chr1"] = chr1_;
+  j["prg"] = prg_;
+}
+
+void Mapper001::LoadState(const nlohmann::json& j) {
+  Mapper::LoadState(j);
+  shift_ = j.at("shift").get<uint8_t>();
+  control_ = j.at("control").get<uint8_t>();
+  chr0_ = j.at("chr0").get<uint8_t>();
+  chr1_ = j.at("chr1").get<uint8_t>();
+  prg_ = j.at("prg").get<uint8_t>();
 }
