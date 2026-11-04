@@ -30,6 +30,7 @@ The emulators run directly in the browser through WebAssembly. No native emulato
 | **Super-CHIP 48** | ✅ | Extended CHIP-8 instructions, 128×64 display |
 | **Atari 2600** | ✅ | MOS 6507, MOS 6532 RIOT, TIA, cartridges |
 | **Game Boy** | ✅ | Sharp LR35902, PPU, timer, joypad, cartridges |
+| **NES** | ✅ | Ricoh 2A03 (6502), 2C02 PPU, 5-channel APU, mappers 0, 1, 2, 3, 4 (MMC3), 7, 66 (`.nes`) |
 
 The project is designed so that additional systems can be integrated without changing the architecture of the existing emulators.
 

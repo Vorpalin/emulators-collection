@@ -72,7 +72,7 @@ create table if not exists public.games (
   id          uuid primary key default gen_random_uuid(),
   owner_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
   title       text not null,
-  system      text not null check (system in ('chip8', 'atari2600', 'gameboy')),
+  system      text not null check (system in ('chip8', 'atari2600', 'gameboy', 'nes')),
   rom_path    text,
   size_bytes  integer,
   rom_url     text,
@@ -94,6 +94,12 @@ alter table public.games add constraint games_rom_url_check
 alter table public.games drop constraint if exists games_has_rom;
 alter table public.games add constraint games_has_rom
   check (rom_path is not null or rom_url is not null);
+
+-- Allow the NES on databases created before it was supported (the inline check
+-- above is auto-named games_system_check).
+alter table public.games drop constraint if exists games_system_check;
+alter table public.games add constraint games_system_check
+  check (system in ('chip8', 'atari2600', 'gameboy', 'nes'));
 
 alter table public.games alter column owner_id set default auth.uid();
 

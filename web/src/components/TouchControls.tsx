@@ -213,7 +213,8 @@ function Pills({
 }
 
 /**
- * GameBoyButtons component renders the buttons for a Game Boy-style controller.
+ * GameBoyButtons component renders the buttons for a Game Boy-style controller
+ * (also used by the NES: same A / B / Select / Start layout).
  * @param props - The properties for the GameBoyButtons component.
  * @returns The rendered GameBoyButtons component.
  */
@@ -382,7 +383,12 @@ export default function TouchControls({
       left = <HexPad {...props} />;
     } else {
       left = <DPad {...props} />;
-      right = system.id === 'gameboy' ? <GameBoyButtons {...props} /> : <AtariButtons {...props} />;
+      right =
+        system.id === 'gameboy' || system.id === 'nes' ? (
+          <GameBoyButtons {...props} />
+        ) : (
+          <AtariButtons {...props} />
+        );
     }
   }
 

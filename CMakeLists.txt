@@ -70,14 +70,27 @@ target_link_libraries(chip8
 )
 
 # ============================================================
+# MOS 6502 core (shared by the Atari 2600 and the NES)
+# ============================================================
+
+add_library(cpu65 STATIC
+    src/emulators/cpu/CPU65/CPU65.cc
+    src/emulators/cpu/CPU65/setFlags.cc
+)
+
+target_link_libraries(cpu65
+    PUBLIC
+        emulator_options
+        nlohmann_json::nlohmann_json
+)
+
+# ============================================================
 # Atari 2600
 # ============================================================
 
 add_library(atari2600 STATIC
     src/emulators/console/atari2600/Atari2600.cc
     src/emulators/audio/TIA1A/TIAAudio.cc
-    src/emulators/cpu/CPU65/CPU65.cc
-    src/emulators/cpu/CPU65/setFlags.cc
     src/emulators/ppu/TIA1A/TIA1A.cc
     src/emulators/bus/atari2600_bus/Atari2600Bus.cc
     src/emulators/cartridge/atari2600_cartridge/Atari2600Cartridge.cc
@@ -87,6 +100,7 @@ add_library(atari2600 STATIC
 target_link_libraries(atari2600
     PUBLIC
         emulator_options
+        cpu65
         nlohmann_json::nlohmann_json
 )
 
@@ -115,6 +129,46 @@ target_link_libraries(gameboy
 )
 
 # ============================================================
+# NES
+# ============================================================
+
+add_library(nes STATIC
+    src/emulators/console/nes/Nes.cc
+    src/emulators/bus/nes_bus/NesBus.cc
+    src/emulators/ppu/PPU2C02/PPU2C02.cc
+    src/emulators/audio/nes_apu/NesAPU.cc
+    src/emulators/cartridge/nes_cartridge/NesCartridge.cc
+    src/emulators/cartridge/nes_cartridge/mapper/Mapper000.cc
+    src/emulators/cartridge/nes_cartridge/mapper/Mapper001.cc
+    src/emulators/cartridge/nes_cartridge/mapper/Mapper002.cc
+    src/emulators/cartridge/nes_cartridge/mapper/Mapper003.cc
+    src/emulators/cartridge/nes_cartridge/mapper/Mapper004.cc
+    src/emulators/cartridge/nes_cartridge/mapper/Mapper007.cc
+    src/emulators/cartridge/nes_cartridge/mapper/Mapper066.cc
+)
+
+target_link_libraries(nes
+    PUBLIC
+        emulator_options
+        cpu65
+        nlohmann_json::nlohmann_json
+)
+
+# ============================================================
+# Test tools (native, optional): cmake -DBUILD_TESTS=ON
+# ============================================================
+
+option(BUILD_TESTS "Build the NES test ROM tools (see tests/nes/README.md)" OFF)
+
+if(BUILD_TESTS AND NOT EMSCRIPTEN)
+    add_executable(nes_rom_runner tests/nes/nes_rom_runner.cc)
+    target_link_libraries(nes_rom_runner PRIVATE nes)
+
+    add_executable(nestest_cpu tests/nes/nestest_cpu.cc)
+    target_link_libraries(nestest_cpu PRIVATE cpu65)
+endif()
+
+# ============================================================
 # Main application
 # ============================================================
 
@@ -130,6 +184,7 @@ if(EMSCRIPTEN)
             chip8
             atari2600
             gameboy
+            nes
     )
 
     target_link_options(emulators

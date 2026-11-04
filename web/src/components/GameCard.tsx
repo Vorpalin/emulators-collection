@@ -14,6 +14,7 @@ const GRADIENTS: Record<SystemId, string> = {
   chip8: 'from-emerald-900/70 to-slate-950',
   atari2600: 'from-amber-900/70 to-slate-950',
   gameboy: 'from-purple-900/70 to-slate-950',
+  nes: 'from-red-900/70 to-slate-950',
 };
 
 /**

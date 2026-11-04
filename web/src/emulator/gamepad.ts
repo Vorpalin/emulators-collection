@@ -44,6 +44,15 @@ export const GAMEPAD_MAPPINGS: Record<SystemId, PadMapping> = {
       START: [9],
     },
   },
+  nes: {
+    directions: GB_LIKE_DIRECTIONS,
+    buttons: {
+      A: [1, 3],
+      B: [0, 2], // bottom and left face buttons
+      SELECT: [8],
+      START: [9],
+    },
+  },
   atari2600: {
     directions: GB_LIKE_DIRECTIONS,
     buttons: {

@@ -286,6 +286,7 @@ enum Opcodes {
   INS_LAX_INDY = 0xB3,
 
   // SAX (Store Accumulator and X Register) opcodes
+  INS_SAX_INDX = 0x83,
   INS_SAX_ZP = 0x87,
   INS_SAX_ZPY = 0x97,
   INS_SAX_ABS = 0x8F,
@@ -359,6 +360,7 @@ enum Opcodes {
 
   // XAA (Transfer Accumulator and X Register) opcode
   INS_XAA_IMM = 0x8B,
+  INS_LXA_IMM = 0xAB,
 
   // ANC (AND with Carry) opcode
   INS_ANC_IMM_0B = 0x0B,
