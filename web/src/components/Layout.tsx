@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import { Cpu, FolderOpen, Gamepad2, LogOut, Menu, X, Github, ChevronRight } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
@@ -15,6 +15,21 @@ export default function Layout() {
   const { user, signOut } = useAuth();
   const { username } = useProfile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+
+      setMobileMenuOpen(false);
+      menuButtonRef.current?.focus();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mobileMenuOpen]);
 
   const navigation = (
     <>
@@ -74,6 +89,7 @@ export default function Layout() {
               {username ?? user?.email}
             </div>
             <button
+              type="button"
               onClick={() => void signOut()}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
             >
@@ -82,10 +98,12 @@ export default function Layout() {
           </div>
 
           <button
+            ref={menuButtonRef}
             type="button"
             className="rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-300 md:hidden"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
             onClick={() => setMobileMenuOpen((open) => !open)}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -93,7 +111,7 @@ export default function Layout() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="border-t border-slate-800 py-3 md:hidden">
+          <div id="mobile-navigation" className="border-t border-slate-800 py-3 md:hidden">
             <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
               {navigation}
             </nav>
@@ -102,6 +120,7 @@ export default function Layout() {
                 {username ?? user?.email}
               </span>
               <button
+                type="button"
                 onClick={() => void signOut()}
                 className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-400 hover:bg-rose-500/10 hover:text-rose-300"
               >
