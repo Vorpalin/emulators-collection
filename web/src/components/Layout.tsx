@@ -31,41 +31,85 @@ export default function Layout() {
     <div className="flex min-h-screen flex-col bg-slate-950 font-sans text-slate-100 selection:bg-cyan-400 selection:text-slate-950">
       <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/85 px-4 backdrop-blur-xl sm:px-6">
         <div className="mx-auto flex min-h-[72px] max-w-7xl items-center justify-between gap-4">
-          <Link to="/" className="group flex min-w-0 items-center gap-3" aria-label="Emulators Collection home">
+          <Link
+            to="/"
+            className="group flex min-w-0 items-center gap-3"
+            aria-label="Emulators Collection home"
+          >
             <div className="rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 p-2.5 shadow-lg shadow-cyan-500/10 transition group-hover:rotate-3 group-hover:scale-105">
               <Cpu className="h-5 w-5 text-slate-950" />
             </div>
             <div className="min-w-0">
-              <span className="block truncate text-sm font-extrabold tracking-[0.12em] text-white sm:text-base">EMULATORS <span className="text-cyan-300">COLLECTION</span></span>
-              <span className="hidden text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500 sm:block">Play the classics</span>
+              <span className="block truncate text-sm font-extrabold tracking-[0.12em] text-white sm:text-base">
+                EMULATORS <span className="text-cyan-300">COLLECTION</span>
+              </span>
+              <span className="hidden text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500 sm:block">
+                Play the classics
+              </span>
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-1 rounded-2xl border border-slate-800/80 bg-slate-900/50 p-1 md:flex" aria-label="Main navigation">
+          <nav
+            className="hidden items-center gap-1 rounded-2xl border border-slate-800/80 bg-slate-900/50 p-1 md:flex"
+            aria-label="Main navigation"
+          >
             {navigation}
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <a href="https://github.com/Vorpalin/emulators-collection" target="_blank" rel="noopener noreferrer" aria-label="View project on GitHub" className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-white"><Github className="h-4 w-4" /></a>
+            <a
+              href="https://github.com/Vorpalin/emulators-collection"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View project on GitHub"
+              className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-white"
+            >
+              <Github className="h-4 w-4" />
+            </a>
             <div className="h-6 w-px bg-slate-800" />
-            <div className="max-w-[180px] truncate text-xs text-slate-400" title={username ?? user?.email ?? undefined}>{username ?? user?.email}</div>
-            <button onClick={() => void signOut()} className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
+            <div
+              className="max-w-[180px] truncate text-xs text-slate-400"
+              title={username ?? user?.email ?? undefined}
+            >
+              {username ?? user?.email}
+            </div>
+            <button
+              onClick={() => void signOut()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            >
               <LogOut className="h-3.5 w-3.5" /> Sign out
             </button>
           </div>
 
-          <button type="button" className="rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-300 md:hidden" aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((open) => !open)}>
+          <button
+            type="button"
+            className="rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-300 md:hidden"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
-        {mobileMenuOpen && <div className="border-t border-slate-800 py-3 md:hidden">
-          <nav className="flex flex-col gap-1" aria-label="Mobile navigation">{navigation}</nav>
-          <div className="mt-3 flex items-center justify-between border-t border-slate-800 pt-3">
-            <span className="max-w-[70%] truncate text-xs text-slate-500">{username ?? user?.email}</span>
-            <button onClick={() => void signOut()} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-400 hover:bg-rose-500/10 hover:text-rose-300"><LogOut className="h-3.5 w-3.5" /> Sign out</button>
+        {mobileMenuOpen && (
+          <div className="border-t border-slate-800 py-3 md:hidden">
+            <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
+              {navigation}
+            </nav>
+            <div className="mt-3 flex items-center justify-between border-t border-slate-800 pt-3">
+              <span className="max-w-[70%] truncate text-xs text-slate-500">
+                {username ?? user?.email}
+              </span>
+              <button
+                onClick={() => void signOut()}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-400 hover:bg-rose-500/10 hover:text-rose-300"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Sign out
+              </button>
+            </div>
           </div>
-        </div>}
+        )}
       </header>
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
@@ -75,7 +119,10 @@ export default function Layout() {
       <footer className="border-t border-slate-800/70 bg-slate-950 px-4 py-5 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 text-xs text-slate-600 sm:flex-row">
           <span>© {new Date().getFullYear()} Emulators Collection</span>
-          <span className="flex items-center gap-1.5">Built for retro gaming <ChevronRight className="h-3 w-3 text-cyan-500" /> React · WebAssembly</span>
+          <span className="flex items-center gap-1.5">
+            Built for retro gaming <ChevronRight className="h-3 w-3 text-cyan-500" /> React ·
+            WebAssembly
+          </span>
         </div>
       </footer>
     </div>

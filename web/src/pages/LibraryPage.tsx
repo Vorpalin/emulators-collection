@@ -19,8 +19,11 @@ export default function LibraryPage() {
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
     return games
-      .filter((game) => (filter === 'all' || game.system === filter)
-        && game.title.toLocaleLowerCase().includes(normalizedQuery))
+      .filter(
+        (game) =>
+          (filter === 'all' || game.system === filter) &&
+          game.title.toLocaleLowerCase().includes(normalizedQuery),
+      )
       .sort((a, b) => {
         if (sort === 'az') return a.title.localeCompare(b.title);
         if (sort === 'za') return b.title.localeCompare(a.title);
@@ -53,9 +56,12 @@ export default function LibraryPage() {
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
               <Sparkles className="h-3.5 w-3.5" /> Your retro collection
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Game library</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Game library
+            </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
-              Your personal collection, ready to play. Add your own ROMs and launch them directly in your browser.
+              Your personal collection, ready to play. Add your own ROMs and launch them directly in
+              your browser.
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-500">
               <span className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-1.5">
@@ -78,10 +84,20 @@ export default function LibraryPage() {
       {adding && <AddGameForm onSubmit={add} onCancel={() => setAdding(false)} />}
 
       {(error || actionError) && (
-        <div role="alert" className="flex items-center gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+        <div
+          role="alert"
+          className="flex items-center gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+        >
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{actionError ?? error}</span>
-          {actionError && <button className="ml-auto text-rose-200 underline" onClick={() => setActionError(null)}>Dismiss</button>}
+          {actionError && (
+            <button
+              className="ml-auto text-rose-200 underline"
+              onClick={() => setActionError(null)}
+            >
+              Dismiss
+            </button>
+          )}
         </div>
       )}
 
@@ -89,7 +105,11 @@ export default function LibraryPage() {
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-white">Browse games</h2>
-            <p className="mt-1 text-sm text-slate-500">{loading ? 'Loading your collection…' : `Showing ${filtered.length} of ${games.length} games`}</p>
+            <p className="mt-1 text-sm text-slate-500">
+              {loading
+                ? 'Loading your collection…'
+                : `Showing ${filtered.length} of ${games.length} games`}
+            </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative min-w-0 sm:w-72">
@@ -102,12 +122,24 @@ export default function LibraryPage() {
                 aria-label="Search games"
                 className="w-full rounded-xl border border-slate-800 bg-slate-900 py-2.5 pl-10 pr-10 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10"
               />
-              {query && <button onClick={() => setQuery('')} aria-label="Clear search" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"><X className="h-4 w-4" /></button>}
+              {query && (
+                <button
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <label className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 text-sm text-slate-400">
               <SlidersHorizontal className="h-4 w-4" />
               <span className="sr-only">Sort games</span>
-              <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} className="bg-transparent py-2.5 text-slate-200 outline-none">
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value as SortMode)}
+                className="bg-transparent py-2.5 text-slate-200 outline-none"
+              >
                 <option value="recent">Recently added</option>
                 <option value="oldest">Oldest first</option>
                 <option value="az">Name A–Z</option>
@@ -118,31 +150,67 @@ export default function LibraryPage() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter by system">
-          <button onClick={() => setFilter('all')} className={pill(filter === 'all')}>All systems</button>
+          <button onClick={() => setFilter('all')} className={pill(filter === 'all')}>
+            All systems
+          </button>
           {SYSTEM_LIST.map((system) => (
-            <button key={system.id} onClick={() => setFilter(system.id)} className={pill(filter === system.id)}>{system.label}</button>
+            <button
+              key={system.id}
+              onClick={() => setFilter(system.id)}
+              className={pill(filter === system.id)}
+            >
+              {system.label}
+            </button>
           ))}
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-            {Array.from({ length: 8 }, (_, index) => <div key={index} className="h-56 animate-pulse rounded-2xl border border-slate-800 bg-slate-900/70" />)}
+            {Array.from({ length: 8 }, (_, index) => (
+              <div
+                key={index}
+                className="h-56 animate-pulse rounded-2xl border border-slate-800 bg-slate-900/70"
+              />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 px-6 py-16 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-slate-500"><Search className="h-6 w-6" /></div>
-            <h3 className="font-semibold text-slate-200">{games.length === 0 ? 'Your library is waiting' : 'No games found'}</h3>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-slate-500">
+              <Search className="h-6 w-6" />
+            </div>
+            <h3 className="font-semibold text-slate-200">
+              {games.length === 0 ? 'Your library is waiting' : 'No games found'}
+            </h3>
             <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
               {games.length === 0
                 ? `Add a ROM you own to get started. Supported formats: ${ACCEPTED_EXTENSIONS.split(',').join(', ')}.`
                 : 'Try another search or system filter.'}
             </p>
-            {games.length === 0 && <button onClick={() => setAdding(true)} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300"><Plus className="h-4 w-4" /> Add your first game</button>}
-            {(query || filter !== 'all') && <button onClick={() => { setQuery(''); setFilter('all'); }} className="mt-4 block mx-auto text-sm text-cyan-300 hover:text-cyan-200">Reset filters</button>}
+            {games.length === 0 && (
+              <button
+                onClick={() => setAdding(true)}
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
+              >
+                <Plus className="h-4 w-4" /> Add your first game
+              </button>
+            )}
+            {(query || filter !== 'all') && (
+              <button
+                onClick={() => {
+                  setQuery('');
+                  setFilter('all');
+                }}
+                className="mt-4 block mx-auto text-sm text-cyan-300 hover:text-cyan-200"
+              >
+                Reset filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-            {filtered.map((game) => <GameCard key={game.id} game={game} onDelete={onDelete} />)}
+            {filtered.map((game) => (
+              <GameCard key={game.id} game={game} onDelete={onDelete} />
+            ))}
           </div>
         )}
       </section>
