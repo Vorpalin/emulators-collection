@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Play, Trash2, CalendarDays, HardDrive, ExternalLink } from 'lucide-react';
+import { Play, Trash2, CalendarDays, HardDrive } from 'lucide-react';
 import { SYSTEMS, type SystemId } from '../emulator/systems';
 import type { Game } from '../types';
 
@@ -91,10 +91,11 @@ export default function GameCard({
           <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 opacity-0 backdrop-blur-sm transition duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
             <Link
               to={`/play/${game.id}`}
+              aria-label={`Play ${game.title}`}
               className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-105 hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
-              <Play className="h-4 w-4 fill-current" /> Play game{' '}
-              <ExternalLink className="h-3.5 w-3.5" />
+              <Play className="h-4 w-4 fill-current" aria-hidden="true" />
+              Play game
             </Link>
           </div>
         )}
@@ -106,12 +107,15 @@ export default function GameCard({
             {game.title}
           </h3>
           <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-            <CalendarDays className="h-3.5 w-3.5" /> Added{' '}
-            {new Date(game.created_at).toLocaleDateString(undefined, {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            })}
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Added </span>
+            <time dateTime={game.created_at}>
+              {new Date(game.created_at).toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })}
+            </time>
           </p>
         </div>
         <button
