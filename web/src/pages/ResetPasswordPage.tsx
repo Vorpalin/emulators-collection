@@ -119,7 +119,7 @@ export default function ResetPasswordPage() {
               to="/login"
               className="block w-full text-center bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-semibold py-2.5 rounded-xl transition"
             >
-              {t('backSignIn')}
+              {t('backToSignIn')}
             </Link>
           </>
         )}
