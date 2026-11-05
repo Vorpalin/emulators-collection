@@ -160,12 +160,12 @@ export default function LibraryPage() {
               <select
                 value={sort}
                 onChange={(event) => setSort(event.target.value as SortMode)}
-                className="bg-transparent py-2.5 text-slate-200 outline-none"
+                className="bg-slate-900 py-2.5 text-slate-100 outline-none"
               >
-                <option value="recent">{t('recentlyAdded')}</option>
-                <option value="oldest">{t('oldestFirst')}</option>
-                <option value="az">{t('nameAZ')}</option>
-                <option value="za">{t('nameZA')}</option>
+                <option className="bg-slate-900 text-slate-100" value="recent">{t('recentlyAdded')}</option>
+                <option className="bg-slate-900 text-slate-100" value="oldest">{t('oldestFirst')}</option>
+                <option className="bg-slate-900 text-slate-100" value="az">{t('nameAZ')}</option>
+                <option className="bg-slate-900 text-slate-100" value="za">{t('nameZA')}</option>
               </select>
             </label>
           </div>
