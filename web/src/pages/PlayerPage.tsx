@@ -196,7 +196,6 @@ export default function PlayerPage() {
       URL.revokeObjectURL(url);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setStatus('error');
     }
   };
 
@@ -217,13 +216,14 @@ export default function PlayerPage() {
     setStateLoading(true);
     setError(null);
 
+    let wasPaused = session.isPaused;
+
     try {
       const data = await file.text();
 
-      const wasPaused = session.isPaused;
-
       if (!wasPaused) {
         session.pause();
+        wasPaused = false;
       }
 
       const success = session.loadState(data);
@@ -240,6 +240,10 @@ export default function PlayerPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
+      if (!wasPaused && session.isPaused) {
+        session.resume();
+        setPaused(false);
+      }
       setStateLoading(false);
     }
   };
