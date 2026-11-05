@@ -175,6 +175,8 @@ export default function PlayerPage() {
 
     if (!session || !game) return;
 
+    setError(null);
+
     try {
       const state = session.saveState();
 
@@ -213,6 +215,7 @@ export default function PlayerPage() {
     if (!file || !session) return;
 
     setStateLoading(true);
+    setError(null);
 
     try {
       const data = await file.text();
@@ -236,7 +239,6 @@ export default function PlayerPage() {
       setPaused(session.isPaused);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setStatus('error');
     } finally {
       setStateLoading(false);
     }
@@ -369,6 +371,24 @@ export default function PlayerPage() {
             </div>
           </div>
         </TouchControls>
+
+        {error && playing && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 border-t border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0 flex-1">{error}</span>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="rounded px-1 text-rose-200 transition hover:bg-rose-500/20"
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Control bar */}
         <div className="bg-slate-900 border-t border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
