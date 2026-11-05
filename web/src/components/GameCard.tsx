@@ -53,7 +53,7 @@ export default function GameCard({
   onDelete: (game: Game) => void;
   deleting?: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const system = SYSTEMS[game.system];
   const accent = ACCENTS[game.system] ?? ACCENTS.chip8;
 
@@ -114,7 +114,7 @@ export default function GameCard({
             <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
             <span>{t('added')} </span>
             <time dateTime={game.created_at}>
-              {new Date(game.created_at).toLocaleDateString(undefined, {
+              {new Date(game.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
