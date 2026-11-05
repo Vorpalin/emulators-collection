@@ -349,7 +349,9 @@ export default function PlayerPage() {
           disabled={!playing || paused}
           onAction={pressAction}
         >
-          <div className={`relative flex items-center justify-center bg-black p-3 sm:p-4 ${isLandscape && isTouch ? 'min-h-[160px]' : 'min-h-[240px] sm:min-h-[320px]'}`}>
+          <div
+            className={`relative flex items-center justify-center bg-black p-3 sm:p-4 ${isLandscape && isTouch ? 'min-h-[160px]' : 'min-h-[240px] sm:min-h-[320px]'}`}
+          >
             <div
               className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
               style={{
