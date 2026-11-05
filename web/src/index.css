@@ -16,6 +16,7 @@ html[data-theme='light'] body {
 
 /* The UI uses a slate-based dark palette. Remap its neutral utilities in light mode. */
 html[data-theme='light'] [class~='bg-slate-950'],
+html[data-theme='light'] [class~='bg-slate-950/50'],
 html[data-theme='light'] [class~='bg-slate-950/60'],
 html[data-theme='light'] [class~='bg-slate-950/70'],
 html[data-theme='light'] [class~='bg-slate-950/85'] {
@@ -27,6 +28,7 @@ html[data-theme='light'] [class~='bg-slate-900/30'],
 html[data-theme='light'] [class~='bg-slate-900/50'],
 html[data-theme='light'] [class~='bg-slate-900/60'],
 html[data-theme='light'] [class~='bg-slate-900/70'],
+html[data-theme='light'] [class~='bg-slate-900/80'],
 html[data-theme='light'] [class~='bg-slate-900/90'] {
   background-color: #ffffff !important;
 }
