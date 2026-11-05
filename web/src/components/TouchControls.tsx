@@ -94,7 +94,7 @@ function PadButton({
     e.preventDefault();
     if (!e.repeat) setAction(id, true);
   };
-  const keyUp = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+  const keyUp = (e: KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       setAction(id, false);
