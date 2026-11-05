@@ -5,7 +5,6 @@ import { useAuth } from '../auth/AuthProvider';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../theme/ThemeProvider';
 import { useI18n } from '../i18n/I18nProvider';
-import { useI18n } from '../i18n/I18nProvider';
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
@@ -18,7 +17,6 @@ export default function Layout() {
   const { user, signOut } = useAuth();
   const { username } = useProfile();
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage, t } = useI18n();
   const { language, setLanguage, t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -108,11 +106,6 @@ export default function Layout() {
             >
               <Github className="h-4 w-4" />
             </a>
-            <label className="sr-only" htmlFor="language-preference">{t('language')}</label>
-            <select id="language-preference" value={language} onChange={(event) => setLanguage(event.target.value as 'en' | 'fr')} className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-xs font-medium text-slate-300 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
-              <option value="en">{t('english')}</option>
-              <option value="fr">{t('french')}</option>
-            </select>
             <div className="h-6 w-px bg-slate-800" />
             <div
               className="max-w-[180px] truncate text-xs text-slate-400"
@@ -172,17 +165,12 @@ export default function Layout() {
               <span className="max-w-[70%] truncate text-xs text-slate-500">
                 {username ?? user?.email}
               </span>
-              <label className="sr-only" htmlFor="mobile-language-preference">{t('language')}</label>
-              <select id="mobile-language-preference" value={language} onChange={(event) => setLanguage(event.target.value as 'en' | 'fr')} className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-xs text-slate-300">
-                <option value="en">{t('english')}</option>
-                <option value="fr">{t('french')}</option>
-              </select>
               <button
                 type="button"
                 onClick={() => void signOut()}
                 className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-400 hover:bg-rose-500/10 hover:text-rose-300"
               >
-                <LogOut className="h-3.5 w-3.5" /> Sign out
+                <LogOut className="h-3.5 w-3.5" /> {t('signOut')}
               </button>
             </div>
           </div>
