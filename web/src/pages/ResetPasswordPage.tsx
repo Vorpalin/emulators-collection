@@ -29,10 +29,15 @@ export default function ResetPasswordPage() {
     if (verifyStarted.current) return;
     verifyStarted.current = true;
 
-    supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }).then(({ error }) => {
-      window.history.replaceState({}, '', window.location.pathname);
-      setLinkValid(!error);
-    });
+    supabase.auth
+      .verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+      .then(({ error }) => {
+        window.history.replaceState({}, '', window.location.pathname);
+        setLinkValid(!error);
+      })
+      .catch(() => {
+        setLinkValid(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -64,16 +69,22 @@ export default function ResetPasswordPage() {
     }
 
     setBusy(true);
-    const { error: err } = await supabase.auth.updateUser({ password });
-    setBusy(false);
 
-    if (err) {
-      setError(err.message);
-      return;
+    try {
+      const { error: err } = await supabase.auth.updateUser({ password });
+
+      if (err) {
+        setError(err.message);
+        return;
+      }
+
+      setDone(true);
+      setTimeout(() => navigate('/', { replace: true }), 1500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to update your password.');
+    } finally {
+      setBusy(false);
     }
-
-    setDone(true);
-    setTimeout(() => navigate('/', { replace: true }), 1500);
   };
 
   const input =
@@ -120,6 +131,7 @@ export default function ResetPasswordPage() {
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="New password"
+                aria-label="New password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={`${input} pr-10`}
@@ -140,12 +152,17 @@ export default function ResetPasswordPage() {
               minLength={6}
               autoComplete="new-password"
               placeholder="Confirm new password"
+              aria-label="Confirm new password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className={input}
             />
 
-            {error && <p className="text-sm text-rose-400">{error}</p>}
+            {error && (
+              <p role="alert" className="text-sm text-rose-400">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
@@ -157,7 +174,11 @@ export default function ResetPasswordPage() {
           </>
         )}
 
-        {done && <p className="text-sm text-emerald-400">Password updated. Redirecting…</p>}
+        {done && (
+          <p role="status" aria-live="polite" className="text-sm text-emerald-400">
+            Password updated. Redirecting…
+          </p>
+        )}
       </form>
     </div>
   );
