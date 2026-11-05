@@ -61,7 +61,7 @@ export default function LoginPage() {
           setError(t('tooManyRequests'));
         } else {
           if (err) console.error(err);
-          setInfo(t('resetEmailSent'));
+          setInfo(t('resetEmailInfo'));
           setCooldown(RESET_COOLDOWN_SECONDS);
         }
         return;
@@ -77,7 +77,7 @@ export default function LoginPage() {
       }
 
       if (!USERNAME_RE.test(username)) {
-        setError(t('usernameRule'));
+        setError(t('usernameValidation'));
         return;
       }
 
@@ -104,7 +104,7 @@ export default function LoginPage() {
       if (err) setError(err.message);
       else if (!data.session) setInfo(t('accountCreated'));
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('authFailed'));
+      setError(e instanceof Error ? e.message : t('unableUpdatePassword'));
     } finally {
       setBusy(false);
     }
@@ -119,9 +119,9 @@ export default function LoginPage() {
   const submitLabel = busy
     ? '…'
     : mode === 'signin'
-      ? 'Sign in'
+      ? t('signIn')
       : mode === 'signup'
-        ? 'Sign up'
+        ? t('createAccount')
         : cooldown > 0
           ? t('resendIn', { seconds: cooldown })
           : t('sendResetLink');
@@ -144,7 +144,7 @@ export default function LoginPage() {
 
         {mode === 'forgot' && (
           <p className="text-sm text-slate-400">
-            {t('resetInstructions')}
+            {t('enterResetEmail')}
           </p>
         )}
 
@@ -155,7 +155,7 @@ export default function LoginPage() {
             minLength={3}
             maxLength={20}
             pattern="[A-Za-z0-9_]{3,20}"
-            title={t('usernameRule')}
+            title={t('usernameValidation')}
             autoComplete="username"
             placeholder={t('username')}
             aria-label={t('username')}
@@ -169,7 +169,7 @@ export default function LoginPage() {
           required
           autoComplete="email"
           placeholder={t('email')}
-          aria-label={t('emailAddress')}
+          aria-label={t('email')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={input}
@@ -241,8 +241,8 @@ export default function LoginPage() {
           {mode === 'signin'
             ? t('noAccount')
             : mode === 'signup'
-              ? t('hasAccount')
-              : t('backSignIn')}
+              ? t('haveAccount')
+              : t('backToSignIn')}
         </button>
       </form>
     </div>
