@@ -100,3 +100,72 @@ html[data-theme='light'] [class*='to-slate-950'] {
 .pixelated {
   image-rendering: pixelated;
 }
+
+/* Use the dynamic viewport height on mobile browsers (including Chrome's address bar). */
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/*
+ * Phones in landscape often exceed Tailwind's md width breakpoint despite
+ * having very little vertical space. Keep the compact mobile navigation and
+ * avoid rendering the full desktop toolbar in that situation.
+ */
+@media screen and (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
+  header > div:first-child {
+    min-height: 56px !important;
+  }
+
+  header > div:first-child > nav {
+    display: none !important;
+  }
+
+  header > div:first-child > div.hidden {
+    display: none !important;
+  }
+
+  header > div:first-child > button {
+    display: inline-flex !important;
+  }
+
+  #mobile-navigation {
+    display: block !important;
+  }
+
+  main {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  main > div.space-y-8 > * + * {
+    margin-top: 1rem !important;
+  }
+
+  main section {
+    scroll-margin-top: 4rem;
+  }
+
+  footer {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  /* Keep catalogue grids readable instead of letting desktop breakpoints
+     create three or four narrow columns on a phone held sideways. */
+  [class~='md:grid-cols-3'],
+  [class~='md:grid-cols-4'],
+  [class~='lg:grid-cols-3'],
+  [class~='lg:grid-cols-4'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
