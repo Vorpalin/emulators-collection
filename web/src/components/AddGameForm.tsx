@@ -82,6 +82,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
     <form
       id="add-game-form"
       onSubmit={submit}
+      aria-busy={busy}
       className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3"
     >
       <div className="flex items-center justify-between">
@@ -97,19 +98,24 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
         </button>
       </div>
 
-      <label className="flex items-center gap-3 cursor-pointer bg-slate-950 border border-dashed border-slate-700 hover:border-cyan-500 rounded-lg px-3 py-3 transition">
+      <label
+        htmlFor="rom-file"
+        className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-700 bg-slate-950 px-3 py-3 transition hover:border-cyan-500"
+      >
         <Upload className="w-4 h-4 text-cyan-400 shrink-0" />
-        <span className="text-sm text-slate-300 truncate">
+        <span className="min-w-0 truncate text-sm text-slate-300" role="status" aria-live="polite">
           {file ? `${file.name} (${formatSize(file.size)})` : 'Choose a ROM file…'}
         </span>
         <input
           ref={fileInputRef}
+          id="rom-file"
           type="file"
           required
+          disabled={busy}
+          aria-describedby="rom-file-help"
           accept={ACCEPTED_EXTENSIONS}
           onChange={onFileChange}
           className="sr-only"
-          aria-label="ROM file"
           onClick={(event) => {
             event.currentTarget.value = '';
           }}
@@ -118,10 +124,14 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
 
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
-          <span className="sr-only">Game title</span>
+          <label htmlFor="game-title" className="sr-only">
+            Game title
+          </label>
           <input
+            id="game-title"
             type="text"
             required
+            disabled={busy}
             maxLength={80}
             placeholder="Title"
             aria-label="Game title"
@@ -134,9 +144,12 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
           />
         </label>
         <label className="block">
-          <span className="sr-only">Emulator system</span>
+          <label htmlFor="game-system" className="sr-only">
+            Emulator system
+          </label>
           <select
-            aria-label="Emulator system"
+            id="game-system"
+            disabled={busy}
             value={system}
             onChange={(e) => {
               setSystem(e.target.value as SystemId);
@@ -153,13 +166,13 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
         </label>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p id="rom-file-help" className="text-xs text-slate-500">
         Accepted formats: {ACCEPTED_EXTENSIONS.split(',').join(', ')}. Maximum 16 MB. The file is
         stored privately in your account: only you can play it.
       </p>
 
       {error && (
-        <p role="alert" className="text-sm text-rose-400">
+        <p id="rom-file-error" role="alert" className="text-sm text-rose-400">
           {error}
         </p>
       )}
