@@ -3,10 +3,12 @@ import { Gamepad2, RotateCcw, Keyboard, CheckCircle2, AlertCircle } from 'lucide
 import { useSettings } from '../hooks/useSettings';
 import { SYSTEM_LIST, SYSTEMS, type SystemId } from '../emulator/systems';
 import { useKeyLabel } from '../emulator/keyboardLayout';
+import { useI18n } from '../i18n/I18nProvider';
 
 export default function ControlsPage() {
   const { settings, loading, update, bindingsFor, defaultsFor } = useSettings();
   const keyLabel = useKeyLabel();
+  const { t } = useI18n();
   const [systemId, setSystemId] = useState<SystemId>('gameboy');
   const [listening, setListening] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -64,8 +66,8 @@ export default function ControlsPage() {
         const conflictingAction = system.actions.find((action) => action.id === conflict);
         setSaveNotice(
           conflictingAction
-            ? `${keyLabel(event.code)} was already assigned to ${conflictingAction.label}; the bindings were swapped.`
-            : 'An existing key assignment was swapped.',
+            ? t('keyAlreadyAssigned', { key: keyLabel(event.code), action: conflictingAction.label })
+            : t('keyAssignmentSwapped'),
         );
         next[conflict] = next[listening];
       } else {
@@ -96,11 +98,11 @@ export default function ControlsPage() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">
-              Personal setup
+              {t('personalSetup')}
             </p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">Controls</h1>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">{t('controls')}</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
-              Configure keyboard bindings for each system. Changes are synced to your account.
+              {t('controlsDescription')}
             </p>
           </div>
         </div>
@@ -118,7 +120,7 @@ export default function ControlsPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-          Choose a system
+          {t('chooseSystem')}
         </h2>
         <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Choose a system">
           {SYSTEM_LIST.map((item) => (
@@ -144,9 +146,9 @@ export default function ControlsPage() {
       <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
         <div className="flex flex-col gap-3 border-b border-slate-800 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-semibold text-white">{system.label} keyboard layout</h2>
+            <h2 className="font-semibold text-white">{system.label} {t('keyboardLayout')}</h2>
             <p className="mt-1 text-xs text-slate-500">
-              {system.actions.length} actions · Click a key to remap
+              {system.actions.length} {t('actions')} · {t('clickKeyRemap')}
             </p>
           </div>
           <button
@@ -158,7 +160,7 @@ export default function ControlsPage() {
             }}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-700 hover:text-white disabled:opacity-50"
           >
-            <RotateCcw className="h-3.5 w-3.5" /> Restore defaults
+            <RotateCcw className="h-3.5 w-3.5" /> {t('restoreDefaults')}
           </button>
         </div>
 
@@ -171,9 +173,9 @@ export default function ControlsPage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-cyan-400" />
             </span>
-            Press a key for{' '}
+            {t('pressKeyFor')}{' '}
             <strong>{system.actions.find((action) => action.id === listening)?.label}</strong>.
-            Escape cancels.
+            {t('escapeCancels')}
           </div>
         )}
 
@@ -196,8 +198,8 @@ export default function ControlsPage() {
                 <button
                   type="button"
                   disabled={loading || saving}
-                  title={bindings[action.id] ?? 'Unassigned'}
-                  aria-label={`Remap ${action.label} key`}
+                  title={bindings[action.id] ?? t('unassigned')}
+                  aria-label={t('remapKey', { action: action.label })}
                   aria-pressed={active}
                   onClick={() => {
                     setListening(action.id);
@@ -219,7 +221,7 @@ export default function ControlsPage() {
           aria-live="polite"
         >
           {saving ? (
-            'Saving keyboard changes…'
+            '{t('savingKeyboard')}'
           ) : saveNotice ? (
             <>
               <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
@@ -228,10 +230,10 @@ export default function ControlsPage() {
           ) : saved ? (
             <>
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              Keyboard changes saved.
+              {t('keyboardSaved')}
             </>
           ) : (
-            'Keyboard changes are saved automatically after each update.'
+            '{t('keyboardAutoSaved')}'
           )}
         </div>
       </section>
