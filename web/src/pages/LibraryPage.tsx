@@ -76,8 +76,7 @@ export default function LibraryPage() {
               {t('gameLibrary')}
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
-              Your personal collection, ready to play. Add your own ROMs and launch them directly in
-              your browser.
+              {t('libraryDescription')}
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-500">
               <span className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-1.5">
@@ -181,7 +180,9 @@ export default function LibraryPage() {
               {t('filterBySystem')}
             </span>
             <span className="text-xs font-medium text-slate-400">
-              {filter === 'all' ? t('allSystems') : SYSTEM_LIST.find((system) => system.id === filter)?.label}
+              {filter === 'all'
+                ? t('allSystems')
+                : SYSTEM_LIST.find((system) => system.id === filter)?.label}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
