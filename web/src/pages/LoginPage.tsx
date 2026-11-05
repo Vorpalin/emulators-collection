@@ -156,6 +156,7 @@ export default function LoginPage() {
             title="3 to 20 characters: letters, numbers, or _"
             autoComplete="username"
             placeholder="Username"
+            aria-label="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className={input}
@@ -166,6 +167,7 @@ export default function LoginPage() {
           required
           autoComplete="email"
           placeholder="Email"
+          aria-label="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={input}
@@ -179,6 +181,7 @@ export default function LoginPage() {
               minLength={6}
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
               placeholder="Password"
+              aria-label="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={`${input} pr-10`}
@@ -207,8 +210,16 @@ export default function LoginPage() {
           </div>
         )}
 
-        {error && <p className="text-sm text-rose-400">{error}</p>}
-        {info && <p className="text-sm text-emerald-400">{info}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-rose-400">
+            {error}
+          </p>
+        )}
+        {info && (
+          <p role="status" aria-live="polite" className="text-sm text-emerald-400">
+            {info}
+          </p>
+        )}
 
         <button
           type="submit"
