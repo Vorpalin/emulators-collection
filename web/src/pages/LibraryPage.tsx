@@ -15,6 +15,8 @@ export default function LibraryPage() {
   const [sort, setSort] = useState<SortMode>('recent');
   const [adding, setAdding] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [deletingGameId, setDeletingGameId] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -34,11 +36,17 @@ export default function LibraryPage() {
   }, [games, filter, query, sort]);
 
   const onDelete = (game: Game) => {
+    if (deletingGameId) return;
+
     if (window.confirm(`Delete « ${game.title} » from your library?`)) {
       setActionError(null);
-      remove(game).catch((err) =>
-        setActionError(err instanceof Error ? err.message : String(err)),
-      );
+      setDeleteMessage(null);
+      setDeletingGameId(game.id);
+
+      remove(game)
+        .then(() => setDeleteMessage(`“${game.title}” was removed from your library.`))
+        .catch((err) => setActionError(err instanceof Error ? err.message : String(err)))
+        .finally(() => setDeletingGameId(null));
     }
   };
 
@@ -114,7 +122,9 @@ export default function LibraryPage() {
             <p className="mt-1 text-sm text-slate-500" role="status" aria-live="polite">
               {loading
                 ? 'Loading your collection…'
-                : `Showing ${filtered.length} of ${games.length} games`}
+                : deletingGameId
+                  ? 'Removing game…'
+                  : deleteMessage ?? `Showing ${filtered.length} of ${games.length} games`}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -229,7 +239,12 @@ export default function LibraryPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {filtered.map((game) => (
-              <GameCard key={game.id} game={game} onDelete={onDelete} />
+              <GameCard
+                key={game.id}
+                game={game}
+                onDelete={onDelete}
+                deleting={deletingGameId === game.id}
+              />
             ))}
           </div>
         )}
