@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { appUrl } from '../lib/redirect';
 import { useI18n } from '../i18n/I18nProvider';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const USERNAME_RE = /^[A-Za-z0-9_]{3,20}$/;
 const RESET_COOLDOWN_SECONDS = 60;
@@ -128,6 +129,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="fixed right-4 top-4 z-10"><LanguageSwitcher /></div>
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl"
