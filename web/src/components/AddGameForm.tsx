@@ -80,6 +80,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
 
   return (
     <form
+      id="add-game-form"
       onSubmit={submit}
       className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3"
     >
