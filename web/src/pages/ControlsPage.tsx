@@ -4,12 +4,10 @@ import { useSettings } from '../hooks/useSettings';
 import { SYSTEM_LIST, SYSTEMS, type SystemId } from '../emulator/systems';
 import { useKeyLabel } from '../emulator/keyboardLayout';
 import { useI18n } from '../i18n/I18nProvider';
-import { useI18n } from '../i18n/I18nProvider';
 
 export default function ControlsPage() {
   const { settings, loading, update, bindingsFor, defaultsFor } = useSettings();
   const keyLabel = useKeyLabel();
-  const { t } = useI18n();
   const { t } = useI18n();
   const [systemId, setSystemId] = useState<SystemId>('gameboy');
   const [listening, setListening] = useState<string | null>(null);
