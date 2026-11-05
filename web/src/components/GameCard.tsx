@@ -46,9 +46,11 @@ function sourceLabel(game: Game): string {
 export default function GameCard({
   game,
   onDelete,
+  deleting = false,
 }: {
   game: Game;
   onDelete: (game: Game) => void;
+  deleting?: boolean;
 }) {
   const system = SYSTEMS[game.system];
   const accent = ACCENTS[game.system] ?? ACCENTS.chip8;
@@ -121,11 +123,12 @@ export default function GameCard({
         <button
           type="button"
           onClick={() => onDelete(game)}
-          title={`Delete ${game.title}`}
-          aria-label={`Delete ${game.title}`}
-          className="shrink-0 rounded-lg p-2 text-slate-600 transition hover:bg-rose-500/10 hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+          title={deleting ? `Deleting ${game.title}` : `Delete ${game.title}`}
+          aria-label={deleting ? `Deleting ${game.title}` : `Delete ${game.title}`}
+          disabled={deleting}
+          className="shrink-0 rounded-lg p-2 text-slate-600 transition hover:bg-rose-500/10 hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:cursor-wait disabled:opacity-50"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className={`h-4 w-4 ${deleting ? 'animate-pulse' : ''}`} />
         </button>
       </div>
     </article>
