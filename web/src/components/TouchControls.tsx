@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent,
   type PointerEvent,
   type ReactNode,
 } from 'react';
@@ -88,7 +89,7 @@ function PadButton({
     setAction(id, true);
   };
   const up = () => setAction(id, false);
-  const keyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+  const keyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     if (e.key !== ' ' && e.key !== 'Enter') return;
     e.preventDefault();
     if (!e.repeat) setAction(id, true);
