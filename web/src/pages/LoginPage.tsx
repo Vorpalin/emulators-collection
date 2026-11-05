@@ -105,7 +105,7 @@ export default function LoginPage() {
       if (err) setError(err.message);
       else if (!data.session) setInfo(t('accountCreated'));
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('unableUpdatePassword'));
+      setError(e instanceof Error ? e.message : t('authFailed'));
     } finally {
       setBusy(false);
     }
