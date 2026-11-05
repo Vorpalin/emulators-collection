@@ -359,7 +359,7 @@ export default function PlayerPage() {
               <canvas
                 ref={canvasRef}
                 role="img"
-                aria-label={`${game?.title ?? 'Game'} screen`}
+                aria-label={t('gameScreen', { title: game?.title ?? t('game') })}
                 className="pixelated block h-full w-full"
               />
 
@@ -377,7 +377,7 @@ export default function PlayerPage() {
               {paused && (
                 <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center text-white z-30">
                   <Pause className="w-12 h-12 text-amber-400 mb-2" />
-                  <span className="font-bold tracking-widest text-lg">PAUSE</span>
+                  <span className="font-bold tracking-widest text-lg">{t('pause')}</span>
                 </div>
               )}
 
