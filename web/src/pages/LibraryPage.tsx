@@ -5,11 +5,13 @@ import GameCard from '../components/GameCard';
 import { useGames } from '../hooks/useGames';
 import { ACCEPTED_EXTENSIONS, SYSTEM_LIST, type SystemId } from '../emulator/systems';
 import type { Game } from '../types';
+import { useI18n } from '../i18n/I18nProvider';
 
 type SortMode = 'recent' | 'oldest' | 'az' | 'za';
 
 export default function LibraryPage() {
   const { games, loading, error, add, remove } = useGames();
+  const { t } = useI18n();
   const [filter, setFilter] = useState<SystemId | 'all'>('all');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortMode>('recent');
@@ -38,13 +40,13 @@ export default function LibraryPage() {
   const onDelete = (game: Game) => {
     if (deletingGameId) return;
 
-    if (window.confirm(`Delete « ${game.title} » from your library?`)) {
+    if (window.confirm(t('deleteConfirm', { title: game.title }))) {
       setActionError(null);
       setDeleteMessage(null);
       setDeletingGameId(game.id);
 
       remove(game)
-        .then(() => setDeleteMessage(`“${game.title}” was removed from your library.`))
+        .then(() => setDeleteMessage(t('gameRemoved', { title: game.title })))
         .catch((err) => setActionError(err instanceof Error ? err.message : String(err)))
         .finally(() => setDeletingGameId(null));
     }
@@ -68,10 +70,10 @@ export default function LibraryPage() {
         <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
-              <Sparkles className="h-3.5 w-3.5" /> Your retro collection
+              <Sparkles className="h-3.5 w-3.5" /> {t('retroCollection')}
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Game library
+              {t('gameLibrary')}
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
               Your personal collection, ready to play. Add your own ROMs and launch them directly in
@@ -79,10 +81,10 @@ export default function LibraryPage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-500">
               <span className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-1.5">
-                {loading ? '…' : games.length} {games.length === 1 ? 'game' : 'games'}
+                {loading ? '…' : games.length} {games.length === 1 ? t('game') : t('games')}
               </span>
               <span className="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-1.5">
-                {SYSTEM_LIST.length} systems supported
+                {SYSTEM_LIST.length} {t('systemsSupported')}
               </span>
             </div>
           </div>
@@ -93,7 +95,7 @@ export default function LibraryPage() {
             aria-controls="add-game-form"
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/15 transition hover:-translate-y-0.5 hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
           >
-            <Plus className="h-4 w-4" /> {adding ? 'Close upload' : 'Add a game'}
+            <Plus className="h-4 w-4" /> {adding ? t('closeUpload') : t('addGame')}
           </button>
         </div>
       </section>
@@ -112,7 +114,7 @@ export default function LibraryPage() {
               className="ml-auto text-rose-200 underline"
               onClick={() => setActionError(null)}
             >
-              Dismiss
+              {t('dismiss')}
             </button>
           )}
         </div>
@@ -121,13 +123,13 @@ export default function LibraryPage() {
       <section className="space-y-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">Browse games</h2>
+            <h2 className="text-lg font-semibold text-white">{t('browseGames')}</h2>
             <p className="mt-1 text-sm text-slate-500" role="status" aria-live="polite">
               {loading
-                ? 'Loading your collection…'
+                ? '{t('loadingCollection')}'
                 : deletingGameId
-                  ? 'Removing game…'
-                  : deleteMessage ?? `Showing ${filtered.length} of ${games.length} games`}
+                  ? '{t('removingGame')}'
+                  : deleteMessage ?? t('showingGames', { shown: filtered.length, total: games.length })}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -135,17 +137,17 @@ export default function LibraryPage() {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 type="search"
-                placeholder="Search your collection…"
+                placeholder="{t('searchCollection')}"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                aria-label="Search games"
+                aria-label={t('searchGames')}
                 className="w-full rounded-xl border border-slate-800 bg-slate-900 py-2.5 pl-10 pr-10 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery('')}
-                  aria-label="Clear search"
+                  aria-label={t('clearSearch')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
                 >
                   <X className="h-4 w-4" />
@@ -160,10 +162,10 @@ export default function LibraryPage() {
                 onChange={(event) => setSort(event.target.value as SortMode)}
                 className="bg-transparent py-2.5 text-slate-200 outline-none"
               >
-                <option value="recent">Recently added</option>
-                <option value="oldest">Oldest first</option>
-                <option value="az">Name A–Z</option>
-                <option value="za">Name Z–A</option>
+                <option value="recent">{t('recentlyAdded')}</option>
+                <option value="oldest">{t('oldestFirst')}</option>
+                <option value="az">{t('nameAZ')}</option>
+                <option value="za">{t('nameZA')}</option>
               </select>
             </label>
           </div>
@@ -176,10 +178,10 @@ export default function LibraryPage() {
         >
           <div className="mb-3 flex items-center justify-between gap-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Filter by system
+              {t('filterBySystem')}
             </span>
             <span className="text-xs font-medium text-slate-400">
-              {filter === 'all' ? 'All systems selected' : SYSTEM_LIST.find((system) => system.id === filter)?.label}
+              {filter === 'all' ? '{t('allSystems')} selected' : SYSTEM_LIST.find((system) => system.id === filter)?.label}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -237,12 +239,12 @@ export default function LibraryPage() {
               <Search className="h-6 w-6" />
             </div>
             <h3 className="font-semibold text-slate-200">
-              {games.length === 0 ? 'Your library is waiting' : 'No games found'}
+              {games.length === 0 ? t('libraryWaiting') : t('noGamesFound')}
             </h3>
             <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
               {games.length === 0
-                ? `Add a ROM you own to get started. Supported formats: ${ACCEPTED_EXTENSIONS.split(',').join(', ')}.`
-                : 'Try another search or system filter.'}
+                ? t('addRomStart', { formats: ACCEPTED_EXTENSIONS.split(',').join(', ') })
+                : '{t('tryAnotherFilter')}'}
             </p>
             {games.length === 0 && (
               <button
@@ -250,7 +252,7 @@ export default function LibraryPage() {
                 onClick={() => setAdding(true)}
                 className="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
               >
-                <Plus className="h-4 w-4" /> Add your first game
+                <Plus className="h-4 w-4" /> {t('addFirstGame')}
               </button>
             )}
             {(query || filter !== 'all') && (
@@ -262,7 +264,7 @@ export default function LibraryPage() {
                 }}
                 className="mt-4 block mx-auto text-sm text-cyan-300 hover:text-cyan-200"
               >
-                Reset filters
+                {t('resetFilters')}
               </button>
             )}
           </div>
