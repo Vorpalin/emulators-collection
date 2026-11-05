@@ -4,6 +4,7 @@ import { Cpu, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { appUrl } from '../lib/redirect';
+import { useI18n } from '../i18n/I18nProvider';
 
 const USERNAME_RE = /^[A-Za-z0-9_]{3,20}$/;
 const RESET_COOLDOWN_SECONDS = 60;
@@ -16,6 +17,7 @@ type Mode = 'signin' | 'signup' | 'forgot';
  */
 export default function LoginPage() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '/';
 
@@ -56,10 +58,10 @@ export default function LoginPage() {
         });
 
         if (err?.status === 429) {
-          setError('Too many requests. Please wait a minute before trying again.');
+          setError(t('tooManyRequests'));
         } else {
           if (err) console.error(err);
-          setInfo('If an account exists for this email, a reset link has been sent.');
+          setInfo(t('resetEmailSent'));
           setCooldown(RESET_COOLDOWN_SECONDS);
         }
         return;
@@ -75,7 +77,7 @@ export default function LoginPage() {
       }
 
       if (!USERNAME_RE.test(username)) {
-        setError('Username : 3 to 20 characters (letters, numbers, _).');
+        setError(t('usernameRule'));
         return;
       }
 
@@ -87,7 +89,7 @@ export default function LoginPage() {
         return;
       }
       if (!free) {
-        setError('This username is already taken.');
+        setError(t('usernameTaken'));
         return;
       }
 
@@ -100,9 +102,9 @@ export default function LoginPage() {
         },
       });
       if (err) setError(err.message);
-      else if (!data.session) setInfo('Account created: check your email to confirm.');
+      else if (!data.session) setInfo(t('accountCreated'));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Authentication request failed.');
+      setError(e instanceof Error ? e.message : t('authFailed'));
     } finally {
       setBusy(false);
     }
@@ -112,7 +114,7 @@ export default function LoginPage() {
     'w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition';
 
   const subtitle =
-    mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create an account' : 'Reset your password';
+    mode === 'signin' ? t('signIn') : mode === 'signup' ? t('createAccount') : t('resetPassword');
 
   const submitLabel = busy
     ? '…'
@@ -121,8 +123,8 @@ export default function LoginPage() {
       : mode === 'signup'
         ? 'Sign up'
         : cooldown > 0
-          ? `Resend in ${cooldown}s`
-          : 'Send reset link';
+          ? t('resendIn', { seconds: cooldown })
+          : t('sendResetLink');
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
@@ -142,8 +144,7 @@ export default function LoginPage() {
 
         {mode === 'forgot' && (
           <p className="text-sm text-slate-400">
-            Enter the email linked to your account and we'll send you a link to choose a new
-            password.
+            {t('resetInstructions')}
           </p>
         )}
 
@@ -154,10 +155,10 @@ export default function LoginPage() {
             minLength={3}
             maxLength={20}
             pattern="[A-Za-z0-9_]{3,20}"
-            title="3 to 20 characters: letters, numbers, or _"
+            title={t('usernameRule')}
             autoComplete="username"
-            placeholder="Username"
-            aria-label="Username"
+            placeholder={t('username')}
+            aria-label={t('username')}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className={input}
@@ -167,8 +168,8 @@ export default function LoginPage() {
           type="email"
           required
           autoComplete="email"
-          placeholder="Email"
-          aria-label="Email address"
+          placeholder={t('email')}
+          aria-label={t('emailAddress')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={input}
@@ -181,8 +182,8 @@ export default function LoginPage() {
               required
               minLength={6}
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              placeholder="Password"
-              aria-label="Password"
+              placeholder={t('password')}
+              aria-label={t('password')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={`${input} pr-10`}
@@ -192,7 +193,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setShowPassword((visible) => !visible)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? t('hidePassword') : t('showPassword')}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -206,7 +207,7 @@ export default function LoginPage() {
               onClick={() => switchMode('forgot')}
               className="text-xs text-slate-400 hover:text-cyan-400 transition"
             >
-              Forgot password?
+              {t('forgotPassword')}
             </button>
           </div>
         )}
@@ -238,10 +239,10 @@ export default function LoginPage() {
           className="w-full text-xs text-slate-400 hover:text-cyan-400 transition"
         >
           {mode === 'signin'
-            ? 'No account ? Sign up'
+            ? t('noAccount')
             : mode === 'signup'
-              ? 'Already have an account ? Sign in'
-              : 'Back to sign in'}
+              ? t('hasAccount')
+              : t('backSignIn')}
         </button>
       </form>
     </div>
