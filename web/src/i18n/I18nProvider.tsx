@@ -82,6 +82,8 @@ const messages: Record<Language, Record<string, string>> = {
     passwordUpdated: 'Password updated. Redirecting…', unableUpdatePassword: 'Unable to update your password.',
     hidePassword: 'Hide password', showPassword: 'Show password',
     restartGame: 'Restart game', toggleCrt: 'Toggle CRT filter',
+    unsupportedSystem: 'Unsupported emulator system: {system}.', touchHelp: 'Use the on-screen buttons to play. Rotate your phone or use fullscreen for a bigger screen.',
+    keyboardHelp: 'Keys are configured in the Controls tab. Click the screen if the keyboard does not respond. You can also connect a controller by pressing any button.',
   },
   fr: {
     library: 'Bibliothèque', controls: 'Commandes', signOut: 'Déconnexion', playClassics: 'Jouez aux classiques',
@@ -162,6 +164,8 @@ const messages: Record<Language, Record<string, string>> = {
     passwordUpdated: 'Mot de passe mis à jour. Redirection…', unableUpdatePassword: 'Impossible de mettre à jour le mot de passe.',
     hidePassword: 'Masquer le mot de passe', showPassword: 'Afficher le mot de passe',
     restartGame: 'Redémarrer le jeu', toggleCrt: 'Activer/désactiver le filtre CRT',
+    unsupportedSystem: 'Système d’émulation non pris en charge : {system}.', touchHelp: 'Utilisez les boutons à l’écran pour jouer. Tournez votre téléphone ou passez en plein écran pour agrandir l’affichage.',
+    keyboardHelp: 'Les touches sont configurées dans l’onglet Commandes. Cliquez sur l’écran si le clavier ne répond pas. Vous pouvez aussi connecter une manette en appuyant sur un bouton.',
   },
 };
 
