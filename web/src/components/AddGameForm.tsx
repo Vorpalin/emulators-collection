@@ -125,9 +125,9 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
       </label>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <label className="block">
+        <div>
           <label htmlFor="game-title" className="sr-only">
-            Game title
+            {t('gameTitle')}
           </label>
           <input
             id="game-title"
@@ -144,10 +144,10 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
             }}
             className={input}
           />
-        </label>
-        <label className="block">
+        </div>
+        <div>
           <label htmlFor="game-system" className="sr-only">
-            Emulator system
+            {t('emulatorSystem')}
           </label>
           <select
             id="game-system"
@@ -165,7 +165,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
               </option>
             ))}
           </select>
-        </label>
+        </div>
       </div>
 
       <p id="rom-file-help" className="text-xs text-slate-500">
