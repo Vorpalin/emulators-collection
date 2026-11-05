@@ -4,6 +4,7 @@ import { Cpu, FolderOpen, Gamepad2, LogOut, Menu, X, Github, ChevronRight } from
 import { useAuth } from '../auth/AuthProvider';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../theme/ThemeProvider';
+import { useI18n } from '../i18n/I18nProvider';
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
@@ -16,6 +17,7 @@ export default function Layout() {
   const { user, signOut } = useAuth();
   const { username } = useProfile();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -36,10 +38,10 @@ export default function Layout() {
   const navigation = (
     <>
       <NavLink to="/" end className={tabClass} onClick={() => setMobileMenuOpen(false)}>
-        <FolderOpen className="h-4 w-4" /> Library
+        <FolderOpen className="h-4 w-4" /> {t('library')}
       </NavLink>
       <NavLink to="/controls" className={tabClass} onClick={() => setMobileMenuOpen(false)}>
-        <Gamepad2 className="h-4 w-4" /> Controls
+        <Gamepad2 className="h-4 w-4" /> {t('controls')}
       </NavLink>
     </>
   );
@@ -61,14 +63,14 @@ export default function Layout() {
                 EMULATORS <span className="text-cyan-300">COLLECTION</span>
               </span>
               <span className="hidden text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500 sm:block">
-                Play the classics
+                {t('playClassics')}
               </span>
             </div>
           </Link>
 
           <nav
             className="hidden items-center gap-1 rounded-2xl border border-slate-800/80 bg-slate-900/50 p-1 md:flex"
-            aria-label="Main navigation"
+            aria-label={t('mainNavigation')}
           >
             {navigation}
           </nav>
@@ -81,19 +83,24 @@ export default function Layout() {
               onChange={(event) => setTheme(event.target.value as typeof theme)}
               className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-xs font-medium text-slate-300 outline-none transition hover:border-slate-600 focus-visible:ring-2 focus-visible:ring-cyan-400"
             >
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
+              <option value="system">{t('systemTheme')}</option>
+              <option value="light">{t('lightTheme')}</option>
+              <option value="dark">{t('darkTheme')}</option>
             </select>
             <a
               href="https://github.com/Vorpalin/emulators-collection"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="View project on GitHub"
+              aria-label={t('github')}
               className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-800 hover:text-white"
             >
               <Github className="h-4 w-4" />
             </a>
+            <label className="sr-only" htmlFor="language-preference">{t('language')}</label>
+            <select id="language-preference" value={language} onChange={(event) => setLanguage(event.target.value as 'en' | 'fr')} className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-xs font-medium text-slate-300 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">
+              <option value="en">{t('english')}</option>
+              <option value="fr">{t('french')}</option>
+            </select>
             <div className="h-6 w-px bg-slate-800" />
             <div
               className="max-w-[180px] truncate text-xs text-slate-400"
@@ -106,7 +113,7 @@ export default function Layout() {
               onClick={() => void signOut()}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
             >
-              <LogOut className="h-3.5 w-3.5" /> Sign out
+              <LogOut className="h-3.5 w-3.5" /> {t('signOut')}
             </button>
           </div>
 
@@ -125,7 +132,7 @@ export default function Layout() {
 
         {mobileMenuOpen && (
           <div id="mobile-navigation" className="border-t border-slate-800 py-3 md:hidden">
-            <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
+            <nav className="flex flex-col gap-1" aria-label={t('mobileNavigation')}>
               {navigation}
             </nav>
             <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-800 pt-3">
@@ -136,13 +143,18 @@ export default function Layout() {
                 onChange={(event) => setTheme(event.target.value as typeof theme)}
                 className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-xs font-medium text-slate-300 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
               >
-                <option value="system">System theme</option>
-                <option value="light">Light theme</option>
-                <option value="dark">Dark theme</option>
+                <option value="system">{t('systemTheme')}</option>
+                <option value="light">{t('lightTheme')}</option>
+                <option value="dark">{t('darkTheme')}</option>
               </select>
               <span className="max-w-[70%] truncate text-xs text-slate-500">
                 {username ?? user?.email}
               </span>
+              <label className="sr-only" htmlFor="mobile-language-preference">{t('language')}</label>
+              <select id="mobile-language-preference" value={language} onChange={(event) => setLanguage(event.target.value as 'en' | 'fr')} className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-xs text-slate-300">
+                <option value="en">{t('english')}</option>
+                <option value="fr">{t('french')}</option>
+              </select>
               <button
                 type="button"
                 onClick={() => void signOut()}
