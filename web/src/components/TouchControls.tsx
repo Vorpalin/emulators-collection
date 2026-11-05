@@ -88,12 +88,28 @@ function PadButton({
     setAction(id, true);
   };
   const up = () => setAction(id, false);
+  const keyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+    e.preventDefault();
+    if (!e.repeat) setAction(id, true);
+  };
+  const keyUp = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      setAction(id, false);
+    }
+  };
 
   return (
     <button
       type="button"
       onPointerDown={down}
       onPointerUp={up}
+      onKeyDown={keyDown}
+      onKeyUp={keyUp}
+      onBlur={up}
+      aria-label={label}
+      aria-pressed={held.has(id)}
       onPointerCancel={up}
       onLostPointerCapture={up}
       onContextMenu={(e) => e.preventDefault()}
@@ -147,6 +163,8 @@ function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
     <div
       ref={ref}
       className="relative w-36 h-36"
+      role="group"
+      aria-label="Directional pad"
       style={noGestures}
       onContextMenu={(e) => e.preventDefault()}
       onPointerDown={(e) => {
@@ -273,7 +291,24 @@ function AtariButtons(props: { held: Held; setAction: SetAction }) {
   );
 }
 
-const HEX_LAYOUT = ['1', '2', '3', 'C', '4', '5', '6', 'D', '7', '8', '9', 'E', 'A', '0', 'B', 'F'];
+const HEX_LAYOUT = [
+  '1',
+  '2',
+  '3',
+  'C',
+  '4',
+  '5',
+  '6',
+  'D',
+  '7',
+  '8',
+  '9',
+  'E',
+  'A',
+  '0',
+  'B',
+  'F',
+];
 
 /**
  * HexPad component renders a hexadecimal pad for game controls.
