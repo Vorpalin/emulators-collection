@@ -1,111 +1,54 @@
 import { Link } from 'react-router-dom';
-import { Play, Trash2 } from 'lucide-react';
+import { Play, Trash2, CalendarDays, HardDrive, ExternalLink } from 'lucide-react';
 import { SYSTEMS, type SystemId } from '../emulator/systems';
 import type { Game } from '../types';
 
-/**
- * GameCard component displays a card for a game with its details and actions.
- * @param {Object} props - The component props.
- * @param {Game} props.game - The game object to display.
- * @param {Function} props.onDelete - Callback function to handle game deletion.
- * @returns {JSX.Element} The rendered GameCard component.
- */
-const GRADIENTS: Record<SystemId, string> = {
-  chip8: 'from-emerald-900/70 to-slate-950',
-  atari2600: 'from-amber-900/70 to-slate-950',
-  gameboy: 'from-purple-900/70 to-slate-950',
-  nes: 'from-red-900/70 to-slate-950',
+const ACCENTS: Record<SystemId, { gradient: string; glow: string; label: string }> = {
+  chip8: { gradient: 'from-emerald-500/20 via-emerald-950/50 to-slate-950', glow: 'group-hover:border-emerald-400/40', label: 'text-emerald-300' },
+  atari2600: { gradient: 'from-amber-500/20 via-amber-950/50 to-slate-950', glow: 'group-hover:border-amber-400/40', label: 'text-amber-300' },
+  gameboy: { gradient: 'from-violet-500/20 via-violet-950/50 to-slate-950', glow: 'group-hover:border-violet-400/40', label: 'text-violet-300' },
+  nes: { gradient: 'from-rose-500/20 via-rose-950/50 to-slate-950', glow: 'group-hover:border-rose-400/40', label: 'text-rose-300' },
 };
 
-/**
- * Returns the host of a given URL.
- * @param url - The URL string to extract the host from.
- * @returns The host of the URL, or '?' if the URL is invalid.
- */
-function hostOf(url: string): string {
-  try {
-    return new URL(url).host;
-  } catch {
-    return '?';
-  }
-}
-
-/**
- * Formats a size in bytes to a human-readable string.
- * @param bytes - The size in bytes.
- * @returns A formatted string representing the size in KB or MB.
- */
 function formatSize(bytes: number): string {
-  return bytes < 1024 * 1024
-    ? `${(bytes / 1024).toFixed(1)} KB`
-    : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-/**
- * Returns a label for the source of a game, either its size or the host of its ROM URL.
- * @param game - The game object to get the source label for.
- * @returns The source label for the game.
- */
 function sourceLabel(game: Game): string {
   if (game.size_bytes != null) return formatSize(game.size_bytes);
-  if (game.rom_url) return hostOf(game.rom_url);
-  return '';
+  if (game.rom_url) {
+    try { return new URL(game.rom_url).host; } catch { return 'External ROM'; }
+  }
+  return 'ROM';
 }
 
-/**
- * GameCard component displays a card for a game with its details and actions.
- * @param game - The game object to display.
- * @param onDelete - Callback function to handle game deletion.
- * @returns
- */
-export default function GameCard({ game, onDelete }: { game: Game; onDelete: (g: Game) => void }) {
+export default function GameCard({ game, onDelete }: { game: Game; onDelete: (game: Game) => void }) {
   const system = SYSTEMS[game.system];
-  const systemLabel = system?.label ?? 'Unknown system';
-  const gradient = GRADIENTS[game.system] ?? 'from-slate-800 to-slate-950';
+  const accent = ACCENTS[game.system] ?? ACCENTS.chip8;
 
   return (
-    <div className="group bg-slate-900 rounded-xl border border-slate-800/80 overflow-hidden hover:border-cyan-500/50 hover:shadow-xl hover:shadow-cyan-500/10 transition-all duration-300 flex flex-col">
-      <div
-        className={`relative h-36 bg-gradient-to-br ${gradient} flex items-center justify-center`}
-      >
-        <span className="text-3xl font-extrabold tracking-widest text-white/20 select-none">
-          {systemLabel.toUpperCase()}
-        </span>
-        <div className="absolute top-2 left-2 bg-slate-950/80 backdrop-blur text-cyan-400 text-[10px] font-mono px-2 py-0.5 rounded border border-cyan-500/30">
-          {systemLabel}
+    <article className={`group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20 ${accent.glow}`}>
+      <div className={`relative flex h-40 items-center justify-center overflow-hidden bg-gradient-to-br ${accent.gradient}`}>
+        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
+        <div className="relative text-center transition duration-300 group-hover:scale-105">
+          <div className={`font-mono text-4xl font-black tracking-[0.2em] opacity-25 ${accent.label}`}>{system?.label?.toUpperCase() ?? 'ROM'}</div>
+          <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">Emulator collection</div>
         </div>
-        <div className="absolute top-2 right-2 bg-slate-950/80 backdrop-blur text-slate-300 text-[10px] font-mono px-2 py-0.5 rounded border border-slate-800 max-w-[55%] truncate">
-          {sourceLabel(game)}
-        </div>
-
-        {system && (
-          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Link
-              to={`/play/${game.id}`}
-              className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>PLAY</span>
-            </Link>
-          </div>
-        )}
+        <span className={`absolute left-3 top-3 rounded-lg border border-white/10 bg-slate-950/70 px-2.5 py-1 text-[11px] font-semibold backdrop-blur ${accent.label}`}>{system?.label ?? 'Unknown system'}</span>
+        <span className="absolute right-3 top-3 inline-flex max-w-[45%] items-center gap-1.5 truncate rounded-lg border border-white/10 bg-slate-950/70 px-2.5 py-1 text-[11px] text-slate-400 backdrop-blur"><HardDrive className="h-3 w-3 shrink-0" />{sourceLabel(game)}</span>
+        {system && <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 opacity-0 backdrop-blur-sm transition duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+          <Link to={`/play/${game.id}`} className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-105 hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"><Play className="h-4 w-4 fill-current" /> Play game <ExternalLink className="h-3.5 w-3.5" /></Link>
+        </div>}
       </div>
 
-      <div className="p-3.5 flex items-center justify-between gap-2">
+      <div className="flex flex-1 items-start justify-between gap-3 p-4">
         <div className="min-w-0">
-          <h3 className="font-bold text-slate-100 text-sm truncate">{game.title}</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Added on {new Date(game.created_at).toLocaleDateString()}
-          </p>
+          <h3 className="truncate font-semibold text-slate-100" title={game.title}>{game.title}</h3>
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500"><CalendarDays className="h-3.5 w-3.5" /> Added {new Date(game.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
         </div>
-        <button
-          onClick={() => onDelete(game)}
-          title="Delete"
-          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <button type="button" onClick={() => onDelete(game)} title={`Delete ${game.title}`} aria-label={`Delete ${game.title}`} className="shrink-0 rounded-lg p-2 text-slate-600 transition hover:bg-rose-500/10 hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"><Trash2 className="h-4 w-4" /></button>
       </div>
-    </div>
+    </article>
   );
 }
