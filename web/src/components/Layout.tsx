@@ -76,7 +76,9 @@ export default function Layout() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <label className="sr-only" htmlFor="theme-preference">{t('theme')}</label>
+            <label className="sr-only" htmlFor="theme-preference">
+              {t('theme')}
+            </label>
             <select
               id="theme-preference"
               value={theme}
@@ -87,7 +89,9 @@ export default function Layout() {
               <option value="light">{t('lightTheme')}</option>
               <option value="dark">{t('darkTheme')}</option>
             </select>
-            <label className="sr-only" htmlFor="language-preference">{t('language')}</label>
+            <label className="sr-only" htmlFor="language-preference">
+              {t('language')}
+            </label>
             <select
               id="language-preference"
               value={language}
@@ -141,7 +145,9 @@ export default function Layout() {
               {navigation}
             </nav>
             <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-800 pt-3">
-              <label className="sr-only" htmlFor="mobile-theme-preference">{t('theme')}</label>
+              <label className="sr-only" htmlFor="mobile-theme-preference">
+                {t('theme')}
+              </label>
               <select
                 id="mobile-theme-preference"
                 value={theme}
@@ -152,7 +158,9 @@ export default function Layout() {
                 <option value="light">{t('lightTheme')}</option>
                 <option value="dark">{t('darkTheme')}</option>
               </select>
-              <label className="sr-only" htmlFor="mobile-language-preference">{t('language')}</label>
+              <label className="sr-only" htmlFor="mobile-language-preference">
+                {t('language')}
+              </label>
               <select
                 id="mobile-language-preference"
                 value={language}

@@ -55,11 +55,7 @@ export default function UpdatePrompt() {
         role="status"
         className="pointer-events-auto flex items-center gap-3 bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-xl shadow-2xl px-4 py-3 max-w-sm w-full"
       >
-        <span className="flex-1">
-          {needRefresh
-            ? t('newVersion')
-            : t('offlineReady')}
-        </span>
+        <span className="flex-1">{needRefresh ? t('newVersion') : t('offlineReady')}</span>
 
         {needRefresh && (
           <button

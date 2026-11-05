@@ -66,7 +66,10 @@ export default function ControlsPage() {
         const conflictingAction = system.actions.find((action) => action.id === conflict);
         setSaveNotice(
           conflictingAction
-            ? t('keyAlreadyAssigned', { key: keyLabel(event.code), action: conflictingAction.label })
+            ? t('keyAlreadyAssigned', {
+                key: keyLabel(event.code),
+                action: conflictingAction.label,
+              })
             : t('keyAssignmentSwapped'),
         );
         next[conflict] = next[listening];
@@ -122,7 +125,11 @@ export default function ControlsPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
           {t('chooseSystem')}
         </h2>
-        <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label={t('chooseSystem')}>
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label={t('chooseSystem')}
+        >
           {SYSTEM_LIST.map((item) => (
             <button
               key={item.id}
@@ -146,7 +153,9 @@ export default function ControlsPage() {
       <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
         <div className="flex flex-col gap-3 border-b border-slate-800 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-semibold text-white">{system.label} {t('keyboardLayout')}</h2>
+            <h2 className="font-semibold text-white">
+              {system.label} {t('keyboardLayout')}
+            </h2>
             <p className="mt-1 text-xs text-slate-500">
               {system.actions.length} {t('actions')} · {t('clickKeyRemap')}
             </p>

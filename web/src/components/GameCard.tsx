@@ -125,8 +125,12 @@ export default function GameCard({
         <button
           type="button"
           onClick={() => onDelete(game)}
-          title={deleting ? t('deleting', { title: game.title }) : t('deleteGame', { title: game.title })}
-          aria-label={deleting ? t('deleting', { title: game.title }) : t('deleteGame', { title: game.title })}
+          title={
+            deleting ? t('deleting', { title: game.title }) : t('deleteGame', { title: game.title })
+          }
+          aria-label={
+            deleting ? t('deleting', { title: game.title }) : t('deleteGame', { title: game.title })
+          }
           disabled={deleting}
           className="shrink-0 rounded-lg p-2 text-slate-600 transition hover:bg-rose-500/10 hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:cursor-wait disabled:opacity-50"
         >

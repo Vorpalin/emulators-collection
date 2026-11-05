@@ -551,11 +551,7 @@ export default function PlayerPage() {
         </div>
       </div>
 
-      <p className="text-xs text-slate-500">
-        {isTouch
-          ? t('touchHelp')
-          : t('keyboardHelp')}
-      </p>
+      <p className="text-xs text-slate-500">{isTouch ? t('touchHelp') : t('keyboardHelp')}</p>
     </div>
   );
 }

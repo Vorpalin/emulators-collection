@@ -128,7 +128,8 @@ export default function LibraryPage() {
                 ? t('loadingCollection')
                 : deletingGameId
                   ? t('removingGame')
-                  : deleteMessage ?? t('showingGames', { shown: filtered.length, total: games.length })}
+                  : (deleteMessage ??
+                    t('showingGames', { shown: filtered.length, total: games.length }))}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -195,7 +196,9 @@ export default function LibraryPage() {
               {t('allSystems')}
               <span
                 className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums ${
-                  filter === 'all' ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-950/50 text-slate-100'
+                  filter === 'all'
+                    ? 'bg-slate-950/15 text-slate-950'
+                    : 'bg-slate-950/50 text-slate-100'
                 }`}
               >
                 {countForSystem('all')}

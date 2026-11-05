@@ -95,7 +95,9 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="fixed right-4 top-4 z-10"><LanguageSwitcher /></div>
+      <div className="fixed right-4 top-4 z-10">
+        <LanguageSwitcher />
+      </div>
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl"
@@ -114,9 +116,7 @@ export default function ResetPasswordPage() {
 
         {linkValid === false && (
           <>
-            <p className="text-sm text-rose-400">
-              {t('invalidResetLink')}
-            </p>
+            <p className="text-sm text-rose-400">{t('invalidResetLink')}</p>
             <Link
               to="/login"
               className="block w-full text-center bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-semibold py-2.5 rounded-xl transition"
