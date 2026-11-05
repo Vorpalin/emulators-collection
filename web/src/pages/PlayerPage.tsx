@@ -23,6 +23,7 @@ import { useGamepadName } from '../emulator/gamepad';
 import { EmulatorSession } from '../emulator/session';
 import { SYSTEMS } from '../emulator/systems';
 import type { Game } from '../types';
+import { useI18n } from '../i18n/I18nProvider';
 
 type Status = 'loading' | 'ready' | 'playing' | 'error';
 
@@ -35,6 +36,7 @@ export default function PlayerPage() {
   const { settings, loading: settingsLoading, update, bindingsFor } = useSettings();
   const isTouch = useIsTouchDevice();
   const gamepad = useGamepadName();
+  const { t } = useI18n();
 
   const [game, setGame] = useState<Game | null>(null);
   const [rom, setRom] = useState<Uint8Array | null>(null);
@@ -199,7 +201,7 @@ export default function PlayerPage() {
       anchor.remove();
 
       URL.revokeObjectURL(url);
-      setStateMessage('Save state downloaded.');
+      setStateMessage(t('saveStateDownloaded'));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -236,7 +238,7 @@ export default function PlayerPage() {
       const success = session.loadState(data);
 
       if (!success) {
-        throw new Error('The save state could not be loaded.');
+        throw new Error(t('saveStateLoadFailed'));
       }
 
       if (!wasPaused) {
@@ -244,7 +246,7 @@ export default function PlayerPage() {
       }
 
       setPaused(session.isPaused);
-      setStateMessage('Save state loaded successfully.');
+      setStateMessage(t('saveStateLoaded'));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -264,7 +266,7 @@ export default function PlayerPage() {
         await frameRef.current?.requestFullscreen();
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to toggle fullscreen.');
+      setError(e instanceof Error ? e.message : t('unableFullscreen'));
     }
   };
 
@@ -280,7 +282,7 @@ export default function PlayerPage() {
         </div>
 
         <Link to="/" className="text-sm text-cyan-400 hover:underline">
-          ← Return to the library
+          ← {t('returnLibrary')}
         </Link>
       </div>
     );
@@ -300,7 +302,7 @@ export default function PlayerPage() {
         className="inline-flex items-center space-x-1.5 text-sm text-slate-400 hover:text-cyan-400"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Library</span>
+        <span>{t('library')}</span>
       </Link>
 
       <div
@@ -318,7 +320,7 @@ export default function PlayerPage() {
             />
 
             <span className="font-bold text-sm text-slate-200 truncate">
-              {game?.title ?? 'Loading…'}
+              {game?.title ?? t('loading')}
             </span>
 
             {system && (
@@ -333,7 +335,7 @@ export default function PlayerPage() {
                 title={gamepad}
               >
                 <Gamepad2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Controller</span>
+                <span className="hidden sm:inline">{t('controller')}</span>
               </span>
             )}
           </div>
@@ -409,7 +411,7 @@ export default function PlayerPage() {
               type="button"
               onClick={() => setError(null)}
               className="rounded px-1 text-rose-200 transition hover:bg-rose-500/20"
-              aria-label="Dismiss error"
+              aria-label={t('dismiss')}
             >
               ×
             </button>
@@ -435,8 +437,8 @@ export default function PlayerPage() {
               onClick={togglePause}
               disabled={!playing}
               className={bar}
-              title={paused ? 'Continue' : 'Pause'}
-              aria-label={paused ? 'Continue game' : 'Pause game'}
+              title={paused ? t('resume') : t('pause')}
+              aria-label={paused ? t('resume') : t('pause')}
             >
               {paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
             </button>
@@ -459,8 +461,8 @@ export default function PlayerPage() {
               onClick={saveState}
               disabled={!playing || stateLoading}
               className={bar}
-              title="Save"
-              aria-label="Download save state"
+              title={t('saveState')}
+              aria-label={t('saveState')}
             >
               <Download className="w-4 h-4" />
             </button>
@@ -471,8 +473,8 @@ export default function PlayerPage() {
               onClick={openStatePicker}
               disabled={!playing || stateLoading}
               className={bar}
-              title="Upload"
-              aria-label="Load save state"
+              title={t('loadState')}
+              aria-label={t('loadState')}
             >
               {stateLoading ? (
                 <FolderOpen className="w-4 h-4 animate-pulse" />
@@ -523,7 +525,7 @@ export default function PlayerPage() {
 
               <input
                 type="range"
-                aria-label="Game volume"
+                aria-label={t('volume')}
                 min={0}
                 max={100}
                 value={muted ? 0 : effectiveVolume}
@@ -539,8 +541,8 @@ export default function PlayerPage() {
                 type="button"
                 onClick={() => void toggleFullscreen()}
                 className={bar}
-                aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-                title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                aria-label={fullscreen ? t('exitFullscreen') : t('fullscreen')}
+                title={fullscreen ? t('exitFullscreen') : t('fullscreen')}
               >
                 {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </button>
