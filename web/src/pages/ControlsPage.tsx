@@ -122,7 +122,7 @@ export default function ControlsPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
           {t('chooseSystem')}
         </h2>
-        <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="{t('chooseSystem')}">
+        <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label={t('chooseSystem')}>
           {SYSTEM_LIST.map((item) => (
             <button
               key={item.id}
@@ -221,7 +221,7 @@ export default function ControlsPage() {
           aria-live="polite"
         >
           {saving ? (
-            '{t('savingKeyboard')}'
+            t('savingKeyboard')
           ) : saveNotice ? (
             <>
               <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
@@ -233,7 +233,7 @@ export default function ControlsPage() {
               {t('keyboardSaved')}
             </>
           ) : (
-            '{t('keyboardAutoSaved')}'
+            t('keyboardAutoSaved')
           )}
         </div>
       </section>
