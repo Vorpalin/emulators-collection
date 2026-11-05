@@ -74,6 +74,8 @@ export default function LibraryPage() {
           </div>
           <button
             onClick={() => setAdding((value) => !value)}
+            aria-expanded={adding}
+            aria-controls="add-game-form"
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/15 transition hover:-translate-y-0.5 hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
           >
             <Plus className="h-4 w-4" /> {adding ? 'Close upload' : 'Add a game'}
@@ -149,14 +151,23 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter by system">
-          <button onClick={() => setFilter('all')} className={pill(filter === 'all')}>
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label="Filter by system"
+        >
+          <button
+            onClick={() => setFilter('all')}
+            aria-pressed={filter === 'all'}
+            className={pill(filter === 'all')}
+          >
             All systems
           </button>
           {SYSTEM_LIST.map((system) => (
             <button
               key={system.id}
               onClick={() => setFilter(system.id)}
+              aria-pressed={filter === system.id}
               className={pill(filter === system.id)}
             >
               {system.label}
