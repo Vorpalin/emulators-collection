@@ -85,7 +85,7 @@ export default function GameCard({
         <span
           className={`absolute left-3 top-3 rounded-lg border border-white/10 bg-slate-950/70 px-2.5 py-1 text-[11px] font-semibold backdrop-blur ${accent.label}`}
         >
-          {system?.label ?? 'Unknown system'}
+          {system?.label ?? t('unknownSystem')}
         </span>
         <span className="absolute right-3 top-3 inline-flex max-w-[45%] items-center gap-1.5 truncate rounded-lg border border-white/10 bg-slate-950/70 px-2.5 py-1 text-[11px] text-slate-400 backdrop-blur">
           <HardDrive className="h-3 w-3 shrink-0" />
