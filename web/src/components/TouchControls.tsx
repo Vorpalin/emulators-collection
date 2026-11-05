@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { SystemDef } from '../emulator/systems';
+import { useI18n } from '../i18n/I18nProvider';
 
 /**
  * Custom hook to determine if the current device matches a given media query.
@@ -131,6 +132,7 @@ const DIRECTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT'] as const;
  * @returns The rendered DPad component.
  */
 function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
+  const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const pointer = useRef<number | null>(null);
   const DEAD_ZONE = 0.28;
@@ -165,7 +167,7 @@ function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
       ref={ref}
       className="relative w-36 h-36"
       role="group"
-      aria-label="Directional pad"
+      aria-label={t('directionalPad')}
       style={noGestures}
       onContextMenu={(e) => e.preventDefault()}
       onPointerDown={(e) => {
