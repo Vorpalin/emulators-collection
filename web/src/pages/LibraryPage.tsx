@@ -51,10 +51,10 @@ export default function LibraryPage() {
   };
 
   const pill = (active: boolean) =>
-    `inline-flex items-center rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
+    `inline-flex min-h-10 items-center rounded-xl border px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
       active
-        ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/15'
-        : 'border border-slate-800 bg-slate-900/70 text-slate-400 hover:border-slate-700 hover:text-white'
+        ? 'border-cyan-300 bg-cyan-300 text-slate-950 shadow-md shadow-cyan-500/20'
+        : 'border-slate-700 bg-slate-800/90 text-slate-200 hover:border-slate-500 hover:bg-slate-700 hover:text-white'
     }`;
 
   return (
@@ -166,11 +166,20 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        <div
-          className="flex gap-2 overflow-x-auto pb-1"
-          role="group"
-          aria-label="Filter by system"
-        >
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3 shadow-inner shadow-black/10">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              Filter by system
+            </span>
+            <span className="text-xs font-medium tabular-nums text-slate-400">
+              {filter === 'all' ? games.length : filtered.length} shown
+            </span>
+          </div>
+          <div
+            className="flex gap-2 overflow-x-auto pb-1"
+            role="group"
+            aria-label="Filter by system"
+          >
           <button
             type="button"
             onClick={() => setFilter('all')}
@@ -190,6 +199,7 @@ export default function LibraryPage() {
               {system.label}
             </button>
           ))}
+          </div>
         </div>
 
         {loading ? (
