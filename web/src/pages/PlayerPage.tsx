@@ -346,7 +346,7 @@ export default function PlayerPage() {
           disabled={!playing || paused}
           onAction={pressAction}
         >
-          <div className="relative flex items-center justify-center p-4 bg-black min-h-[320px]">
+          <div className="relative flex min-h-[240px] items-center justify-center bg-black p-3 sm:min-h-[320px] sm:p-4">
             <div
               className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
               style={{
