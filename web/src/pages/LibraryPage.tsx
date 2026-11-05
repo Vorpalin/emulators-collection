@@ -126,9 +126,9 @@ export default function LibraryPage() {
             <h2 className="text-lg font-semibold text-white">{t('browseGames')}</h2>
             <p className="mt-1 text-sm text-slate-500" role="status" aria-live="polite">
               {loading
-                ? '{t('loadingCollection')}'
+                ? {t('loadingCollection')}
                 : deletingGameId
-                  ? '{t('removingGame')}'
+                  ? {t('removingGame')}
                   : deleteMessage ?? t('showingGames', { shown: filtered.length, total: games.length })}
             </p>
           </div>
@@ -137,7 +137,7 @@ export default function LibraryPage() {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 type="search"
-                placeholder="{t('searchCollection')}"
+                placeholder={t('searchCollection')}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 aria-label={t('searchGames')}
@@ -156,7 +156,7 @@ export default function LibraryPage() {
             </div>
             <label className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 text-sm text-slate-400">
               <SlidersHorizontal className="h-4 w-4" />
-              <span className="sr-only">Sort games</span>
+              <span className="sr-only">{t('sortGames')}</span>
               <select
                 value={sort}
                 onChange={(event) => setSort(event.target.value as SortMode)}
@@ -174,14 +174,14 @@ export default function LibraryPage() {
         <div
           className="rounded-2xl border border-slate-700 bg-slate-900/80 p-3 sm:p-4"
           role="group"
-          aria-label="Filter games by system"
+          aria-label={t('filterBySystem')}
         >
           <div className="mb-3 flex items-center justify-between gap-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
               {t('filterBySystem')}
             </span>
             <span className="text-xs font-medium text-slate-400">
-              {filter === 'all' ? '{t('allSystems')} selected' : SYSTEM_LIST.find((system) => system.id === filter)?.label}
+              {filter === 'all' ? t('allSystems') : SYSTEM_LIST.find((system) => system.id === filter)?.label}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -191,7 +191,7 @@ export default function LibraryPage() {
               aria-pressed={filter === 'all'}
               className={pill(filter === 'all')}
             >
-              All systems
+              {t('allSystems')}
               <span
                 className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums ${
                   filter === 'all' ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-950/50 text-slate-100'
@@ -244,7 +244,7 @@ export default function LibraryPage() {
             <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
               {games.length === 0
                 ? t('addRomStart', { formats: ACCEPTED_EXTENSIONS.split(',').join(', ') })
-                : '{t('tryAnotherFilter')}'}
+                : t('tryAnotherFilter')}
             </p>
             {games.length === 0 && (
               <button
