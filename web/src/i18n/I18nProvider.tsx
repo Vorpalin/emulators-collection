@@ -4,7 +4,7 @@ export type Language = 'en' | 'fr';
 
 const messages: Record<Language, Record<string, string>> = {
   en: {
-    library: 'Library', controls: 'Controls', signOut: 'Sign out', playClassics: 'Play the classics',
+    library: 'Library', controls: 'Controls', signOut: 'Sign out', directionalPad: 'Directional pad', gameScreen: '{title} screen', playClassics: 'Play the classics',
     mainNavigation: 'Main navigation', mobileNavigation: 'Mobile navigation', openMenu: 'Open menu', closeMenu: 'Close menu', builtForRetro: 'Built for retro gaming', theme: 'Color theme',
     systemTheme: 'System', lightTheme: 'Light', darkTheme: 'Dark', language: 'Language',
     english: 'English', french: 'Français', github: 'View project on GitHub',
@@ -63,7 +63,7 @@ const messages: Record<Language, Record<string, string>> = {
     offlineReady: 'Emulators Collection is ready to work offline.', reload: 'Reload', later: 'Later', ok: 'OK',
   },
   fr: {
-    library: 'Bibliothèque', controls: 'Commandes', signOut: 'Déconnexion', playClassics: 'Jouez aux classiques',
+    library: 'Bibliothèque', controls: 'Commandes', signOut: 'Déconnexion', directionalPad: 'Croix directionnelle', gameScreen: 'Écran de {title}', playClassics: 'Jouez aux classiques',
     mainNavigation: 'Navigation principale', mobileNavigation: 'Navigation mobile', openMenu: 'Ouvrir le menu', closeMenu: 'Fermer le menu', builtForRetro: 'Conçu pour le jeu rétro', theme: 'Thème de couleur',
     systemTheme: 'Système', lightTheme: 'Clair', darkTheme: 'Sombre', language: 'Langue',
     english: 'English', french: 'Français', github: 'Voir le projet sur GitHub',
