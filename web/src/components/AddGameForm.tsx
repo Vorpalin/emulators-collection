@@ -124,11 +124,11 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
             maxLength={80}
             placeholder="Title"
             aria-label="Game title"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            setTitleTouched(true);
-          }}
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setTitleTouched(true);
+            }}
             className={input}
           />
         </label>
@@ -136,18 +136,18 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
           <span className="sr-only">Emulator system</span>
           <select
             aria-label="Emulator system"
-          value={system}
-          onChange={(e) => {
-            setSystem(e.target.value as SystemId);
-            setSystemTouched(true);
-          }}
+            value={system}
+            onChange={(e) => {
+              setSystem(e.target.value as SystemId);
+              setSystemTouched(true);
+            }}
             className={input}
           >
-          {SYSTEM_LIST.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
+            {SYSTEM_LIST.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
           </select>
         </label>
       </div>
