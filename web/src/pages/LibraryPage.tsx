@@ -35,7 +35,10 @@ export default function LibraryPage() {
 
   const onDelete = (game: Game) => {
     if (window.confirm(`Delete « ${game.title} » from your library?`)) {
-      remove(game).catch((err) => setActionError(String(err)));
+      setActionError(null);
+      remove(game).catch((err) =>
+        setActionError(err instanceof Error ? err.message : String(err)),
+      );
     }
   };
 
@@ -73,6 +76,7 @@ export default function LibraryPage() {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setAdding((value) => !value)}
             aria-expanded={adding}
             aria-controls="add-game-form"
@@ -107,7 +111,7 @@ export default function LibraryPage() {
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-white">Browse games</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500" role="status" aria-live="polite">
               {loading
                 ? 'Loading your collection…'
                 : `Showing ${filtered.length} of ${games.length} games`}
@@ -126,6 +130,7 @@ export default function LibraryPage() {
               />
               {query && (
                 <button
+                  type="button"
                   onClick={() => setQuery('')}
                   aria-label="Clear search"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
@@ -157,6 +162,7 @@ export default function LibraryPage() {
           aria-label="Filter by system"
         >
           <button
+            type="button"
             onClick={() => setFilter('all')}
             aria-pressed={filter === 'all'}
             className={pill(filter === 'all')}
@@ -165,6 +171,7 @@ export default function LibraryPage() {
           </button>
           {SYSTEM_LIST.map((system) => (
             <button
+              type="button"
               key={system.id}
               onClick={() => setFilter(system.id)}
               aria-pressed={filter === system.id}
@@ -199,6 +206,7 @@ export default function LibraryPage() {
             </p>
             {games.length === 0 && (
               <button
+                type="button"
                 onClick={() => setAdding(true)}
                 className="mt-5 inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
               >
@@ -207,6 +215,7 @@ export default function LibraryPage() {
             )}
             {(query || filter !== 'all') && (
               <button
+                type="button"
                 onClick={() => {
                   setQuery('');
                   setFilter('all');
