@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Cpu, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useI18n } from '../i18n/I18nProvider';
 
 /**
  * ResetPasswordPage component provides a user interface for users to reset their password. It verifies the validity of the reset link, allows users to enter a new password, and handles the submission of the new password to update the user's account.
@@ -10,6 +11,7 @@ import { supabase } from '../lib/supabase';
  */
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const [linkValid, setLinkValid] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
@@ -64,7 +66,7 @@ export default function ResetPasswordPage() {
     setError(null);
 
     if (password !== confirm) {
-      setError('Passwords do not match.');
+      setError(t('passwordsMismatch'));
       return;
     }
 
@@ -81,7 +83,7 @@ export default function ResetPasswordPage() {
       setDone(true);
       setTimeout(() => navigate('/', { replace: true }), 1500);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to update your password.');
+      setError(e instanceof Error ? e.message : t('unableUpdatePassword'));
     } finally {
       setBusy(false);
     }
@@ -102,22 +104,22 @@ export default function ResetPasswordPage() {
           </div>
           <div>
             <h1 className="font-extrabold tracking-wider text-white">EMULATORS COLLECTION</h1>
-            <p className="text-xs text-slate-400">Choose a new password</p>
+            <p className="text-xs text-slate-400">{t('chooseNewPassword')}</p>
           </div>
         </div>
 
-        {linkValid === null && <p className="text-sm text-slate-400">Checking your link…</p>}
+        {linkValid === null && <p className="text-sm text-slate-400">{t('checkingLink')}</p>}
 
         {linkValid === false && (
           <>
             <p className="text-sm text-rose-400">
-              This reset link is invalid or has expired. Request a new one from the sign-in page.
+              {t('invalidResetLink')}
             </p>
             <Link
               to="/login"
               className="block w-full text-center bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-semibold py-2.5 rounded-xl transition"
             >
-              Back to sign in
+              {t('backSignIn')}
             </Link>
           </>
         )}
@@ -130,8 +132,8 @@ export default function ResetPasswordPage() {
                 required
                 minLength={6}
                 autoComplete="new-password"
-                placeholder="New password"
-                aria-label="New password"
+                placeholder={t('newPassword')}
+                aria-label={t('newPassword')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={`${input} pr-10`}
@@ -140,7 +142,7 @@ export default function ResetPasswordPage() {
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('hidePassword') : t('showPassword')}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -151,8 +153,8 @@ export default function ResetPasswordPage() {
               required
               minLength={6}
               autoComplete="new-password"
-              placeholder="Confirm new password"
-              aria-label="Confirm new password"
+              placeholder={t('confirmPassword')}
+              aria-label={t('confirmPassword')}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className={input}
@@ -169,14 +171,14 @@ export default function ResetPasswordPage() {
               disabled={busy}
               className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold py-2.5 rounded-xl transition"
             >
-              {busy ? '…' : 'Update password'}
+              {busy ? '…' : t('updatePassword')}
             </button>
           </>
         )}
 
         {done && (
           <p role="status" aria-live="polite" className="text-sm text-emerald-400">
-            Password updated. Redirecting…
+            {t('passwordUpdated')}
           </p>
         )}
       </form>
