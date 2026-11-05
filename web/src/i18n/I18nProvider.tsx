@@ -5,7 +5,7 @@ export type Language = 'en' | 'fr';
 const messages: Record<Language, Record<string, string>> = {
   en: {
     library: 'Library', controls: 'Controls', signOut: 'Sign out', playClassics: 'Play the classics',
-    mainNavigation: 'Main navigation', mobileNavigation: 'Mobile navigation', theme: 'Color theme',
+    mainNavigation: 'Main navigation', mobileNavigation: 'Mobile navigation', openMenu: 'Open menu', closeMenu: 'Close menu', builtForRetro: 'Built for retro gaming', theme: 'Color theme',
     systemTheme: 'System', lightTheme: 'Light', darkTheme: 'Dark', language: 'Language',
     english: 'English', french: 'Français', github: 'View project on GitHub',
     retroCollection: 'Your retro collection', gameLibrary: 'Game library',
@@ -64,7 +64,7 @@ const messages: Record<Language, Record<string, string>> = {
   },
   fr: {
     library: 'Bibliothèque', controls: 'Commandes', signOut: 'Déconnexion', playClassics: 'Jouez aux classiques',
-    mainNavigation: 'Navigation principale', mobileNavigation: 'Navigation mobile', theme: 'Thème de couleur',
+    mainNavigation: 'Navigation principale', mobileNavigation: 'Navigation mobile', openMenu: 'Ouvrir le menu', closeMenu: 'Fermer le menu', builtForRetro: 'Conçu pour le jeu rétro', theme: 'Thème de couleur',
     systemTheme: 'Système', lightTheme: 'Clair', darkTheme: 'Sombre', language: 'Langue',
     english: 'English', french: 'Français', github: 'Voir le projet sur GitHub',
     retroCollection: 'Votre collection rétro', gameLibrary: 'Bibliothèque de jeux',
