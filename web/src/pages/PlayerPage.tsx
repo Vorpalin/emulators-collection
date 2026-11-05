@@ -18,7 +18,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { loadRom } from '../hooks/useGames';
 import { useSettings } from '../hooks/useSettings';
-import TouchControls, { useIsTouchDevice } from '../components/TouchControls';
+import TouchControls, { useIsTouchDevice, useMediaQuery } from '../components/TouchControls';
 import { useGamepadName } from '../emulator/gamepad';
 import { EmulatorSession } from '../emulator/session';
 import { SYSTEMS } from '../emulator/systems';
@@ -35,6 +35,7 @@ export default function PlayerPage() {
   const { gameId } = useParams();
   const { settings, loading: settingsLoading, update, bindingsFor } = useSettings();
   const isTouch = useIsTouchDevice();
+  const isLandscape = useMediaQuery('(orientation: landscape)');
   const gamepad = useGamepadName();
   const { t } = useI18n();
 
@@ -348,12 +349,12 @@ export default function PlayerPage() {
           disabled={!playing || paused}
           onAction={pressAction}
         >
-          <div className="relative flex min-h-[240px] items-center justify-center bg-black p-3 sm:min-h-[320px] sm:p-4">
+          <div className={`relative flex items-center justify-center bg-black p-3 sm:p-4 ${isLandscape && isTouch ? 'min-h-[160px]' : 'min-h-[240px] sm:min-h-[320px]'}`}>
             <div
               className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
               style={{
                 aspectRatio: String(aspect),
-                width: `min(100%, calc(65vh * ${aspect}))`,
+                width: `min(100%, calc(${isLandscape && isTouch ? 52 : 65}vh * ${aspect}))`,
               }}
             >
               <canvas
