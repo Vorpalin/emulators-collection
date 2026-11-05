@@ -50,11 +50,14 @@ export default function LibraryPage() {
     }
   };
 
+  const countForSystem = (systemId: SystemId | 'all') =>
+    systemId === 'all' ? games.length : games.filter((game) => game.system === systemId).length;
+
   const pill = (active: boolean) =>
-    `inline-flex min-h-10 items-center rounded-xl border px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+    `inline-flex min-h-10 items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
       active
-        ? 'border-cyan-300 bg-cyan-300 text-slate-950 shadow-md shadow-cyan-500/20'
-        : 'border-slate-700 bg-slate-800/90 text-slate-200 hover:border-slate-500 hover:bg-slate-700 hover:text-white'
+        ? 'border-cyan-300 bg-cyan-300 text-slate-950 shadow-md shadow-cyan-950/30'
+        : 'border-slate-600 bg-slate-800 text-slate-100 hover:border-slate-400 hover:bg-slate-700'
     }`;
 
   return (
@@ -176,29 +179,56 @@ export default function LibraryPage() {
             </span>
           </div>
           <div
-            className="flex gap-2 overflow-x-auto pb-1"
+            className="rounded-2xl border border-slate-700 bg-slate-900/80 p-3 sm:p-4"
             role="group"
-            aria-label="Filter by system"
+            aria-label="Filter games by system"
           >
-          <button
-            type="button"
-            onClick={() => setFilter('all')}
-            aria-pressed={filter === 'all'}
-            className={pill(filter === 'all')}
-          >
-            All systems
-          </button>
-          {SYSTEM_LIST.map((system) => (
-            <button
-              type="button"
-              key={system.id}
-              onClick={() => setFilter(system.id)}
-              aria-pressed={filter === system.id}
-              className={pill(filter === system.id)}
-            >
-              {system.label}
-            </button>
-          ))}
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Filter by system
+              </span>
+              <span className="text-xs font-medium text-slate-400">
+                {filter === 'all' ? 'All systems selected' : SYSTEM_LIST.find((system) => system.id === filter)?.label}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setFilter('all')}
+                aria-pressed={filter === 'all'}
+                className={pill(filter === 'all')}
+              >
+                All systems
+                <span
+                  className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums ${
+                    filter === 'all' ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-950/50 text-slate-100'
+                  }`}
+                >
+                  {countForSystem('all')}
+                </span>
+              </button>
+              {SYSTEM_LIST.map((system) => {
+                const active = filter === system.id;
+                return (
+                  <button
+                    type="button"
+                    key={system.id}
+                    onClick={() => setFilter(system.id)}
+                    aria-pressed={active}
+                    className={pill(active)}
+                  >
+                    {system.label}
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums ${
+                        active ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-950/50 text-slate-100'
+                      }`}
+                    >
+                      {countForSystem(system.id)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
