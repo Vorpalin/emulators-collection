@@ -1,4 +1,5 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useI18n } from '../i18n/I18nProvider';
 
 const CHECK_EVERY_MS = 60 * 60 * 1000;
 
@@ -19,6 +20,7 @@ function isInstalledPWA(): boolean {
  * @returns {JSX.Element | null} The rendered UpdatePrompt component or null if no prompt is needed.
  */
 export default function UpdatePrompt() {
+  const { t } = useI18n();
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     offlineReady: [offlineReady, setOfflineReady],
@@ -53,11 +55,7 @@ export default function UpdatePrompt() {
         role="status"
         className="pointer-events-auto flex items-center gap-3 bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-xl shadow-2xl px-4 py-3 max-w-sm w-full"
       >
-        <span className="flex-1">
-          {needRefresh
-            ? 'A new version is available.'
-            : 'Emulators Collection is ready to work offline.'}
-        </span>
+        <span className="flex-1">{needRefresh ? t('newVersion') : t('offlineReady')}</span>
 
         {needRefresh && (
           <button
@@ -71,9 +69,9 @@ export default function UpdatePrompt() {
         <button
           onClick={close}
           className="text-slate-400 hover:text-slate-200 px-2 py-1.5 rounded-lg transition"
-          aria-label="Dismiss"
+          aria-label={t('dismissNotice')}
         >
-          {needRefresh ? 'Later' : 'OK'}
+          {needRefresh ? t('later') : t('ok')}
         </button>
       </div>
     </div>

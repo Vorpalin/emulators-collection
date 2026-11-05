@@ -18,11 +18,12 @@ import {
 import { supabase } from '../lib/supabase';
 import { loadRom } from '../hooks/useGames';
 import { useSettings } from '../hooks/useSettings';
-import TouchControls, { useIsTouchDevice } from '../components/TouchControls';
+import TouchControls, { useIsTouchDevice, useMediaQuery } from '../components/TouchControls';
 import { useGamepadName } from '../emulator/gamepad';
 import { EmulatorSession } from '../emulator/session';
 import { SYSTEMS } from '../emulator/systems';
 import type { Game } from '../types';
+import { useI18n } from '../i18n/I18nProvider';
 
 type Status = 'loading' | 'ready' | 'playing' | 'error';
 
@@ -34,7 +35,9 @@ export default function PlayerPage() {
   const { gameId } = useParams();
   const { settings, loading: settingsLoading, update, bindingsFor } = useSettings();
   const isTouch = useIsTouchDevice();
+  const isLandscape = useMediaQuery('(orientation: landscape)');
   const gamepad = useGamepadName();
+  const { t } = useI18n();
 
   const [game, setGame] = useState<Game | null>(null);
   const [rom, setRom] = useState<Uint8Array | null>(null);
@@ -45,6 +48,7 @@ export default function PlayerPage() {
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState<number | null>(null);
   const [stateLoading, setStateLoading] = useState(false);
+  const [stateMessage, setStateMessage] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -56,6 +60,9 @@ export default function PlayerPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setError(null);
+    setGame(null);
+    setRom(null);
     setStatus('loading');
 
     (async () => {
@@ -109,7 +116,7 @@ export default function PlayerPage() {
 
     const system = SYSTEMS[game.system];
     if (!system) {
-      setError(`Unsupported emulator system: ${String(game.system ?? 'unknown')}.`);
+      setError(t('unsupportedSystem', { system: String(game.system ?? 'unknown') }));
       setStatus('error');
       return;
     }
@@ -175,6 +182,9 @@ export default function PlayerPage() {
 
     if (!session || !game) return;
 
+    setError(null);
+    setStateMessage(null);
+
     try {
       const state = session.saveState();
 
@@ -192,9 +202,9 @@ export default function PlayerPage() {
       anchor.remove();
 
       URL.revokeObjectURL(url);
+      setStateMessage(t('saveStateDownloaded'));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setStatus('error');
     }
   };
 
@@ -213,20 +223,23 @@ export default function PlayerPage() {
     if (!file || !session) return;
 
     setStateLoading(true);
+    setError(null);
+    setStateMessage(null);
+
+    let wasPaused = session.isPaused;
 
     try {
       const data = await file.text();
 
-      const wasPaused = session.isPaused;
-
       if (!wasPaused) {
         session.pause();
+        wasPaused = false;
       }
 
       const success = session.loadState(data);
 
       if (!success) {
-        throw new Error('The save state could not be loaded.');
+        throw new Error(t('saveStateLoadFailed'));
       }
 
       if (!wasPaused) {
@@ -234,10 +247,14 @@ export default function PlayerPage() {
       }
 
       setPaused(session.isPaused);
+      setStateMessage(t('saveStateLoaded'));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setStatus('error');
     } finally {
+      if (!wasPaused && session.isPaused) {
+        session.resume();
+        setPaused(false);
+      }
       setStateLoading(false);
     }
   };
@@ -249,19 +266,24 @@ export default function PlayerPage() {
       } else {
         await frameRef.current?.requestFullscreen();
       }
-    } catch {}
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('unableFullscreen'));
+    }
   };
 
   if (status === 'error') {
     return (
-      <div className="max-w-xl mx-auto mt-12 space-y-4">
-        <div className="flex items-start space-x-3 bg-rose-500/10 border border-rose-500/40 text-rose-300 rounded-xl p-4 text-sm">
+      <div className="mx-auto mt-12 max-w-xl space-y-4">
+        <div
+          role="alert"
+          className="flex items-start space-x-3 rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-300"
+        >
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
 
         <Link to="/" className="text-sm text-cyan-400 hover:underline">
-          ← Return to the library
+          ← {t('returnLibrary')}
         </Link>
       </div>
     );
@@ -281,12 +303,13 @@ export default function PlayerPage() {
         className="inline-flex items-center space-x-1.5 text-sm text-slate-400 hover:text-cyan-400"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Library</span>
+        <span>{t('library')}</span>
       </Link>
 
       <div
         ref={frameRef}
-        className="relative bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col"
+        aria-busy={status === 'loading' || settingsLoading}
+        className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl"
       >
         {/* Title bar */}
         <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
@@ -298,7 +321,7 @@ export default function PlayerPage() {
             />
 
             <span className="font-bold text-sm text-slate-200 truncate">
-              {game?.title ?? 'Loading…'}
+              {game?.title ?? t('loading')}
             </span>
 
             {system && (
@@ -313,7 +336,7 @@ export default function PlayerPage() {
                 title={gamepad}
               >
                 <Gamepad2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Controller</span>
+                <span className="hidden sm:inline">{t('controller')}</span>
               </span>
             )}
           </div>
@@ -326,15 +349,22 @@ export default function PlayerPage() {
           disabled={!playing || paused}
           onAction={pressAction}
         >
-          <div className="relative flex items-center justify-center p-4 bg-black min-h-[320px]">
+          <div
+            className={`relative flex items-center justify-center bg-black p-3 sm:p-4 ${isLandscape && isTouch ? 'min-h-[160px]' : 'min-h-[240px] sm:min-h-[320px]'}`}
+          >
             <div
               className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
               style={{
                 aspectRatio: String(aspect),
-                width: `min(100%, calc(65vh * ${aspect}))`,
+                width: `min(100%, calc(${isLandscape && isTouch ? 52 : 65}vh * ${aspect}))`,
               }}
             >
-              <canvas ref={canvasRef} className="pixelated block w-full h-full" />
+              <canvas
+                ref={canvasRef}
+                role="img"
+                aria-label={t('gameScreen', { title: game?.title ?? t('game') })}
+                className="pixelated block h-full w-full"
+              />
 
               {playing && settings.crt_filter && (
                 <div
@@ -350,19 +380,22 @@ export default function PlayerPage() {
               {paused && (
                 <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center text-white z-30">
                   <Pause className="w-12 h-12 text-amber-400 mb-2" />
-                  <span className="font-bold tracking-widest text-lg">PAUSE</span>
+                  <span className="font-bold tracking-widest text-lg">{t('pause')}</span>
                 </div>
               )}
 
               {!playing && (
                 <div className="absolute inset-0 z-30 bg-slate-950 flex items-center justify-center">
                   <button
+                    type="button"
                     onClick={() => void start()}
                     disabled={status !== 'ready' || settingsLoading}
                     className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition"
                   >
                     <Play className="w-5 h-5 fill-current" />
-                    <span>{status === 'loading' || settingsLoading ? 'Loading…' : 'START'}</span>
+                    <span role="status" aria-live="polite">
+                      {status === 'loading' || settingsLoading ? t('loading') : t('startGame')}
+                    </span>
                   </button>
                 </div>
               )}
@@ -370,45 +403,81 @@ export default function PlayerPage() {
           </div>
         </TouchControls>
 
+        {error && playing && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 border-t border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0 flex-1">{error}</span>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="rounded px-1 text-rose-200 transition hover:bg-rose-500/20"
+              aria-label={t('dismiss')}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {stateMessage && (
+          <p
+            role="status"
+            aria-live="polite"
+            className="border-t border-emerald-500/20 bg-emerald-500/5 px-4 py-2.5 text-sm text-emerald-300"
+          >
+            {stateMessage}
+          </p>
+        )}
+
         {/* Control bar */}
         <div className="bg-slate-900 border-t border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
             {/* Pause */}
             <button
+              type="button"
               onClick={togglePause}
               disabled={!playing}
               className={bar}
-              title={paused ? 'Continue' : 'Pause'}
+              title={paused ? t('resume') : t('pause')}
+              aria-label={paused ? t('resume') : t('pause')}
             >
               {paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
             </button>
 
             {/* Reset */}
             <button
+              type="button"
               onClick={() => sessionRef.current?.reset()}
               disabled={!playing}
               className={bar}
-              title="Restart"
+              title={t('restartGame')}
+              aria-label={t('restartGame')}
             >
               <RotateCcw className="w-4 h-4" />
             </button>
 
             {/* Save state */}
             <button
+              type="button"
               onClick={saveState}
               disabled={!playing || stateLoading}
               className={bar}
-              title="Save"
+              title={t('saveState')}
+              aria-label={t('saveState')}
             >
               <Download className="w-4 h-4" />
             </button>
 
             {/* Load state */}
             <button
+              type="button"
               onClick={openStatePicker}
               disabled={!playing || stateLoading}
               className={bar}
-              title="Upload"
+              title={t('loadState')}
+              aria-label={t('loadState')}
             >
               {stateLoading ? (
                 <FolderOpen className="w-4 h-4 animate-pulse" />
@@ -429,6 +498,9 @@ export default function PlayerPage() {
           <div className="flex items-center space-x-3">
             {/* CRT */}
             <button
+              type="button"
+              aria-pressed={settings.crt_filter}
+              aria-label={t('toggleCrt')}
               onClick={() => void update({ crt_filter: !settings.crt_filter })}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono border transition ${
                 settings.crt_filter
@@ -441,7 +513,12 @@ export default function PlayerPage() {
 
             {/* Volume */}
             <div className="flex items-center space-x-2">
-              <button onClick={toggleMute} className="text-slate-400 hover:text-slate-200">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="text-slate-400 hover:text-slate-200"
+                aria-label={muted || effectiveVolume === 0 ? t('unmute') : t('mute')}
+              >
                 {muted || effectiveVolume === 0 ? (
                   <VolumeX className="w-4 h-4 text-rose-400" />
                 ) : (
@@ -451,6 +528,7 @@ export default function PlayerPage() {
 
               <input
                 type="range"
+                aria-label={t('volume')}
                 min={0}
                 max={100}
                 value={muted ? 0 : effectiveVolume}
@@ -463,9 +541,11 @@ export default function PlayerPage() {
             {/* Fullscreen */}
             {document.fullscreenEnabled && (
               <button
+                type="button"
                 onClick={() => void toggleFullscreen()}
                 className={bar}
-                title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                aria-label={fullscreen ? t('exitFullscreen') : t('fullscreen')}
+                title={fullscreen ? t('exitFullscreen') : t('fullscreen')}
               >
                 {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </button>
@@ -474,11 +554,7 @@ export default function PlayerPage() {
         </div>
       </div>
 
-      <p className="text-xs text-slate-500">
-        {isTouch
-          ? 'Use the on-screen buttons to play. Rotate your phone or use fullscreen for a bigger screen.'
-          : 'The keys are configured in the « Controls » tab. Click on the screen if the keyboard does not respond. A controller works too: press any button to connect it.'}
-      </p>
+      <p className="text-xs text-slate-500">{isTouch ? t('touchHelp') : t('keyboardHelp')}</p>
     </div>
   );
 }

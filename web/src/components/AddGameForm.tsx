@@ -1,7 +1,8 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Plus, Upload, X } from 'lucide-react';
 import { ACCEPTED_EXTENSIONS, SYSTEM_LIST, detectSystem, type SystemId } from '../emulator/systems';
 import { validateRomFile, type NewGame } from '../hooks/useGames';
+import { useI18n } from '../i18n/I18nProvider';
 
 /**
  * Props interface defines the properties for the AddGameForm component.
@@ -41,6 +42,8 @@ function formatSize(bytes: number): string {
  * @returns The AddGameForm component.
  */
 export default function AddGameForm({ onSubmit, onCancel }: Props) {
+  const { t } = useI18n();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [system, setSystem] = useState<SystemId>('gameboy');
@@ -79,74 +82,109 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
 
   return (
     <form
+      id="add-game-form"
       onSubmit={submit}
+      aria-busy={busy}
       className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3"
     >
       <div className="flex items-center justify-between">
-        <h2 className="font-bold text-slate-200 text-sm">Add a game</h2>
-        <button type="button" onClick={onCancel} className="text-slate-500 hover:text-slate-300">
+        <h2 className="font-bold text-slate-200 text-sm">{t('addGameTitle')}</h2>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={busy}
+          aria-label={t('closeAddGame')}
+          className="rounded-lg p-1 text-slate-500 transition hover:bg-slate-800 hover:text-slate-300 disabled:opacity-50"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <label className="flex items-center gap-3 cursor-pointer bg-slate-950 border border-dashed border-slate-700 hover:border-cyan-500 rounded-lg px-3 py-3 transition">
+      <label
+        htmlFor="rom-file"
+        className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-slate-700 bg-slate-950 px-3 py-3 transition hover:border-cyan-500"
+      >
         <Upload className="w-4 h-4 text-cyan-400 shrink-0" />
-        <span className="text-sm text-slate-300 truncate">
-          {file ? `${file.name} (${formatSize(file.size)})` : 'Choose a ROM file…'}
+        <span className="min-w-0 truncate text-sm text-slate-300" role="status" aria-live="polite">
+          {file ? `${file.name} (${formatSize(file.size)})` : t('chooseRom')}
         </span>
         <input
+          ref={fileInputRef}
+          id="rom-file"
           type="file"
           required
+          disabled={busy}
+          aria-describedby="rom-file-help"
           accept={ACCEPTED_EXTENSIONS}
           onChange={onFileChange}
           className="sr-only"
-          aria-label="ROM file"
+          onClick={(event) => {
+            event.currentTarget.value = '';
+          }}
         />
       </label>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <input
-          type="text"
-          required
-          maxLength={80}
-          placeholder="Title"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            setTitleTouched(true);
-          }}
-          className={input}
-        />
-        <select
-          value={system}
-          onChange={(e) => {
-            setSystem(e.target.value as SystemId);
-            setSystemTouched(true);
-          }}
-          className={input}
-        >
-          {SYSTEM_LIST.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+        <div>
+          <label htmlFor="game-title" className="sr-only">
+            {t('gameTitle')}
+          </label>
+          <input
+            id="game-title"
+            type="text"
+            required
+            disabled={busy}
+            maxLength={80}
+            placeholder={t('gameTitle')}
+            aria-label={t('gameTitle')}
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setTitleTouched(true);
+            }}
+            className={input}
+          />
+        </div>
+        <div>
+          <label htmlFor="game-system" className="sr-only">
+            {t('emulatorSystem')}
+          </label>
+          <select
+            id="game-system"
+            disabled={busy}
+            value={system}
+            onChange={(e) => {
+              setSystem(e.target.value as SystemId);
+              setSystemTouched(true);
+            }}
+            className={input}
+          >
+            {SYSTEM_LIST.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <p className="text-xs text-slate-500">
-        Accepted formats: {ACCEPTED_EXTENSIONS.split(',').join(', ')}. Maximum 16 MB. The file is
-        stored privately in your account: only you can play it.
+      <p id="rom-file-help" className="text-xs text-slate-500">
+        {t('acceptedFormats', { formats: ACCEPTED_EXTENSIONS.split(',').join(', ') })}
       </p>
 
-      {error && <p className="text-sm text-rose-400">{error}</p>}
+      {error && (
+        <p id="rom-file-error" role="alert" className="text-sm text-rose-400">
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"
-        disabled={busy || !file}
+        disabled={busy || !file || Boolean(file && validateRomFile(file)) || !title.trim()}
         className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm flex items-center space-x-2 transition"
       >
         <Plus className="w-4 h-4" />
-        <span>{busy ? 'Uploading…' : 'Add'}</span>
+        <span>{busy ? t('uploading') : t('add')}</span>
       </button>
     </form>
   );

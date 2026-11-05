@@ -4,6 +4,8 @@ import { Cpu, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/AuthProvider';
 import { appUrl } from '../lib/redirect';
+import { useI18n } from '../i18n/I18nProvider';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const USERNAME_RE = /^[A-Za-z0-9_]{3,20}$/;
 const RESET_COOLDOWN_SECONDS = 60;
@@ -16,6 +18,7 @@ type Mode = 'signin' | 'signup' | 'forgot';
  */
 export default function LoginPage() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '/';
 
@@ -49,32 +52,33 @@ export default function LoginPage() {
     setError(null);
     setInfo(null);
 
-    if (mode === 'forgot') {
-      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: appUrl('reset-password'),
-      });
+    try {
+      if (mode === 'forgot') {
+        const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: appUrl('reset-password'),
+        });
 
-      if (err?.status === 429) {
-        setError('Too many requests. Please wait a minute before trying again.');
-      } else {
-        if (err) console.error(err);
-        setInfo('If an account exists for this email, a reset link has been sent.');
-        setCooldown(RESET_COOLDOWN_SECONDS);
+        if (err?.status === 429) {
+          setError(t('tooManyRequests'));
+        } else {
+          if (err) console.error(err);
+          setInfo(t('resetEmailInfo'));
+          setCooldown(RESET_COOLDOWN_SECONDS);
+        }
+        return;
       }
-      setBusy(false);
-      return;
-    }
 
-    if (mode === 'signin') {
-      const { error: err } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (err) setError(err.message);
-    } else {
+      if (mode === 'signin') {
+        const { error: err } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (err) setError(err.message);
+        return;
+      }
+
       if (!USERNAME_RE.test(username)) {
-        setError('Username : 3 to 20 characters (letters, numbers, _).');
-        setBusy(false);
+        setError(t('usernameValidation'));
         return;
       }
 
@@ -83,12 +87,10 @@ export default function LoginPage() {
       });
       if (rpcErr) {
         setError(rpcErr.message);
-        setBusy(false);
         return;
       }
       if (!free) {
-        setError('This username is already taken.');
-        setBusy(false);
+        setError(t('usernameTaken'));
         return;
       }
 
@@ -97,34 +99,39 @@ export default function LoginPage() {
         password,
         options: {
           data: { username },
-
           emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
         },
       });
       if (err) setError(err.message);
-      else if (!data.session) setInfo('Account created: check your email to confirm.');
+      else if (!data.session) setInfo(t('accountCreated'));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('authFailed'));
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   };
 
   const input =
     'w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition';
 
   const subtitle =
-    mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create an account' : 'Reset your password';
+    mode === 'signin' ? t('signIn') : mode === 'signup' ? t('createAccount') : t('resetPassword');
 
   const submitLabel = busy
     ? '…'
     : mode === 'signin'
-      ? 'Sign in'
+      ? t('signIn')
       : mode === 'signup'
-        ? 'Sign up'
+        ? t('createAccount')
         : cooldown > 0
-          ? `Resend in ${cooldown}s`
-          : 'Send reset link';
+          ? t('resendIn', { seconds: cooldown })
+          : t('sendResetLink');
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="fixed right-4 top-4 z-10">
+        <LanguageSwitcher />
+      </div>
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl"
@@ -139,12 +146,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {mode === 'forgot' && (
-          <p className="text-sm text-slate-400">
-            Enter the email linked to your account and we'll send you a link to choose a new
-            password.
-          </p>
-        )}
+        {mode === 'forgot' && <p className="text-sm text-slate-400">{t('enterResetEmail')}</p>}
 
         {mode === 'signup' && (
           <input
@@ -153,9 +155,10 @@ export default function LoginPage() {
             minLength={3}
             maxLength={20}
             pattern="[A-Za-z0-9_]{3,20}"
-            title="3 to 20 characters: letters, numbers, or _"
+            title={t('usernameValidation')}
             autoComplete="username"
-            placeholder="Username"
+            placeholder={t('username')}
+            aria-label={t('username')}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className={input}
@@ -165,7 +168,8 @@ export default function LoginPage() {
           type="email"
           required
           autoComplete="email"
-          placeholder="Email"
+          placeholder={t('email')}
+          aria-label={t('email')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={input}
@@ -178,7 +182,8 @@ export default function LoginPage() {
               required
               minLength={6}
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              placeholder="Password"
+              placeholder={t('password')}
+              aria-label={t('password')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={`${input} pr-10`}
@@ -188,7 +193,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setShowPassword((visible) => !visible)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? t('hidePassword') : t('showPassword')}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -202,13 +207,21 @@ export default function LoginPage() {
               onClick={() => switchMode('forgot')}
               className="text-xs text-slate-400 hover:text-cyan-400 transition"
             >
-              Forgot password?
+              {t('forgotPassword')}
             </button>
           </div>
         )}
 
-        {error && <p className="text-sm text-rose-400">{error}</p>}
-        {info && <p className="text-sm text-emerald-400">{info}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-rose-400">
+            {error}
+          </p>
+        )}
+        {info && (
+          <p role="status" aria-live="polite" className="text-sm text-emerald-400">
+            {info}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -226,10 +239,10 @@ export default function LoginPage() {
           className="w-full text-xs text-slate-400 hover:text-cyan-400 transition"
         >
           {mode === 'signin'
-            ? 'No account ? Sign up'
+            ? t('noAccount')
             : mode === 'signup'
-              ? 'Already have an account ? Sign in'
-              : 'Back to sign in'}
+              ? t('haveAccount')
+              : t('backToSignIn')}
         </button>
       </form>
     </div>

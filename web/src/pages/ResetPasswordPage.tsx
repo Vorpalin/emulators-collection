@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Cpu, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useI18n } from '../i18n/I18nProvider';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 /**
  * ResetPasswordPage component provides a user interface for users to reset their password. It verifies the validity of the reset link, allows users to enter a new password, and handles the submission of the new password to update the user's account.
@@ -10,6 +12,7 @@ import { supabase } from '../lib/supabase';
  */
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const [linkValid, setLinkValid] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
@@ -29,10 +32,15 @@ export default function ResetPasswordPage() {
     if (verifyStarted.current) return;
     verifyStarted.current = true;
 
-    supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }).then(({ error }) => {
-      window.history.replaceState({}, '', window.location.pathname);
-      setLinkValid(!error);
-    });
+    supabase.auth
+      .verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+      .then(({ error }) => {
+        window.history.replaceState({}, '', window.location.pathname);
+        setLinkValid(!error);
+      })
+      .catch(() => {
+        setLinkValid(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -59,21 +67,27 @@ export default function ResetPasswordPage() {
     setError(null);
 
     if (password !== confirm) {
-      setError('Passwords do not match.');
+      setError(t('passwordsMismatch'));
       return;
     }
 
     setBusy(true);
-    const { error: err } = await supabase.auth.updateUser({ password });
-    setBusy(false);
 
-    if (err) {
-      setError(err.message);
-      return;
+    try {
+      const { error: err } = await supabase.auth.updateUser({ password });
+
+      if (err) {
+        setError(err.message);
+        return;
+      }
+
+      setDone(true);
+      setTimeout(() => navigate('/', { replace: true }), 1500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('unableUpdatePassword'));
+    } finally {
+      setBusy(false);
     }
-
-    setDone(true);
-    setTimeout(() => navigate('/', { replace: true }), 1500);
   };
 
   const input =
@@ -81,6 +95,9 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="fixed right-4 top-4 z-10">
+        <LanguageSwitcher />
+      </div>
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl"
@@ -91,22 +108,20 @@ export default function ResetPasswordPage() {
           </div>
           <div>
             <h1 className="font-extrabold tracking-wider text-white">EMULATORS COLLECTION</h1>
-            <p className="text-xs text-slate-400">Choose a new password</p>
+            <p className="text-xs text-slate-400">{t('chooseNewPassword')}</p>
           </div>
         </div>
 
-        {linkValid === null && <p className="text-sm text-slate-400">Checking your link…</p>}
+        {linkValid === null && <p className="text-sm text-slate-400">{t('checkingLink')}</p>}
 
         {linkValid === false && (
           <>
-            <p className="text-sm text-rose-400">
-              This reset link is invalid or has expired. Request a new one from the sign-in page.
-            </p>
+            <p className="text-sm text-rose-400">{t('invalidResetLink')}</p>
             <Link
               to="/login"
               className="block w-full text-center bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-semibold py-2.5 rounded-xl transition"
             >
-              Back to sign in
+              {t('backToSignIn')}
             </Link>
           </>
         )}
@@ -119,7 +134,8 @@ export default function ResetPasswordPage() {
                 required
                 minLength={6}
                 autoComplete="new-password"
-                placeholder="New password"
+                placeholder={t('newPassword')}
+                aria-label={t('newPassword')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={`${input} pr-10`}
@@ -128,7 +144,7 @@ export default function ResetPasswordPage() {
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('hidePassword') : t('showPassword')}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -139,25 +155,34 @@ export default function ResetPasswordPage() {
               required
               minLength={6}
               autoComplete="new-password"
-              placeholder="Confirm new password"
+              placeholder={t('confirmPassword')}
+              aria-label={t('confirmPassword')}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className={input}
             />
 
-            {error && <p className="text-sm text-rose-400">{error}</p>}
+            {error && (
+              <p role="alert" className="text-sm text-rose-400">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
               disabled={busy}
               className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold py-2.5 rounded-xl transition"
             >
-              {busy ? '…' : 'Update password'}
+              {busy ? '…' : t('updatePassword')}
             </button>
           </>
         )}
 
-        {done && <p className="text-sm text-emerald-400">Password updated. Redirecting…</p>}
+        {done && (
+          <p role="status" aria-live="polite" className="text-sm text-emerald-400">
+            {t('passwordUpdated')}
+          </p>
+        )}
       </form>
     </div>
   );

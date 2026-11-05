@@ -1,5 +1,102 @@
 @import 'tailwindcss';
 
+:root {
+  color-scheme: dark;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+  background: #f1f5f9;
+}
+
+html[data-theme='light'] body {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* The UI uses a slate-based dark palette. Remap its neutral utilities in light mode. */
+html[data-theme='light'] [class~='bg-slate-950'],
+html[data-theme='light'] [class~='bg-slate-950/50'],
+html[data-theme='light'] [class~='bg-slate-950/60'],
+html[data-theme='light'] [class~='bg-slate-950/70'],
+html[data-theme='light'] [class~='bg-slate-950/85'] {
+  background-color: #f8fafc !important;
+}
+
+html[data-theme='light'] [class~='bg-slate-900'],
+html[data-theme='light'] [class~='bg-slate-900/30'],
+html[data-theme='light'] [class~='bg-slate-900/50'],
+html[data-theme='light'] [class~='bg-slate-900/60'],
+html[data-theme='light'] [class~='bg-slate-900/70'],
+html[data-theme='light'] [class~='bg-slate-900/80'],
+html[data-theme='light'] [class~='bg-slate-900/90'] {
+  background-color: #ffffff !important;
+}
+
+html[data-theme='light'] [class~='bg-slate-800'],
+html[data-theme='light'] [class~='bg-slate-800/70'],
+html[data-theme='light'] [class~='bg-slate-800/90'],
+html[data-theme='light'] [class~='bg-slate-700'] {
+  background-color: #e2e8f0 !important;
+}
+
+html[data-theme='light'] [class~='text-white'],
+html[data-theme='light'] [class~='text-slate-100'],
+html[data-theme='light'] [class~='text-slate-200'] {
+  color: #0f172a !important;
+}
+
+html[data-theme='light'] [class~='text-slate-300'] {
+  color: #1e293b !important;
+}
+
+html[data-theme='light'] [class~='text-slate-400'] {
+  color: #475569 !important;
+}
+
+html[data-theme='light'] [class~='text-slate-500'] {
+  color: #64748b !important;
+}
+
+html[data-theme='light'] [class~='text-slate-600'] {
+  color: #64748b !important;
+}
+
+html[data-theme='light'] [class~='text-cyan-300'],
+html[data-theme='light'] [class~='text-cyan-400'] {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] [class~='text-violet-300'] {
+  color: #6d28d9 !important;
+}
+
+html[data-theme='light'] [class~='border-slate-800'],
+html[data-theme='light'] [class~='border-slate-800/70'],
+html[data-theme='light'] [class~='border-slate-800/80'],
+html[data-theme='light'] [class~='border-slate-700'] {
+  border-color: #cbd5e1 !important;
+}
+
+html[data-theme='light'] [class~='hover:bg-slate-800']:hover,
+html[data-theme='light'] [class~='hover:bg-slate-800/70']:hover,
+html[data-theme='light'] [class~='hover:bg-slate-700']:hover {
+  background-color: #e2e8f0 !important;
+}
+
+html[data-theme='light'] [class~='hover:text-white']:hover {
+  color: #0f172a !important;
+}
+
+html[data-theme='light'] [class~='placeholder:text-slate-600']::placeholder,
+html[data-theme='light'] [class~='placeholder:text-slate-500']::placeholder {
+  color: #64748b !important;
+}
+
+html[data-theme='light'] [class*='to-slate-950'] {
+  --tw-gradient-to: #e2e8f0 var(--tw-gradient-to-position);
+}
+
 .pixelated {
   image-rendering: pixelated;
 }

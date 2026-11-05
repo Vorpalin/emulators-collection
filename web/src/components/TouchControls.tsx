@@ -4,10 +4,12 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent,
   type PointerEvent,
   type ReactNode,
 } from 'react';
 import type { SystemDef } from '../emulator/systems';
+import { useI18n } from '../i18n/I18nProvider';
 
 /**
  * Custom hook to determine if the current device matches a given media query.
@@ -88,12 +90,28 @@ function PadButton({
     setAction(id, true);
   };
   const up = () => setAction(id, false);
+  const keyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+    e.preventDefault();
+    if (!e.repeat) setAction(id, true);
+  };
+  const keyUp = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      setAction(id, false);
+    }
+  };
 
   return (
     <button
       type="button"
       onPointerDown={down}
       onPointerUp={up}
+      onKeyDown={keyDown}
+      onKeyUp={keyUp}
+      onBlur={up}
+      aria-label={label}
+      aria-pressed={held.has(id)}
       onPointerCancel={up}
       onLostPointerCapture={up}
       onContextMenu={(e) => e.preventDefault()}
@@ -114,6 +132,7 @@ const DIRECTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT'] as const;
  * @returns The rendered DPad component.
  */
 function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
+  const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const pointer = useRef<number | null>(null);
   const DEAD_ZONE = 0.28;
@@ -147,6 +166,8 @@ function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
     <div
       ref={ref}
       className="relative w-36 h-36"
+      role="group"
+      aria-label={t('directionalPad')}
       style={noGestures}
       onContextMenu={(e) => e.preventDefault()}
       onPointerDown={(e) => {
