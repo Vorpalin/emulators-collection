@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Cpu, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useI18n } from '../i18n/I18nProvider';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 /**
  * ResetPasswordPage component provides a user interface for users to reset their password. It verifies the validity of the reset link, allows users to enter a new password, and handles the submission of the new password to update the user's account.
@@ -94,6 +95,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="fixed right-4 top-4 z-10"><LanguageSwitcher /></div>
       <form
         onSubmit={onSubmit}
         className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl"
