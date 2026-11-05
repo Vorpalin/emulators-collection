@@ -115,7 +115,7 @@ export default function PlayerPage() {
 
     const system = SYSTEMS[game.system];
     if (!system) {
-      setError(`Unsupported emulator system: ${String(game.system ?? 'unknown')}.`);
+      setError(t('unsupportedSystem', { system: String(game.system ?? 'unknown') }));
       setStatus('error');
       return;
     }
@@ -391,7 +391,7 @@ export default function PlayerPage() {
                   >
                     <Play className="w-5 h-5 fill-current" />
                     <span role="status" aria-live="polite">
-                      {status === 'loading' || settingsLoading ? 'Loading…' : 'START'}
+                      {status === 'loading' || settingsLoading ? t('loading') : t('startGame')}
                     </span>
                   </button>
                 </div>
@@ -449,8 +449,8 @@ export default function PlayerPage() {
               onClick={() => sessionRef.current?.reset()}
               disabled={!playing}
               className={bar}
-              title="Restart"
-              aria-label="Restart game"
+              title={t('restartGame')}
+              aria-label={t('restartGame')}
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -497,7 +497,7 @@ export default function PlayerPage() {
             <button
               type="button"
               aria-pressed={settings.crt_filter}
-              aria-label="Toggle CRT filter"
+              aria-label={t('toggleCrt')}
               onClick={() => void update({ crt_filter: !settings.crt_filter })}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono border transition ${
                 settings.crt_filter
@@ -514,7 +514,7 @@ export default function PlayerPage() {
                 type="button"
                 onClick={toggleMute}
                 className="text-slate-400 hover:text-slate-200"
-                aria-label={muted || effectiveVolume === 0 ? 'Unmute audio' : 'Mute audio'}
+                aria-label={muted || effectiveVolume === 0 ? t('unmute') : t('mute')}
               >
                 {muted || effectiveVolume === 0 ? (
                   <VolumeX className="w-4 h-4 text-rose-400" />
@@ -553,8 +553,8 @@ export default function PlayerPage() {
 
       <p className="text-xs text-slate-500">
         {isTouch
-          ? 'Use the on-screen buttons to play. Rotate your phone or use fullscreen for a bigger screen.'
-          : 'The keys are configured in the « Controls » tab. Click on the screen if the keyboard does not respond. A controller works too: press any button to connect it.'}
+          ? t('touchHelp')
+          : t('keyboardHelp')}
       </p>
     </div>
   );
