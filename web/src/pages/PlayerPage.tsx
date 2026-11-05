@@ -255,7 +255,9 @@ export default function PlayerPage() {
       } else {
         await frameRef.current?.requestFullscreen();
       }
-    } catch {}
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to toggle fullscreen.');
+    }
   };
 
   if (status === 'error') {
@@ -403,6 +405,7 @@ export default function PlayerPage() {
               disabled={!playing}
               className={bar}
               title={paused ? 'Continue' : 'Pause'}
+              aria-label={paused ? 'Continue game' : 'Pause game'}
             >
               {paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
             </button>
@@ -413,6 +416,7 @@ export default function PlayerPage() {
               disabled={!playing}
               className={bar}
               title="Restart"
+              aria-label="Restart game"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -423,6 +427,7 @@ export default function PlayerPage() {
               disabled={!playing || stateLoading}
               className={bar}
               title="Save"
+              aria-label="Download save state"
             >
               <Download className="w-4 h-4" />
             </button>
@@ -433,6 +438,7 @@ export default function PlayerPage() {
               disabled={!playing || stateLoading}
               className={bar}
               title="Upload"
+              aria-label="Load save state"
             >
               {stateLoading ? (
                 <FolderOpen className="w-4 h-4 animate-pulse" />
@@ -453,6 +459,9 @@ export default function PlayerPage() {
           <div className="flex items-center space-x-3">
             {/* CRT */}
             <button
+              type="button"
+              aria-pressed={settings.crt_filter}
+              aria-label="Toggle CRT filter"
               onClick={() => void update({ crt_filter: !settings.crt_filter })}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono border transition ${
                 settings.crt_filter
@@ -465,7 +474,12 @@ export default function PlayerPage() {
 
             {/* Volume */}
             <div className="flex items-center space-x-2">
-              <button onClick={toggleMute} className="text-slate-400 hover:text-slate-200">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="text-slate-400 hover:text-slate-200"
+                aria-label={muted || effectiveVolume === 0 ? 'Unmute audio' : 'Mute audio'}
+              >
                 {muted || effectiveVolume === 0 ? (
                   <VolumeX className="w-4 h-4 text-rose-400" />
                 ) : (
@@ -475,6 +489,7 @@ export default function PlayerPage() {
 
               <input
                 type="range"
+                aria-label="Game volume"
                 min={0}
                 max={100}
                 value={muted ? 0 : effectiveVolume}
@@ -489,6 +504,7 @@ export default function PlayerPage() {
               <button
                 onClick={() => void toggleFullscreen()}
                 className={bar}
+                aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                 title={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
               >
                 {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
