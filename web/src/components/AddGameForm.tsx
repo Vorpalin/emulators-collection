@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Plus, Upload, X } from 'lucide-react';
 import { ACCEPTED_EXTENSIONS, SYSTEM_LIST, detectSystem, type SystemId } from '../emulator/systems';
 import { validateRomFile, type NewGame } from '../hooks/useGames';
@@ -41,6 +41,7 @@ function formatSize(bytes: number): string {
  * @returns The AddGameForm component.
  */
 export default function AddGameForm({ onSubmit, onCancel }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [system, setSystem] = useState<SystemId>('gameboy');
@@ -84,7 +85,13 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
     >
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-slate-200 text-sm">Add a game</h2>
-        <button type="button" onClick={onCancel} className="text-slate-500 hover:text-slate-300">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={busy}
+          aria-label="Close add game form"
+          className="rounded-lg p-1 text-slate-500 transition hover:bg-slate-800 hover:text-slate-300 disabled:opacity-50"
+        >
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -95,42 +102,54 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
           {file ? `${file.name} (${formatSize(file.size)})` : 'Choose a ROM file…'}
         </span>
         <input
+          ref={fileInputRef}
           type="file"
           required
           accept={ACCEPTED_EXTENSIONS}
           onChange={onFileChange}
           className="sr-only"
           aria-label="ROM file"
+          onClick={(event) => {
+            event.currentTarget.value = '';
+          }}
         />
       </label>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <input
-          type="text"
-          required
-          maxLength={80}
-          placeholder="Title"
+        <label className="block">
+          <span className="sr-only">Game title</span>
+          <input
+            type="text"
+            required
+            maxLength={80}
+            placeholder="Title"
+            aria-label="Game title"
           value={title}
           onChange={(e) => {
             setTitle(e.target.value);
             setTitleTouched(true);
           }}
-          className={input}
-        />
-        <select
+            className={input}
+          />
+        </label>
+        <label className="block">
+          <span className="sr-only">Emulator system</span>
+          <select
+            aria-label="Emulator system"
           value={system}
           onChange={(e) => {
             setSystem(e.target.value as SystemId);
             setSystemTouched(true);
           }}
-          className={input}
-        >
+            className={input}
+          >
           {SYSTEM_LIST.map((s) => (
             <option key={s.id} value={s.id}>
               {s.label}
             </option>
           ))}
-        </select>
+          </select>
+        </label>
       </div>
 
       <p className="text-xs text-slate-500">
@@ -138,11 +157,15 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
         stored privately in your account: only you can play it.
       </p>
 
-      {error && <p className="text-sm text-rose-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-rose-400">
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"
-        disabled={busy || !file}
+        disabled={busy || !file || Boolean(file && validateRomFile(file)) || !title.trim()}
         className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm flex items-center space-x-2 transition"
       >
         <Plus className="w-4 h-4" />
