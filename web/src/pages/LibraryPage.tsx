@@ -126,9 +126,9 @@ export default function LibraryPage() {
             <h2 className="text-lg font-semibold text-white">{t('browseGames')}</h2>
             <p className="mt-1 text-sm text-slate-500" role="status" aria-live="polite">
               {loading
-                ? {t('loadingCollection')}
+                ? t('loadingCollection')
                 : deletingGameId
-                  ? {t('removingGame')}
+                  ? t('removingGame')
                   : deleteMessage ?? t('showingGames', { shown: filtered.length, total: games.length })}
             </p>
           </div>
