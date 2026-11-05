@@ -34,13 +34,29 @@ export default function ControlsPage() {
   useEffect(() => {
     if (!listening) return;
     const onKey = (event: KeyboardEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
       if (event.code === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
         setListening(null);
         return;
       }
-      if (event.code === 'Tab' || event.code === 'MetaLeft' || event.code === 'MetaRight') return;
+
+      const modifierKeys = [
+        'ShiftLeft',
+        'ShiftRight',
+        'ControlLeft',
+        'ControlRight',
+        'AltLeft',
+        'AltRight',
+        'MetaLeft',
+        'MetaRight',
+      ];
+
+      if (event.code === 'Tab' || modifierKeys.includes(event.code)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
       const next = { ...bindings };
       const conflict = Object.keys(next).find((id) => next[id] === event.code && id !== listening);
       if (conflict) next[conflict] = next[listening];
