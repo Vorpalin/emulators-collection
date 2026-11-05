@@ -169,66 +169,56 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3 shadow-inner shadow-black/10">
-          <div className="mb-2 flex items-center justify-between gap-3">
+        <div
+          className="rounded-2xl border border-slate-700 bg-slate-900/80 p-3 sm:p-4"
+          role="group"
+          aria-label="Filter games by system"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
               Filter by system
             </span>
-            <span className="text-xs font-medium tabular-nums text-slate-400">
-              {filter === 'all' ? games.length : filtered.length} shown
+            <span className="text-xs font-medium text-slate-400">
+              {filter === 'all' ? 'All systems selected' : SYSTEM_LIST.find((system) => system.id === filter)?.label}
             </span>
           </div>
-          <div
-            className="rounded-2xl border border-slate-700 bg-slate-900/80 p-3 sm:p-4"
-            role="group"
-            aria-label="Filter games by system"
-          >
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Filter by system
-              </span>
-              <span className="text-xs font-medium text-slate-400">
-                {filter === 'all' ? 'All systems selected' : SYSTEM_LIST.find((system) => system.id === filter)?.label}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setFilter('all')}
-                aria-pressed={filter === 'all'}
-                className={pill(filter === 'all')}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setFilter('all')}
+              aria-pressed={filter === 'all'}
+              className={pill(filter === 'all')}
+            >
+              All systems
+              <span
+                className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums ${
+                  filter === 'all' ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-950/50 text-slate-100'
+                }`}
               >
-                All systems
-                <span
-                  className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums ${
-                    filter === 'all' ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-950/50 text-slate-100'
-                  }`}
+                {countForSystem('all')}
+              </span>
+            </button>
+            {SYSTEM_LIST.map((system) => {
+              const active = filter === system.id;
+              return (
+                <button
+                  type="button"
+                  key={system.id}
+                  onClick={() => setFilter(system.id)}
+                  aria-pressed={active}
+                  className={pill(active)}
                 >
-                  {countForSystem('all')}
-                </span>
-              </button>
-              {SYSTEM_LIST.map((system) => {
-                const active = filter === system.id;
-                return (
-                  <button
-                    type="button"
-                    key={system.id}
-                    onClick={() => setFilter(system.id)}
-                    aria-pressed={active}
-                    className={pill(active)}
+                  {system.label}
+                  <span
+                    className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums ${
+                      active ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-950/50 text-slate-100'
+                    }`}
                   >
-                    {system.label}
-                    <span
-                      className={`rounded-md px-1.5 py-0.5 text-xs tabular-nums ${
-                        active ? 'bg-slate-950/15 text-slate-950' : 'bg-slate-950/50 text-slate-100'
-                      }`}
-                    >
-                      {countForSystem(system.id)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    {countForSystem(system.id)}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
