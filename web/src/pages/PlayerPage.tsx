@@ -45,6 +45,7 @@ export default function PlayerPage() {
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState<number | null>(null);
   const [stateLoading, setStateLoading] = useState(false);
+  const [stateMessage, setStateMessage] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -179,6 +180,7 @@ export default function PlayerPage() {
     if (!session || !game) return;
 
     setError(null);
+    setStateMessage(null);
 
     try {
       const state = session.saveState();
@@ -197,6 +199,7 @@ export default function PlayerPage() {
       anchor.remove();
 
       URL.revokeObjectURL(url);
+      setStateMessage('Save state downloaded.');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -218,6 +221,7 @@ export default function PlayerPage() {
 
     setStateLoading(true);
     setError(null);
+    setStateMessage(null);
 
     let wasPaused = session.isPaused;
 
@@ -240,6 +244,7 @@ export default function PlayerPage() {
       }
 
       setPaused(session.isPaused);
+      setStateMessage('Save state loaded successfully.');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -409,6 +414,16 @@ export default function PlayerPage() {
               ×
             </button>
           </div>
+        )}
+
+        {stateMessage && (
+          <p
+            role="status"
+            aria-live="polite"
+            className="border-t border-emerald-500/20 bg-emerald-500/5 px-4 py-2.5 text-sm text-emerald-300"
+          >
+            {stateMessage}
+          </p>
         )}
 
         {/* Control bar */}
