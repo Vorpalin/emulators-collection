@@ -126,7 +126,7 @@ export default function Layout() {
             ref={menuButtonRef}
             type="button"
             className="rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-300 md:hidden"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={mobileMenuOpen ? t('closeMenu') : t('openMenu')}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-navigation"
             onClick={() => setMobileMenuOpen((open) => !open)}
@@ -185,7 +185,7 @@ export default function Layout() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 text-xs text-slate-600 sm:flex-row">
           <span>© {new Date().getFullYear()} Emulators Collection</span>
           <span className="flex items-center gap-1.5">
-            Built for retro gaming <ChevronRight className="h-3 w-3 text-cyan-500" /> React ·
+            {t('builtForRetro')} <ChevronRight className="h-3 w-3 text-cyan-500" /> React ·
             WebAssembly
           </span>
         </div>
