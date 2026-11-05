@@ -199,7 +199,12 @@ export default function ControlsPage() {
                   title={bindings[action.id] ?? 'Unassigned'}
                   aria-label={`Remap ${action.label} key`}
                   aria-pressed={active}
-                  onClick={() => setListening(action.id)}
+                  onClick={() => {
+                    setListening(action.id);
+                    setSaveError(null);
+                    setSaved(false);
+                    setSaveNotice(null);
+                  }}
                   className={`min-w-[76px] rounded-lg border px-3 py-2 font-mono text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:opacity-50 ${active ? 'border-cyan-300 bg-cyan-400 text-slate-950' : 'border-slate-700 bg-slate-800 text-cyan-300 hover:border-cyan-400/40 hover:bg-slate-700'}`}
                 >
                   {bindings[action.id] ? keyLabel(bindings[action.id]) : '—'}
