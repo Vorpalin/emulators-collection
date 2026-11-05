@@ -10,16 +10,24 @@ export default function ControlsPage() {
   const [systemId, setSystemId] = useState<SystemId>('gameboy');
   const [listening, setListening] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const system = SYSTEMS[systemId];
   const bindings = bindingsFor(systemId);
 
   const save = async (next: Record<string, string>) => {
     setSaveError(null);
+    setSaved(false);
+    setSaving(true);
+
     try {
       await update({ key_bindings: { ...settings.key_bindings, [systemId]: next } });
+      setSaved(true);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -85,14 +93,18 @@ export default function ControlsPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
           Choose a system
         </h2>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Choose a system">
           {SYSTEM_LIST.map((item) => (
             <button
               key={item.id}
+              type="button"
               onClick={() => {
                 setSystemId(item.id);
                 setListening(null);
+                setSaveError(null);
+                setSaved(false);
               }}
+              aria-pressed={systemId === item.id}
               className={systemButton(systemId === item.id)}
             >
               {item.label}
@@ -111,7 +123,7 @@ export default function ControlsPage() {
           </div>
           <button
             type="button"
-            disabled={loading}
+            disabled={loading || saving}
             onClick={() => {
               setListening(null);
               void save(defaultsFor(systemId));
@@ -155,8 +167,10 @@ export default function ControlsPage() {
                 </div>
                 <button
                   type="button"
-                  disabled={loading}
+                  disabled={loading || saving}
                   title={bindings[action.id] ?? 'Unassigned'}
+                  aria-label={`Remap ${action.label} key`}
+                  aria-pressed={active}
                   onClick={() => setListening(action.id)}
                   className={`min-w-[76px] rounded-lg border px-3 py-2 font-mono text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:opacity-50 ${active ? 'border-cyan-300 bg-cyan-400 text-slate-950' : 'border-slate-700 bg-slate-800 text-cyan-300 hover:border-cyan-400/40 hover:bg-slate-700'}`}
                 >
@@ -166,9 +180,21 @@ export default function ControlsPage() {
             );
           })}
         </div>
-        <div className="flex items-center gap-2 border-t border-slate-800 px-5 py-3 text-xs text-slate-500">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> Keyboard changes are saved
-          automatically.
+        <div
+          className="flex items-center gap-2 border-t border-slate-800 px-5 py-3 text-xs text-slate-500"
+          role="status"
+          aria-live="polite"
+        >
+          {saving ? (
+            'Saving keyboard changes…'
+          ) : saved ? (
+            <>
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              Keyboard changes saved.
+            </>
+          ) : (
+            'Keyboard changes are saved automatically after each update.'
+          )}
         </div>
       </section>
     </div>
