@@ -49,32 +49,33 @@ export default function LoginPage() {
     setError(null);
     setInfo(null);
 
-    if (mode === 'forgot') {
-      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: appUrl('reset-password'),
-      });
+    try {
+      if (mode === 'forgot') {
+        const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: appUrl('reset-password'),
+        });
 
-      if (err?.status === 429) {
-        setError('Too many requests. Please wait a minute before trying again.');
-      } else {
-        if (err) console.error(err);
-        setInfo('If an account exists for this email, a reset link has been sent.');
-        setCooldown(RESET_COOLDOWN_SECONDS);
+        if (err?.status === 429) {
+          setError('Too many requests. Please wait a minute before trying again.');
+        } else {
+          if (err) console.error(err);
+          setInfo('If an account exists for this email, a reset link has been sent.');
+          setCooldown(RESET_COOLDOWN_SECONDS);
+        }
+        return;
       }
-      setBusy(false);
-      return;
-    }
 
-    if (mode === 'signin') {
-      const { error: err } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (err) setError(err.message);
-    } else {
+      if (mode === 'signin') {
+        const { error: err } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (err) setError(err.message);
+        return;
+      }
+
       if (!USERNAME_RE.test(username)) {
         setError('Username : 3 to 20 characters (letters, numbers, _).');
-        setBusy(false);
         return;
       }
 
@@ -83,12 +84,10 @@ export default function LoginPage() {
       });
       if (rpcErr) {
         setError(rpcErr.message);
-        setBusy(false);
         return;
       }
       if (!free) {
         setError('This username is already taken.');
-        setBusy(false);
         return;
       }
 
@@ -97,14 +96,16 @@ export default function LoginPage() {
         password,
         options: {
           data: { username },
-
           emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
         },
       });
       if (err) setError(err.message);
       else if (!data.session) setInfo('Account created: check your email to confirm.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Authentication request failed.');
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   };
 
   const input =
