@@ -56,6 +56,9 @@ export default function PlayerPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setError(null);
+    setGame(null);
+    setRom(null);
     setStatus('loading');
 
     (async () => {
@@ -262,8 +265,11 @@ export default function PlayerPage() {
 
   if (status === 'error') {
     return (
-      <div className="max-w-xl mx-auto mt-12 space-y-4">
-        <div className="flex items-start space-x-3 bg-rose-500/10 border border-rose-500/40 text-rose-300 rounded-xl p-4 text-sm">
+      <div className="mx-auto mt-12 max-w-xl space-y-4">
+        <div
+          role="alert"
+          className="flex items-start space-x-3 rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-300"
+        >
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -294,7 +300,8 @@ export default function PlayerPage() {
 
       <div
         ref={frameRef}
-        className="relative bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col"
+        aria-busy={status === 'loading' || settingsLoading}
+        className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl"
       >
         {/* Title bar */}
         <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
@@ -342,7 +349,12 @@ export default function PlayerPage() {
                 width: `min(100%, calc(65vh * ${aspect}))`,
               }}
             >
-              <canvas ref={canvasRef} className="pixelated block w-full h-full" />
+              <canvas
+                ref={canvasRef}
+                role="img"
+                aria-label={`${game?.title ?? 'Game'} screen`}
+                className="pixelated block h-full w-full"
+              />
 
               {playing && settings.crt_filter && (
                 <div
@@ -365,12 +377,15 @@ export default function PlayerPage() {
               {!playing && (
                 <div className="absolute inset-0 z-30 bg-slate-950 flex items-center justify-center">
                   <button
+                    type="button"
                     onClick={() => void start()}
                     disabled={status !== 'ready' || settingsLoading}
                     className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition"
                   >
                     <Play className="w-5 h-5 fill-current" />
-                    <span>{status === 'loading' || settingsLoading ? 'Loading…' : 'START'}</span>
+                    <span role="status" aria-live="polite">
+                      {status === 'loading' || settingsLoading ? 'Loading…' : 'START'}
+                    </span>
                   </button>
                 </div>
               )}
@@ -401,6 +416,7 @@ export default function PlayerPage() {
           <div className="flex items-center space-x-2">
             {/* Pause */}
             <button
+              type="button"
               onClick={togglePause}
               disabled={!playing}
               className={bar}
@@ -412,6 +428,7 @@ export default function PlayerPage() {
 
             {/* Reset */}
             <button
+              type="button"
               onClick={() => sessionRef.current?.reset()}
               disabled={!playing}
               className={bar}
@@ -423,6 +440,7 @@ export default function PlayerPage() {
 
             {/* Save state */}
             <button
+              type="button"
               onClick={saveState}
               disabled={!playing || stateLoading}
               className={bar}
@@ -434,6 +452,7 @@ export default function PlayerPage() {
 
             {/* Load state */}
             <button
+              type="button"
               onClick={openStatePicker}
               disabled={!playing || stateLoading}
               className={bar}
@@ -502,6 +521,7 @@ export default function PlayerPage() {
             {/* Fullscreen */}
             {document.fullscreenEnabled && (
               <button
+                type="button"
                 onClick={() => void toggleFullscreen()}
                 className={bar}
                 aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
