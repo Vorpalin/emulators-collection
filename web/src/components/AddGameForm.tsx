@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Plus, Upload, X } from 'lucide-react';
 import { ACCEPTED_EXTENSIONS, SYSTEM_LIST, detectSystem, type SystemId } from '../emulator/systems';
 import { validateRomFile, type NewGame } from '../hooks/useGames';
+import { useI18n } from '../i18n/I18nProvider';
 
 /**
  * Props interface defines the properties for the AddGameForm component.
@@ -41,6 +42,7 @@ function formatSize(bytes: number): string {
  * @returns The AddGameForm component.
  */
 export default function AddGameForm({ onSubmit, onCancel }: Props) {
+  const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
@@ -86,12 +88,12 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
       className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3"
     >
       <div className="flex items-center justify-between">
-        <h2 className="font-bold text-slate-200 text-sm">Add a game</h2>
+        <h2 className="font-bold text-slate-200 text-sm">{t('addGameTitle')}</h2>
         <button
           type="button"
           onClick={onCancel}
           disabled={busy}
-          aria-label="Close add game form"
+          aria-label={t('closeAddGame')}
           className="rounded-lg p-1 text-slate-500 transition hover:bg-slate-800 hover:text-slate-300 disabled:opacity-50"
         >
           <X className="w-4 h-4" />
@@ -104,7 +106,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
       >
         <Upload className="w-4 h-4 text-cyan-400 shrink-0" />
         <span className="min-w-0 truncate text-sm text-slate-300" role="status" aria-live="polite">
-          {file ? `${file.name} (${formatSize(file.size)})` : 'Choose a ROM file…'}
+          {file ? `${file.name} (${formatSize(file.size)})` : t('chooseRom')}
         </span>
         <input
           ref={fileInputRef}
@@ -133,8 +135,8 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
             required
             disabled={busy}
             maxLength={80}
-            placeholder="Title"
-            aria-label="Game title"
+            placeholder={t('gameTitle')}
+            aria-label={t('gameTitle')}
             value={title}
             onChange={(e) => {
               setTitle(e.target.value);
@@ -167,8 +169,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
       </div>
 
       <p id="rom-file-help" className="text-xs text-slate-500">
-        Accepted formats: {ACCEPTED_EXTENSIONS.split(',').join(', ')}. Maximum 16 MB. The file is
-        stored privately in your account: only you can play it.
+        {t('acceptedFormats', { formats: ACCEPTED_EXTENSIONS.split(',').join(', ') })}
       </p>
 
       {error && (
@@ -183,7 +184,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
         className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm flex items-center space-x-2 transition"
       >
         <Plus className="w-4 h-4" />
-        <span>{busy ? 'Uploading…' : 'Add'}</span>
+        <span>{busy ? t('uploading') : t('add')}</span>
       </button>
     </form>
   );
