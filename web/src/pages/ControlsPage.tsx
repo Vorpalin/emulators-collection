@@ -12,6 +12,7 @@ export default function ControlsPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
   const system = SYSTEMS[systemId];
   const bindings = bindingsFor(systemId);
@@ -59,7 +60,17 @@ export default function ControlsPage() {
 
       const next = { ...bindings };
       const conflict = Object.keys(next).find((id) => next[id] === event.code && id !== listening);
-      if (conflict) next[conflict] = next[listening];
+      if (conflict) {
+        const conflictingAction = system.actions.find((action) => action.id === conflict);
+        setSaveNotice(
+          conflictingAction
+            ? `${keyLabel(event.code)} was already assigned to ${conflictingAction.label}; the bindings were swapped.`
+            : 'An existing key assignment was swapped.',
+        );
+        next[conflict] = next[listening];
+      } else {
+        setSaveNotice(null);
+      }
       next[listening] = event.code;
       void save(next);
       setListening(null);
@@ -119,6 +130,7 @@ export default function ControlsPage() {
                 setListening(null);
                 setSaveError(null);
                 setSaved(false);
+                setSaveNotice(null);
               }}
               aria-pressed={systemId === item.id}
               className={systemButton(systemId === item.id)}
@@ -203,6 +215,11 @@ export default function ControlsPage() {
         >
           {saving ? (
             'Saving keyboard changes…'
+          ) : saveNotice ? (
+            <>
+              <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+              {saveNotice}
+            </>
           ) : saved ? (
             <>
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
