@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useProfile } from '../hooks/useProfile';
 import { useTheme } from '../theme/ThemeProvider';
 import { useI18n } from '../i18n/I18nProvider';
+import { useI18n } from '../i18n/I18nProvider';
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
@@ -17,6 +18,7 @@ export default function Layout() {
   const { user, signOut } = useAuth();
   const { username } = useProfile();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useI18n();
   const { language, setLanguage, t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -76,7 +78,7 @@ export default function Layout() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <label className="sr-only" htmlFor="theme-preference">Color theme</label>
+            <label className="sr-only" htmlFor="theme-preference">{t('theme')}</label>
             <select
               id="theme-preference"
               value={theme}
@@ -86,6 +88,16 @@ export default function Layout() {
               <option value="system">{t('systemTheme')}</option>
               <option value="light">{t('lightTheme')}</option>
               <option value="dark">{t('darkTheme')}</option>
+            </select>
+            <label className="sr-only" htmlFor="language-preference">{t('language')}</label>
+            <select
+              id="language-preference"
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as typeof language)}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-xs font-medium text-slate-300 outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            >
+              <option value="en">{t('english')}</option>
+              <option value="fr">{t('french')}</option>
             </select>
             <a
               href="https://github.com/Vorpalin/emulators-collection"
@@ -136,7 +148,7 @@ export default function Layout() {
               {navigation}
             </nav>
             <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-800 pt-3">
-              <label className="sr-only" htmlFor="mobile-theme-preference">Color theme</label>
+              <label className="sr-only" htmlFor="mobile-theme-preference">{t('theme')}</label>
               <select
                 id="mobile-theme-preference"
                 value={theme}
@@ -146,6 +158,16 @@ export default function Layout() {
                 <option value="system">{t('systemTheme')}</option>
                 <option value="light">{t('lightTheme')}</option>
                 <option value="dark">{t('darkTheme')}</option>
+              </select>
+              <label className="sr-only" htmlFor="mobile-language-preference">{t('language')}</label>
+              <select
+                id="mobile-language-preference"
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as typeof language)}
+                className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-2 text-xs font-medium text-slate-300"
+              >
+                <option value="en">{t('english')}</option>
+                <option value="fr">{t('french')}</option>
               </select>
               <span className="max-w-[70%] truncate text-xs text-slate-500">
                 {username ?? user?.email}
