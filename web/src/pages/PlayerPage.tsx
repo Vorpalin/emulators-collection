@@ -443,7 +443,6 @@ export default function PlayerPage() {
                 role="img"
                 aria-label={t('gameScreen', { title: game?.title ?? t('game') })}
                 className={"block " + (display.blur ? "display-soft-blur " : "") + (display.palette === "gb-green" ? "display-gb-green" : display.palette === "gb-gray" ? "display-gb-gray" : display.palette === "gb-blue" ? "display-gb-blue" : "") + (display.integerScale ? " display-integer-scale" : " display-smooth-scale")}
-                style={{ width: "100%", height: "100%" }}
               />
 
               {playing && (display.scanlines || display.curvature) && (
