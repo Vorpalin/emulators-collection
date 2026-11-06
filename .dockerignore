@@ -1,18 +1,20 @@
 .git
 .github
+.vscode
+.idea
 
 node_modules
 web/node_modules
 
 dist
 web/dist
-
 build
 build-wasm
 
-.vscode
-.idea
-
+tests
+docs
+wiki
+scripts
 *.log
 
 games

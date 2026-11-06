@@ -350,20 +350,39 @@ emulators-collection/
 
 ## 🐳 Docker
 
-Docker is the recommended way to run the complete web application.
+Docker is the recommended way to build the WebAssembly modules and run the web application in a reproducible environment.
 
 ### Requirements
 
-- Docker
+- Docker with **BuildKit** enabled
+- Docker Buildx (recommended)
 - A modern web browser
 
-Build the image:
+The Dockerfile uses BuildKit cache mounts to speed up dependency installation. A regular legacy `docker build` without BuildKit will fail on the `RUN --mount` instruction.
+
+### Build with Docker Buildx (recommended)
+
+Build and load the image into the local Docker image store:
 
 ```bash
-docker build -t emulator-collection .
+docker buildx build --load -t emulator-collection .
 ```
 
-Run it:
+If you do not have a Buildx builder configured yet, create one and initialize it:
+
+```bash
+docker buildx create --name local-builder --use
+docker buildx inspect --bootstrap
+docker buildx build --load -t emulator-collection .
+```
+
+Alternatively, with a Docker installation that supports BuildKit through the classic build command:
+
+```bash
+DOCKER_BUILDKIT=1 docker build -t emulator-collection .
+```
+
+### Run the development server
 
 ```bash
 docker run --rm -p 5173:5173 emulator-collection
@@ -375,7 +394,24 @@ Then open:
 http://localhost:5173
 ```
 
-The Docker build contains the tooling required to build the emulator cores to WebAssembly and run the frontend.
+### Build configuration
+
+The Dockerfile uses a **multi-stage build**:
+
+1. **WASM builder** — Emscripten compiles the C++ emulator cores into `.js` and `.wasm` artifacts.
+2. **Development image** — Node.js 24 (Bookworm slim) installs the frontend dependencies and runs the Vite development server. The Emscripten SDK and native build tools are not included in the final image.
+
+The npm dependency installation uses a BuildKit cache mount, while the Docker layers keep dependency installation separate from frontend source changes. This improves rebuild times and keeps the final development image smaller.
+
+To enable warnings-as-errors in the C++ WebAssembly build:
+
+```bash
+docker buildx build --load \
+    --build-arg WARNINGS_AS_ERRORS=ON \
+    -t emulator-collection .
+```
+
+To use the default configuration, omit the build argument (defaults to `OFF`).
 
 ---
 
@@ -497,6 +533,8 @@ The main CI pipeline validates:
 - Commit messages
 - Docker build
 - WebAssembly/frontend build
+
+The build and pre-commit jobs run independently to reduce total pipeline duration. The Docker build uses **Docker Buildx** with GitHub Actions cache, allowing reusable build layers across workflow runs. The pre-commit job also caches its Python dependencies.
 
 It runs for pushes to `main` and pull requests targeting `main`.
 
