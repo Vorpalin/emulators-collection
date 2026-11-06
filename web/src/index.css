@@ -169,3 +169,10 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+.display-soft-blur { filter: blur(0.35px); }
+.display-gb-green { filter: sepia(.8) saturate(1.8) hue-rotate(35deg) contrast(1.08); }
+.display-gb-gray { filter: grayscale(1) contrast(1.08); }
+.display-gb-blue { filter: sepia(.5) saturate(1.6) hue-rotate(175deg); }
+.display-curvature { border-radius: 3.5% / 4%; box-shadow: inset 0 0 24px rgba(0,0,0,.45); }
+@media (prefers-reduced-motion: reduce) { .display-soft-blur { transition: none !important; } }
