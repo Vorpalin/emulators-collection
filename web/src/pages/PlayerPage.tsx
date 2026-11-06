@@ -105,6 +105,32 @@ export default function PlayerPage() {
     return () => window.clearInterval(interval);
   }, [playing, display.glow]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const screen = canvas?.parentElement;
+    if (!canvas || !screen) return;
+    const resize = () => {
+      if (!display.integerScale || canvas.width <= 0 || canvas.height <= 0) {
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        return;
+      }
+      const bounds = screen.getBoundingClientRect();
+      const scale = Math.floor(Math.min(bounds.width / canvas.width, bounds.height / canvas.height));
+      if (scale >= 1) {
+        canvas.style.width = `${canvas.width * scale}px`;
+        canvas.style.height = `${canvas.height * scale}px`;
+      } else {
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+      }
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(screen);
+    resize();
+    return () => observer.disconnect();
+  }, [display.integerScale, playing, aspect]);
+
   const effectiveVolume = volume ?? settings.volume;
 
   useEffect(() => {
@@ -403,7 +429,7 @@ export default function PlayerPage() {
             className={`relative flex items-center justify-center bg-black p-3 sm:p-4 ${isLandscape && isTouch ? 'min-h-[160px]' : 'min-h-[240px] sm:min-h-[320px]'}`}
           >
             <div
-              className={"relative overflow-hidden shadow-2xl " + (display.deviceFrame === "gameboy" ? "border-[14px] border-[#8b956d] rounded-[28px]" : display.deviceFrame === "arcade" ? "border-[10px] border-slate-700 rounded-xl" : "border-4 border-slate-800 rounded-lg")}
+              className={"relative flex items-center justify-center overflow-hidden shadow-2xl " + (display.deviceFrame === "gameboy" ? "border-[14px] border-[#8b956d] rounded-[28px]" : display.deviceFrame === "arcade" ? "border-[10px] border-slate-700 rounded-xl" : "border-4 border-slate-800 rounded-lg")}
               style={{
                 aspectRatio: String(aspect),
                 boxShadow: display.glow && playing ? `0 0 24px 4px ${glowColor}, 0 0 65px ${glowColor}` : undefined,
@@ -414,7 +440,7 @@ export default function PlayerPage() {
                 ref={canvasRef}
                 role="img"
                 aria-label={t('gameScreen', { title: game?.title ?? t('game') })}
-                className={"pixelated block " + (display.blur ? "display-soft-blur " : "") + (display.palette === "gb-green" ? "display-gb-green" : display.palette === "gb-gray" ? "display-gb-gray" : display.palette === "gb-blue" ? "display-gb-blue" : "") + (display.integerScale ? " display-integer-scale" : " display-smooth-scale")}
+                className={"block " + (display.blur ? "display-soft-blur " : "") + (display.palette === "gb-green" ? "display-gb-green" : display.palette === "gb-gray" ? "display-gb-gray" : display.palette === "gb-blue" ? "display-gb-blue" : "") + (display.integerScale ? " display-integer-scale" : " display-smooth-scale")}
                 style={{ width: "100%", height: "100%" }}
               />
 
