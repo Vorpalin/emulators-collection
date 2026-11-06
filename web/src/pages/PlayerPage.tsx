@@ -362,7 +362,7 @@ export default function PlayerPage() {
             className={`relative flex items-center justify-center bg-black p-3 sm:p-4 ${isLandscape && isTouch ? 'min-h-[160px]' : 'min-h-[240px] sm:min-h-[320px]'}`}
           >
             <div
-              className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
+              className={"relative overflow-hidden shadow-2xl " + (deviceFrame === "gameboy" ? "border-[14px] border-[#8b956d] rounded-[28px]" : deviceFrame === "arcade" ? "border-[10px] border-slate-700 rounded-xl" : "border-4 border-slate-800 rounded-lg")}
               style={{
                 aspectRatio: String(aspect),
                 boxShadow: glow && playing ? '0 0 22px rgba(80,220,160,.25)' : undefined,
