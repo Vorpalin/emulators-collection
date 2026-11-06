@@ -81,7 +81,7 @@ export default function PlayerPage() {
   }, [display, displayStorageKey, displayLoadedFor]);
 
   useEffect(() => {
-    if (!playing || !display.glow || !canvasRef.current) return;
+    if (status !== 'playing' || !display.glow || !canvasRef.current) return;
     const sampleCanvas = document.createElement('canvas');
     sampleCanvas.width = sampleCanvas.height = 4;
     const sampleContext = sampleCanvas.getContext('2d', { willReadFrequently: true });
@@ -103,7 +103,7 @@ export default function PlayerPage() {
     sample();
     const interval = window.setInterval(sample, 700);
     return () => window.clearInterval(interval);
-  }, [playing, display.glow]);
+  }, [status, display.glow]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -126,10 +126,12 @@ export default function PlayerPage() {
       }
     };
     const observer = new ResizeObserver(resize);
+    const mutationObserver = new MutationObserver(resize);
     observer.observe(screen);
+    mutationObserver.observe(canvas, { attributes: true, attributeFilter: ['width', 'height'] });
     resize();
-    return () => observer.disconnect();
-  }, [display.integerScale, playing, aspect]);
+    return () => { observer.disconnect(); mutationObserver.disconnect(); };
+  }, [display.integerScale, status, display.ratio, game?.system]);
 
   const effectiveVolume = volume ?? settings.volume;
 
@@ -515,8 +517,8 @@ export default function PlayerPage() {
           <label className="flex items-center gap-2"><input type="checkbox" checked={display.blur} onChange={e => setDisplay(d => ({...d,blur:e.target.checked}))}/> {t('softBlur')}</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={display.integerScale} onChange={e => setDisplay(d => ({...d,integerScale:e.target.checked}))}/> {t('integerScaling')}</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={display.glow} onChange={e => setDisplay(d => ({...d,glow:e.target.checked}))}/> {t('screenGlow')}</label>
-          <label className="flex flex-col gap-1">{t('aspectRatio')}<select className="rounded bg-slate-800 p-1.5" value={display.ratio} onChange={e => setDisplay(d => ({...d,ratio:e.target.value}))}><option value="native">{t('nativeRatio')}</option><option value="8:7">8:7 (NES)</option><option value="4:3">4:3</option></select></label>
-          <label className="flex flex-col gap-1">{t('gameBoyPalette')}<select className="rounded bg-slate-800 p-1.5" value={display.palette} onChange={e => setDisplay(d => ({...d,palette:e.target.value}))}><option value="native">{t('originalPalette')}</option><option value="gb-green">{t('classicGreen')}</option><option value="gb-gray">{t('grayscale')}</option><option value="gb-blue">{t('bluePalette')}</option></select></label>
+          {game?.system === 'nes' && <label className="flex flex-col gap-1">{t('aspectRatio')}<select className="rounded bg-slate-800 p-1.5" value={display.ratio} onChange={e => setDisplay(d => ({...d,ratio:e.target.value}))}><option value="native">{t('nativeRatio')}</option><option value="8:7">8:7 (NES)</option><option value="4:3">4:3</option></select></label>}
+          {game?.system === 'gameboy' && <label className="flex flex-col gap-1">{t('gameBoyPalette')}<select className="rounded bg-slate-800 p-1.5" value={display.palette} onChange={e => setDisplay(d => ({...d,palette:e.target.value}))}><option value="native">{t('originalPalette')}</option><option value="gb-green">{t('classicGreen')}</option><option value="gb-gray">{t('grayscale')}</option><option value="gb-blue">{t('bluePalette')}</option></select></label>}
           <label className="flex flex-col gap-1">{t('deviceFrame')}<select className="rounded bg-slate-800 p-1.5" value={display.deviceFrame} onChange={e => setDisplay(d => ({...d,deviceFrame:e.target.value}))}><option value="none">{t('noFrame')}</option><option value="gameboy">Game Boy</option><option value="arcade">{t('arcadeFrame')}</option></select></label>
           <button type="button" className="rounded border border-slate-700 px-3 py-1.5" onClick={() => setDisplay(DEFAULT_DISPLAY)}>{t('resetDisplay')}</button>
         </section>}
@@ -585,7 +587,7 @@ export default function PlayerPage() {
           </div>
 
           <div className="flex items-center space-x-3">
-            <button type="button" onClick={() => setDisplayOptionsOpen(v => !v)} aria-expanded={displayOptionsOpen} className="px-2.5 py-1 rounded-lg text-xs border border-cyan-500/40 text-cyan-400">{t('displaySettings')}</button>
+            <button type="button" onClick={() => setDisplayOptionsOpen(v => !v)} aria-expanded={displayOptionsOpen} aria-label={t('displaySettings')} className="px-2.5 py-1 rounded-lg text-xs border border-cyan-500/40 text-cyan-400">{t('displaySettings')}</button>
 
 
             {/* Volume */}
