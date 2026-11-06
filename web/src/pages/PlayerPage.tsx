@@ -56,6 +56,14 @@ export default function PlayerPage() {
   const sessionRef = useRef<EmulatorSession | null>(null);
   const stateInputRef = useRef<HTMLInputElement>(null);
 
+  const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false);
+  const [scanlines, setScanlines] = useState(true);
+  const [blur, setBlur] = useState(false);
+  const [curvature, setCurvature] = useState(false);
+  const [ratio, setRatio] = useState('native');
+  const [palette, setPalette] = useState('native');
+  const [deviceFrame, setDeviceFrame] = useState('none');
+  const [glow, setGlow] = useState(true);
   const effectiveVolume = volume ?? settings.volume;
 
   useEffect(() => {
@@ -290,7 +298,8 @@ export default function PlayerPage() {
   }
 
   const system = game ? SYSTEMS[game.system] : null;
-  const aspect = system?.displayAspect ?? 1;
+  const nativeAspect = system?.displayAspect ?? 1;
+  const aspect = ratio === '8:7' ? 8 / 7 : ratio === '4:3' ? 4 / 3 : nativeAspect;
   const playing = status === 'playing';
 
   const bar =
@@ -356,6 +365,7 @@ export default function PlayerPage() {
               className="relative border-4 border-slate-800 rounded-lg overflow-hidden shadow-2xl"
               style={{
                 aspectRatio: String(aspect),
+                boxShadow: glow && playing ? '0 0 22px rgba(80,220,160,.25)' : undefined,
                 width: `min(100%, calc(${isLandscape && isTouch ? 52 : 65}vh * ${aspect}))`,
               }}
             >
@@ -363,12 +373,12 @@ export default function PlayerPage() {
                 ref={canvasRef}
                 role="img"
                 aria-label={t('gameScreen', { title: game?.title ?? t('game') })}
-                className="pixelated block h-full w-full"
+                className={"pixelated block h-full w-full " + (blur ? "display-soft-blur " : "") + (palette === "gb-green" ? "display-gb-green" : palette === "gb-gray" ? "display-gb-gray" : palette === "gb-blue" ? "display-gb-blue" : "")}
               />
 
-              {playing && settings.crt_filter && (
+              {playing && scanlines && (
                 <div
-                  className="pointer-events-none absolute inset-0 z-20"
+                  className={"pointer-events-none absolute inset-0 z-20 " + (curvature ? "display-curvature" : "")}
                   style={{
                     background:
                       'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06))',
@@ -431,6 +441,15 @@ export default function PlayerPage() {
           </p>
         )}
 
+        {displayOptionsOpen && <section className="border-t border-slate-800 bg-slate-950 p-4 flex flex-wrap gap-4 text-sm">
+          <label><input type="checkbox" checked={scanlines} onChange={e => setScanlines(e.target.checked)}/> {t('scanlines')}</label>
+          <label><input type="checkbox" checked={curvature} onChange={e => setCurvature(e.target.checked)}/> {t('crtCurvature')}</label>
+          <label><input type="checkbox" checked={blur} onChange={e => setBlur(e.target.checked)}/> {t('softBlur')}</label>
+          <label><input type="checkbox" checked={glow} onChange={e => setGlow(e.target.checked)}/> {t('screenGlow')}</label>
+          <label>{t('aspectRatio')} <select value={ratio} onChange={e => setRatio(e.target.value)}><option value="native">{t('nativeRatio')}</option><option value="8:7">8:7 (NES)</option><option value="4:3">4:3</option></select></label>
+          <label>{t('gameBoyPalette')} <select value={palette} onChange={e => setPalette(e.target.value)}><option value="native">{t('originalPalette')}</option><option value="gb-green">{t('classicGreen')}</option><option value="gb-gray">{t('grayscale')}</option><option value="gb-blue">{t('bluePalette')}</option></select></label>
+          <label>{t('deviceFrame')} <select value={deviceFrame} onChange={e => setDeviceFrame(e.target.value)}><option value="none">{t('noFrame')}</option><option value="gameboy">Game Boy</option><option value="arcade">{t('arcadeFrame')}</option></select></label>
+        </section>}
         {/* Control bar */}
         <div className="bg-slate-900 border-t border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
@@ -496,7 +515,7 @@ export default function PlayerPage() {
           </div>
 
           <div className="flex items-center space-x-3">
-            {/* CRT */}
+            <button type="button" onClick={() => setDisplayOptionsOpen(v => !v)} aria-expanded={displayOptionsOpen} className="px-2.5 py-1 rounded-lg text-xs border border-cyan-500/40 text-cyan-400">{t('displaySettings')}</button>
             <button
               type="button"
               aria-pressed={settings.crt_filter}
