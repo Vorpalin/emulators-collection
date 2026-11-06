@@ -4,7 +4,7 @@ export type Language = 'en' | 'fr';
 
 const messages: Record<Language, Record<string, string>> = {
   en: {
-    displaySettings: 'Display', scanlines: 'CRT scanlines', crtCurvature: 'CRT curvature', softBlur: 'Soft blur', integerScaling: 'Pixel/integer scaling', screenGlow: 'Screen glow', aspectRatio: 'Aspect ratio', nativeRatio: 'Native', gameBoyPalette: 'Game Boy palette', originalPalette: 'Original colors', classicGreen: 'Classic green', grayscale: 'Grayscale', bluePalette: 'Blue', deviceFrame: 'Device frame', noFrame: 'None', arcadeFrame: 'Arcade', resetDisplay: 'Reset display options',
+    displaySettings: 'Display', displayPerConsole: 'Settings are saved separately for {console}.', scanlines: 'CRT scanlines', crtCurvature: 'CRT curvature', softBlur: 'Soft blur', integerScaling: 'Pixel/integer scaling', screenGlow: 'Screen glow', aspectRatio: 'Aspect ratio', nativeRatio: 'Native', gameBoyPalette: 'Game Boy palette', originalPalette: 'Original colors', classicGreen: 'Classic green', grayscale: 'Grayscale', bluePalette: 'Blue', deviceFrame: 'Device frame', noFrame: 'None', arcadeFrame: 'Arcade', resetDisplay: 'Reset display options',
     library: 'Library',
     controls: 'Controls',
     signOut: 'Sign out',
@@ -157,7 +157,7 @@ const messages: Record<Language, Record<string, string>> = {
     ok: 'OK',
   },
   fr: {
-    displaySettings: 'Affichage', scanlines: 'Lignes CRT', crtCurvature: 'Courbure CRT', softBlur: 'Flou léger', integerScaling: 'Mise à l’échelle pixel entière', screenGlow: 'Halo lumineux', aspectRatio: 'Ratio d’image', nativeRatio: 'Natif', gameBoyPalette: 'Palette Game Boy', originalPalette: 'Couleurs originales', classicGreen: 'Vert classique', grayscale: 'Niveaux de gris', bluePalette: 'Bleu', deviceFrame: 'Cadre d’appareil', noFrame: 'Aucun', arcadeFrame: 'Arcade', resetDisplay: 'Réinitialiser l’affichage',
+    displaySettings: 'Affichage', displayPerConsole: 'Les réglages sont enregistrés séparément pour {console}.', scanlines: 'Lignes CRT', crtCurvature: 'Courbure CRT', softBlur: 'Flou léger', integerScaling: 'Mise à l’échelle pixel entière', screenGlow: 'Halo lumineux', aspectRatio: 'Ratio d’image', nativeRatio: 'Natif', gameBoyPalette: 'Palette Game Boy', originalPalette: 'Couleurs originales', classicGreen: 'Vert classique', grayscale: 'Niveaux de gris', bluePalette: 'Bleu', deviceFrame: 'Cadre d’appareil', noFrame: 'Aucun', arcadeFrame: 'Arcade', resetDisplay: 'Réinitialiser l’affichage',
     library: 'Bibliothèque',
     controls: 'Commandes',
     signOut: 'Déconnexion',
