@@ -1,6 +1,8 @@
 # Build the WebAssembly modules with the Emscripten toolchain.
 FROM emscripten/emsdk:6.0.13 AS wasm-builder
 
+ARG WARNINGS_AS_ERRORS=OFF
+
 WORKDIR /src
 
 # Avoid apt-get upgrade: it invalidates caches and makes builds less reproducible.
@@ -21,6 +23,7 @@ RUN emcmake cmake \
         -B build-wasm \
         -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
+        -DWARNINGS_AS_ERRORS=${WARNINGS_AS_ERRORS} \
     && cmake --build build-wasm --parallel \
     && mkdir -p /out/wasm \
     && cp build-wasm/emulators.js build-wasm/emulators.wasm /out/wasm/
