@@ -56,7 +56,16 @@ export default function PlayerPage() {
   const sessionRef = useRef<EmulatorSession | null>(null);
   const stateInputRef = useRef<HTMLInputElement>(null);
 
-  const DEFAULT_DISPLAY = { scanlines: true, curvature: false, blur: false, integerScale: true, ratio: 'native', palette: 'native', deviceFrame: 'none', glow: true };
+  const DEFAULT_DISPLAY = {
+    scanlines: true,
+    curvature: false,
+    blur: false,
+    integerScale: true,
+    ratio: 'native',
+    palette: 'native',
+    deviceFrame: 'none',
+    glow: true,
+  };
   const [display, setDisplay] = useState(DEFAULT_DISPLAY);
   const [displayOptionsOpen, setDisplayOptionsOpen] = useState(false);
   const [displayLoadedFor, setDisplayLoadedFor] = useState<string | null>(null);
@@ -77,7 +86,11 @@ export default function PlayerPage() {
 
   useEffect(() => {
     if (!displayStorageKey || displayLoadedFor !== displayStorageKey) return;
-    try { localStorage.setItem(displayStorageKey, JSON.stringify(display)); } catch { /* Keep settings active for this session. */ }
+    try {
+      localStorage.setItem(displayStorageKey, JSON.stringify(display));
+    } catch {
+      /* Keep settings active for this session. */
+    }
   }, [display, displayStorageKey, displayLoadedFor]);
 
   useEffect(() => {
@@ -92,13 +105,24 @@ export default function PlayerPage() {
       try {
         sampleContext.drawImage(source, 0, 0, 4, 4);
         const pixels = sampleContext.getImageData(0, 0, 4, 4).data;
-        let red = 0, green = 0, blue = 0, count = 0;
+        let red = 0,
+          green = 0,
+          blue = 0,
+          count = 0;
         for (let i = 0; i < pixels.length; i += 4) {
           if (pixels[i + 3] === 0) continue;
-          red += pixels[i]; green += pixels[i + 1]; blue += pixels[i + 2]; count++;
+          red += pixels[i];
+          green += pixels[i + 1];
+          blue += pixels[i + 2];
+          count++;
         }
-        if (count) setGlowColor(`rgba(${Math.round(red/count)}, ${Math.round(green/count)}, ${Math.round(blue/count)}, .38)`);
-      } catch { /* Canvas sampling may be unavailable on some browsers. */ }
+        if (count)
+          setGlowColor(
+            `rgba(${Math.round(red / count)}, ${Math.round(green / count)}, ${Math.round(blue / count)}, .38)`,
+          );
+      } catch {
+        /* Canvas sampling may be unavailable on some browsers. */
+      }
     };
     sample();
     const interval = window.setInterval(sample, 700);
@@ -116,7 +140,9 @@ export default function PlayerPage() {
         return;
       }
       const bounds = screen.getBoundingClientRect();
-      const scale = Math.floor(Math.min(bounds.width / canvas.width, bounds.height / canvas.height));
+      const scale = Math.floor(
+        Math.min(bounds.width / canvas.width, bounds.height / canvas.height),
+      );
       if (scale >= 1) {
         canvas.style.width = `${canvas.width * scale}px`;
         canvas.style.height = `${canvas.height * scale}px`;
@@ -130,7 +156,10 @@ export default function PlayerPage() {
     observer.observe(screen);
     mutationObserver.observe(canvas, { attributes: true, attributeFilter: ['width', 'height'] });
     resize();
-    return () => { observer.disconnect(); mutationObserver.disconnect(); };
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
   }, [display.integerScale, status, display.ratio, game?.system]);
 
   const effectiveVolume = volume ?? settings.volume;
@@ -431,10 +460,20 @@ export default function PlayerPage() {
             className={`relative flex items-center justify-center bg-black p-3 sm:p-4 ${isLandscape && isTouch ? 'min-h-[160px]' : 'min-h-[240px] sm:min-h-[320px]'}`}
           >
             <div
-              className={"relative flex items-center justify-center overflow-hidden shadow-2xl " + (display.deviceFrame === "gameboy" ? "border-[14px] border-[#8b956d] rounded-[28px]" : display.deviceFrame === "arcade" ? "border-[10px] border-slate-700 rounded-xl" : "border-4 border-slate-800 rounded-lg")}
+              className={
+                'relative flex items-center justify-center overflow-hidden shadow-2xl ' +
+                (display.deviceFrame === 'gameboy'
+                  ? 'border-[14px] border-[#8b956d] rounded-[28px]'
+                  : display.deviceFrame === 'arcade'
+                    ? 'border-[10px] border-slate-700 rounded-xl'
+                    : 'border-4 border-slate-800 rounded-lg')
+              }
               style={{
                 aspectRatio: String(aspect),
-                boxShadow: display.glow && playing ? `0 0 24px 4px ${glowColor}, 0 0 65px ${glowColor}` : undefined,
+                boxShadow:
+                  display.glow && playing
+                    ? `0 0 24px 4px ${glowColor}, 0 0 65px ${glowColor}`
+                    : undefined,
                 width: `min(100%, calc(${isLandscape && isTouch ? 52 : 65}vh * ${aspect}))`,
               }}
             >
@@ -442,14 +481,30 @@ export default function PlayerPage() {
                 ref={canvasRef}
                 role="img"
                 aria-label={t('gameScreen', { title: game?.title ?? t('game') })}
-                className={"block " + (display.blur ? "display-soft-blur " : "") + (display.palette === "gb-green" ? "display-gb-green" : display.palette === "gb-gray" ? "display-gb-gray" : display.palette === "gb-blue" ? "display-gb-blue" : "") + (display.integerScale ? " display-integer-scale" : " display-smooth-scale")}
+                className={
+                  'block ' +
+                  (display.blur ? 'display-soft-blur ' : '') +
+                  (display.palette === 'gb-green'
+                    ? 'display-gb-green'
+                    : display.palette === 'gb-gray'
+                      ? 'display-gb-gray'
+                      : display.palette === 'gb-blue'
+                        ? 'display-gb-blue'
+                        : '') +
+                  (display.integerScale ? ' display-integer-scale' : ' display-smooth-scale')
+                }
               />
 
               {playing && (display.scanlines || display.curvature) && (
                 <div
-                  className={"pointer-events-none absolute inset-0 z-20 " + (display.curvature ? "display-curvature" : "")}
+                  className={
+                    'pointer-events-none absolute inset-0 z-20 ' +
+                    (display.curvature ? 'display-curvature' : '')
+                  }
                   style={{
-                    background: display.scanlines ? 'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06))' : undefined,
+                    background: display.scanlines
+                      ? 'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06))'
+                      : undefined,
                     backgroundSize: '100% 4px, 6px 100%',
                   }}
                 />
@@ -509,18 +564,104 @@ export default function PlayerPage() {
           </p>
         )}
 
-        {displayOptionsOpen && <section aria-label={t('displaySettings')} className="border-t border-slate-800 bg-slate-950 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-          <p className="col-span-full text-xs text-slate-500">{t('displayPerConsole', { console: system?.label ?? '' })}</p>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={display.scanlines} onChange={e => setDisplay(d => ({...d,scanlines:e.target.checked}))}/> {t('scanlines')}</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={display.curvature} onChange={e => setDisplay(d => ({...d,curvature:e.target.checked}))}/> {t('crtCurvature')}</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={display.blur} onChange={e => setDisplay(d => ({...d,blur:e.target.checked}))}/> {t('softBlur')}</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={display.integerScale} onChange={e => setDisplay(d => ({...d,integerScale:e.target.checked}))}/> {t('integerScaling')}</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={display.glow} onChange={e => setDisplay(d => ({...d,glow:e.target.checked}))}/> {t('screenGlow')}</label>
-          {game?.system === 'nes' && <label className="flex flex-col gap-1">{t('aspectRatio')}<select className="rounded bg-slate-800 p-1.5" value={display.ratio} onChange={e => setDisplay(d => ({...d,ratio:e.target.value}))}><option value="native">{t('nativeRatio')}</option><option value="8:7">8:7 (NES)</option><option value="4:3">4:3</option></select></label>}
-          {game?.system === 'gameboy' && <label className="flex flex-col gap-1">{t('gameBoyPalette')}<select className="rounded bg-slate-800 p-1.5" value={display.palette} onChange={e => setDisplay(d => ({...d,palette:e.target.value}))}><option value="native">{t('originalPalette')}</option><option value="gb-green">{t('classicGreen')}</option><option value="gb-gray">{t('grayscale')}</option><option value="gb-blue">{t('bluePalette')}</option></select></label>}
-          <label className="flex flex-col gap-1">{t('deviceFrame')}<select className="rounded bg-slate-800 p-1.5" value={display.deviceFrame} onChange={e => setDisplay(d => ({...d,deviceFrame:e.target.value}))}><option value="none">{t('noFrame')}</option><option value="gameboy">Game Boy</option><option value="arcade">{t('arcadeFrame')}</option></select></label>
-          <button type="button" className="rounded border border-slate-700 px-3 py-1.5" onClick={() => setDisplay(DEFAULT_DISPLAY)}>{t('resetDisplay')}</button>
-        </section>}
+        {displayOptionsOpen && (
+          <section
+            aria-label={t('displaySettings')}
+            className="border-t border-slate-800 bg-slate-950 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm"
+          >
+            <p className="col-span-full text-xs text-slate-500">
+              {t('displayPerConsole', { console: system?.label ?? '' })}
+            </p>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={display.scanlines}
+                onChange={(e) => setDisplay((d) => ({ ...d, scanlines: e.target.checked }))}
+              />{' '}
+              {t('scanlines')}
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={display.curvature}
+                onChange={(e) => setDisplay((d) => ({ ...d, curvature: e.target.checked }))}
+              />{' '}
+              {t('crtCurvature')}
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={display.blur}
+                onChange={(e) => setDisplay((d) => ({ ...d, blur: e.target.checked }))}
+              />{' '}
+              {t('softBlur')}
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={display.integerScale}
+                onChange={(e) => setDisplay((d) => ({ ...d, integerScale: e.target.checked }))}
+              />{' '}
+              {t('integerScaling')}
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={display.glow}
+                onChange={(e) => setDisplay((d) => ({ ...d, glow: e.target.checked }))}
+              />{' '}
+              {t('screenGlow')}
+            </label>
+            {game?.system === 'nes' && (
+              <label className="flex flex-col gap-1">
+                {t('aspectRatio')}
+                <select
+                  className="rounded bg-slate-800 p-1.5"
+                  value={display.ratio}
+                  onChange={(e) => setDisplay((d) => ({ ...d, ratio: e.target.value }))}
+                >
+                  <option value="native">{t('nativeRatio')}</option>
+                  <option value="8:7">8:7 (NES)</option>
+                  <option value="4:3">4:3</option>
+                </select>
+              </label>
+            )}
+            {game?.system === 'gameboy' && (
+              <label className="flex flex-col gap-1">
+                {t('gameBoyPalette')}
+                <select
+                  className="rounded bg-slate-800 p-1.5"
+                  value={display.palette}
+                  onChange={(e) => setDisplay((d) => ({ ...d, palette: e.target.value }))}
+                >
+                  <option value="native">{t('originalPalette')}</option>
+                  <option value="gb-green">{t('classicGreen')}</option>
+                  <option value="gb-gray">{t('grayscale')}</option>
+                  <option value="gb-blue">{t('bluePalette')}</option>
+                </select>
+              </label>
+            )}
+            <label className="flex flex-col gap-1">
+              {t('deviceFrame')}
+              <select
+                className="rounded bg-slate-800 p-1.5"
+                value={display.deviceFrame}
+                onChange={(e) => setDisplay((d) => ({ ...d, deviceFrame: e.target.value }))}
+              >
+                <option value="none">{t('noFrame')}</option>
+                <option value="gameboy">Game Boy</option>
+                <option value="arcade">{t('arcadeFrame')}</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              className="rounded border border-slate-700 px-3 py-1.5"
+              onClick={() => setDisplay(DEFAULT_DISPLAY)}
+            >
+              {t('resetDisplay')}
+            </button>
+          </section>
+        )}
         {/* Control bar */}
         <div className="bg-slate-900 border-t border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
@@ -586,8 +727,15 @@ export default function PlayerPage() {
           </div>
 
           <div className="flex items-center space-x-3">
-            <button type="button" onClick={() => setDisplayOptionsOpen(v => !v)} aria-expanded={displayOptionsOpen} aria-label={t('displaySettings')} className="px-2.5 py-1 rounded-lg text-xs border border-cyan-500/40 text-cyan-400">{t('displaySettings')}</button>
-
+            <button
+              type="button"
+              onClick={() => setDisplayOptionsOpen((v) => !v)}
+              aria-expanded={displayOptionsOpen}
+              aria-label={t('displaySettings')}
+              className="px-2.5 py-1 rounded-lg text-xs border border-cyan-500/40 text-cyan-400"
+            >
+              {t('displaySettings')}
+            </button>
 
             {/* Volume */}
             <div className="flex items-center space-x-2">
