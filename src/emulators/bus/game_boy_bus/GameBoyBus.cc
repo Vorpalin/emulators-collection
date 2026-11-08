@@ -108,6 +108,7 @@ void GameBoyBus::reset() {
   hram.fill(0);
   serialData = 0;
   serialControl = 0;
+  serialOutput_.clear();
   dmaActive = false;
 }
 
@@ -158,6 +159,9 @@ void GameBoyBus::write(uint16_t address, uint8_t value) {
         break;
       case 0xFF02:
         serialControl = value;
+        if ((value & 0x81) == 0x81 && serialOutput_.size() < 0x10000) {
+          serialOutput_.push_back(static_cast<char>(serialData));
+        }
         break;
       case 0xFF04:
       case 0xFF05:
