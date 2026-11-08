@@ -131,6 +131,14 @@ class GameBoyBus : public Bus {
    */
   uint32_t step();
 
+  /**
+   * @brief Bytes the program has sent over the serial port (SB/SC).
+   * @details Every write of 0x81 (start, internal clock) to SC appends SB.
+   *          Nothing is ever shifted in; test ROMs (e.g. Blargg's) use this to
+   *          print their result. Capped at 64 KiB and cleared by reset().
+   */
+  const std::string& serialOutput() const { return serialOutput_; }
+
   /** @brief Gives access to the joypad, to feed it host input. */
   GameBoyController& getJoypad() { return joypad; }
 
@@ -197,6 +205,7 @@ class GameBoyBus : public Bus {
 
   uint8_t serialData = 0;     ///< Serial transfer data (SB, 0xFF01).
   uint8_t serialControl = 0;  ///< Serial transfer control (SC, 0xFF02).
+  std::string serialOutput_;  ///< Serial bytes sent so far (diagnostics only).
 
   bool dmaActive = false;   ///< True while an OAM DMA transfer is running.
   bool frameReady = false;  ///< Set by the PPU when a frame is complete.
