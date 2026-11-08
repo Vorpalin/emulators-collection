@@ -130,6 +130,7 @@ void GameBoyCartridge::detectMBC() {
   mbcType = MBCType::None;
   romBankCount = 2;
   ramBankCount = 0;
+  hasBattery_ = false;
 
   if (romData.size() <= 0x0149) {
     std::cerr << "ROM too small to read header, assuming ROM only\n";
@@ -172,6 +173,20 @@ void GameBoyCartridge::detectMBC() {
       std::cerr << "Cartridge type 0x" << std::hex << static_cast<int>(cartType)
                 << std::dec << " not supported, treating as MBC5\n";
       mbcType = MBCType::MBC5;  // widest addressing, safest generic fallback
+      break;
+  }
+
+  switch (cartType) {
+    case 0x03:  // MBC1+RAM+BATTERY
+    case 0x06:  // MBC2+BATTERY
+    case 0x0F:  // MBC3+TIMER+BATTERY
+    case 0x10:  // MBC3+TIMER+RAM+BATTERY
+    case 0x13:  // MBC3+RAM+BATTERY
+    case 0x1B:  // MBC5+RAM+BATTERY
+    case 0x1E:  // MBC5+RUMBLE+RAM+BATTERY
+      hasBattery_ = true;
+      break;
+    default:
       break;
   }
 
@@ -293,11 +308,24 @@ uint8_t GameBoyCartridge::read(uint16_t address) {
   return 0xFF;
 }
 
+void GameBoyCartridge::storeRam(size_t offset, uint8_t value) {
+  if (ramData[offset] == value) return;
+  ramData[offset] = value;
+  ramDirty_ = true;
+}
+
+bool GameBoyCartridge::loadBatteryRam(const uint8_t *data, std::size_t size) {
+  if (!hasBattery_ || data == nullptr || size != ramData.size()) return false;
+  ramData.assign(data, data + size);
+  ramDirty_ = false;
+  return true;
+}
+
 void GameBoyCartridge::write(uint16_t address, uint8_t value) {
   if (mbcType == MBCType::None) {
     if (address >= 0xA000 && address < 0xC000 && !ramData.empty()) {
       size_t offset = address - 0xA000;
-      if (offset < ramData.size()) ramData[offset] = value;
+      if (offset < ramData.size()) storeRam(offset, value);
     }
     return;
   }
@@ -317,7 +345,7 @@ void GameBoyCartridge::write(uint16_t address, uint8_t value) {
         if (!ramEnabled || ramData.empty()) return;
         size_t offset =
             static_cast<size_t>(currentRamBank()) * 0x2000 + (address - 0xA000);
-        if (offset < ramData.size()) ramData[offset] = value;
+        if (offset < ramData.size()) storeRam(offset, value);
       }
       break;
 
@@ -332,7 +360,7 @@ void GameBoyCartridge::write(uint16_t address, uint8_t value) {
       } else if (address >= 0xA000 && address < 0xC000) {
         if (!ramEnabled) return;
         size_t offset = (address - 0xA000) & 0x1FF;
-        if (offset < ramData.size()) ramData[offset] = value & 0x0F;
+        if (offset < ramData.size()) storeRam(offset, value & 0x0F);
       }
       break;
 
@@ -360,7 +388,7 @@ void GameBoyCartridge::write(uint16_t address, uint8_t value) {
         if (ramData.empty()) return;
         size_t offset =
             static_cast<size_t>(currentRamBank()) * 0x2000 + (address - 0xA000);
-        if (offset < ramData.size()) ramData[offset] = value;
+        if (offset < ramData.size()) storeRam(offset, value);
       }
       break;
 
@@ -379,7 +407,7 @@ void GameBoyCartridge::write(uint16_t address, uint8_t value) {
         if (!ramEnabled || ramData.empty()) return;
         size_t offset =
             static_cast<size_t>(currentRamBank()) * 0x2000 + (address - 0xA000);
-        if (offset < ramData.size()) ramData[offset] = value;
+        if (offset < ramData.size()) storeRam(offset, value);
       }
       break;
 
