@@ -1,7 +1,8 @@
 # NES test tools
 
 Two small native programs check the NES core against public test ROMs. They
-are not part of the normal build: `cmake -B build-tests -DBUILD_TESTS=ON`.
+are built with `cmake -B build-tests -DBUILD_TESTS=ON` and run by CTest in CI
+(see `../README.md`); the binaries end up in `build-tests/tests/`.
 
 | Tool             | Purpose                                                        |
 | ---------------- | -------------------------------------------------------------- |

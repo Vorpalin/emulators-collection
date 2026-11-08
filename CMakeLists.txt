@@ -155,17 +155,15 @@ target_link_libraries(nes
 )
 
 # ============================================================
-# Test tools (native, optional): cmake -DBUILD_TESTS=ON
+# Tests (native, optional): cmake -DBUILD_TESTS=ON
+# See tests/README.md
 # ============================================================
 
-option(BUILD_TESTS "Build the NES test ROM tools (see tests/nes/README.md)" OFF)
+option(BUILD_TESTS "Build the test ROM runners and register the CTest suite" OFF)
 
 if(BUILD_TESTS AND NOT EMSCRIPTEN)
-    add_executable(nes_rom_runner tests/nes/nes_rom_runner.cc)
-    target_link_libraries(nes_rom_runner PRIVATE nes)
-
-    add_executable(nestest_cpu tests/nes/nestest_cpu.cc)
-    target_link_libraries(nestest_cpu PRIVATE cpu65)
+    enable_testing()
+    add_subdirectory(tests)
 endif()
 
 # ============================================================
