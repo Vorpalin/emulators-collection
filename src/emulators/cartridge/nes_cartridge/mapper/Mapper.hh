@@ -72,6 +72,22 @@ class Mapper {
   }
 
   std::vector<uint8_t>& PrgRam() { return rom_.prg_ram; }
+  const std::vector<uint8_t>& PrgRam() const { return rom_.prg_ram; }
+
+  /// Restores PRG-RAM (battery save). Size must match; not flagged as dirty.
+  bool LoadPrgRam(const uint8_t* data, size_t size) {
+    if (data == nullptr || size != rom_.prg_ram.size()) return false;
+    rom_.prg_ram.assign(data, data + size);
+    ram_dirty_ = false;
+    return true;
+  }
+
+  /// True if the program changed PRG-RAM since the last call.
+  bool ConsumeRamDirty() {
+    const bool d = ram_dirty_;
+    ram_dirty_ = false;
+    return d;
+  }
 
  protected:
   uint8_t ReadPrg(size_t offset) const {
@@ -91,7 +107,11 @@ class Mapper {
   }
   bool WritePrgRam(uint16_t addr, uint8_t value) {
     if (addr < 0x6000 || addr > 0x7FFF || rom_.prg_ram.empty()) return false;
-    rom_.prg_ram[(addr - 0x6000) % rom_.prg_ram.size()] = value;
+    uint8_t& cell = rom_.prg_ram[(addr - 0x6000) % rom_.prg_ram.size()];
+    if (cell != value) {
+      cell = value;
+      ram_dirty_ = true;
+    }
     return true;
   }
   size_t PrgBanks16k() const { return rom_.prg_rom.size() / 0x4000; }
@@ -110,4 +130,7 @@ class Mapper {
   }
 
   RomData rom_;
+
+ private:
+  bool ram_dirty_ = false;
 };

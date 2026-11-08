@@ -47,6 +47,19 @@ class Nes : public Console {
   bool isHalted() const override { return bus_.isHalted(); }
   void setKey(int key, bool pressed) override;
 
+  bool hasBattery() const override {
+    return loaded_ && bus_.cartridge().hasBattery();
+  }
+  std::vector<uint8_t> saveRam() const override {
+    return bus_.cartridge().batteryRam();
+  }
+  bool loadRam(const uint8_t* data, std::size_t size) override {
+    return loaded_ && bus_.cartridge().loadBatteryRam(data, size);
+  }
+  bool consumeRamDirty() override {
+    return loaded_ && bus_.cartridge().consumeRamDirty();
+  }
+
   int width() const override { return kWidth; }
   int height() const override { return kHeight; }
   const uint8_t* framebuffer() const override { return framebuffer_.data(); }
