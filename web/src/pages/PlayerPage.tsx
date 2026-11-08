@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { loadRom } from '../hooks/useGames';
+import { loadBattery, saveBattery } from '../lib/batteryStore';
 import { useSettings } from '../hooks/useSettings';
 import TouchControls, { useIsTouchDevice, useMediaQuery } from '../components/TouchControls';
 import { useGamepadName } from '../emulator/gamepad';
@@ -227,15 +228,38 @@ export default function PlayerPage() {
       return;
     }
 
+    // Restore the in-game save, if any. If browser storage is unavailable the
+    // game still plays, it just cannot keep its save.
+    let battery: Uint8Array | null = null;
+
+    try {
+      battery = await loadBattery(game.id);
+    } catch (e) {
+      console.warn('Unable to read the stored in-game save:', e);
+    }
+
     const session = new EmulatorSession({
       canvas: canvasRef.current,
       system,
       bindings: bindingsFor(game.system),
       volume: effectiveVolume,
+      onBatterySave: (data) => {
+        saveBattery(game.id, data)
+          .then(() => {
+            const message = t('gameSaved');
+
+            setStateMessage(message);
+            window.setTimeout(
+              () => setStateMessage((current) => (current === message ? null : current)),
+              3000,
+            );
+          })
+          .catch(() => setError(t('gameSaveFailed')));
+      },
     });
 
     try {
-      await session.start(rom);
+      await session.start(rom, battery);
       sessionRef.current = session;
       setPaused(false);
       setStatus('playing');
