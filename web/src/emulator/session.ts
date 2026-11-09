@@ -13,6 +13,23 @@ const MAX_STEPS_PER_TICK = 4;
 const BATTERY_QUIET_FRAMES = 60;
 
 /**
+ * Compares two byte arrays.
+ * @param a The first array.
+ * @param b The second array.
+ * @returns The number of positions where they differ (the length difference counts too).
+ */
+function countDifferences(a: Uint8Array, b: Uint8Array): number {
+  let diff = Math.abs(a.length - b.length);
+  const n = Math.min(a.length, b.length);
+
+  for (let i = 0; i < n; i++) {
+    if (a[i] !== b[i]) diff++;
+  }
+
+  return diff;
+}
+
+/**
  * Options for creating an emulator session.
  * @props canvas The HTML canvas element where the emulator will render its output.
  * @props system The system definition for the emulator (e.g., Game Boy, Atari 2600).
@@ -89,6 +106,8 @@ export class EmulatorSession {
   private batteryPending = false;
   /** Emulated frames since the last write to the battery RAM. */
   private batteryQuiet = 0;
+  /** The battery RAM as last loaded or stored: a "save" is only a real change from it. */
+  private batteryBaseline: Uint8Array | null = null;
 
   /**
    * Creates a new emulator session with the specified options.
@@ -151,6 +170,8 @@ export class EmulatorSession {
     if (this.hasBattery && battery && !this.emu.loadRam(battery)) {
       console.warn('Stored in-game save ignored: it does not match this cartridge.');
     }
+
+    this.batteryBaseline = this.hasBattery ? this.emu.saveRam() : null;
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -381,7 +402,7 @@ export class EmulatorSession {
   /**
    * Hands any unsaved battery RAM changes to the `onBatterySave` callback right
    * away (used when pausing, hiding the page or leaving the game).
-   * Does nothing if the game has not written to its RAM since the last save.
+   * Does nothing if the RAM is the same as the last stored save.
    */
   private flushBattery = (): void => {
     if (!this.hasBattery || !this.emu) return;
@@ -393,7 +414,17 @@ export class EmulatorSession {
     this.batteryPending = false;
     this.batteryQuiet = 0;
 
-    this.opts.onBatterySave?.(this.emu.saveRam());
+    const ram = this.emu.saveRam();
+    const changed = this.batteryBaseline ? countDifferences(ram, this.batteryBaseline) : ram.length;
+
+    // The game wrote to its RAM but left it as it was (it wrote a value then put
+    // it back, or rewrote the same data): that is not a save.
+    if (changed === 0) return;
+
+    console.debug(`[in-game save] ${changed} byte(s) changed`);
+
+    this.batteryBaseline = ram;
+    this.opts.onBatterySave?.(ram);
   };
 
   private onVisibilityChange = (): void => {
