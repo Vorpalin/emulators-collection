@@ -8,11 +8,9 @@ const MAX_STEPS_PER_TICK = 4;
 /**
  * A game "saves" by writing to its cartridge RAM, there is no save event. We
  * consider the save finished once the RAM has not changed for this many
- * emulated frames (about one second)...
+ * emulated frames (about one second).
  */
 const BATTERY_QUIET_FRAMES = 60;
-/** ...or, for games that keep writing, after this many frames (about ten seconds). */
-const BATTERY_MAX_WAIT_FRAMES = 600;
 
 /**
  * Options for creating an emulator session.
@@ -91,8 +89,6 @@ export class EmulatorSession {
   private batteryPending = false;
   /** Emulated frames since the last write to the battery RAM. */
   private batteryQuiet = 0;
-  /** Emulated frames since the first unsaved write. */
-  private batteryWaiting = 0;
 
   /**
    * Creates a new emulator session with the specified options.
@@ -377,14 +373,7 @@ export class EmulatorSession {
       this.batteryQuiet++;
     }
 
-    if (!this.batteryPending) return;
-
-    this.batteryWaiting++;
-
-    if (
-      this.batteryQuiet >= BATTERY_QUIET_FRAMES ||
-      this.batteryWaiting >= BATTERY_MAX_WAIT_FRAMES
-    ) {
+    if (this.batteryPending && this.batteryQuiet >= BATTERY_QUIET_FRAMES) {
       this.flushBattery();
     }
   }
@@ -403,7 +392,6 @@ export class EmulatorSession {
 
     this.batteryPending = false;
     this.batteryQuiet = 0;
-    this.batteryWaiting = 0;
 
     this.opts.onBatterySave?.(this.emu.saveRam());
   };
