@@ -17,4 +17,9 @@ target_link_libraries(gb_rom_runner PRIVATE gameboy)
 add_executable(chip8_rom_runner chip8/chip8_rom_runner.cc)
 target_link_libraries(chip8_rom_runner PRIVATE chip8)
 
+# Battery-RAM API, on synthetic ROMs (no downloaded files needed).
+add_executable(battery_roundtrip battery/battery_roundtrip.cc)
+target_link_libraries(battery_roundtrip PRIVATE gameboy nes)
+add_test(NAME battery.roundtrip COMMAND battery_roundtrip)
+
 include(${CMAKE_CURRENT_LIST_DIR}/RomTests.cmake)

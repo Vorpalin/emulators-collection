@@ -6,6 +6,30 @@ const TARGET_BUFFER_SECONDS = 0.08;
 const MAX_STEPS_PER_TICK = 4;
 
 /**
+ * A game "saves" by writing to its cartridge RAM, there is no save event. We
+ * consider the save finished once the RAM has not changed for this many
+ * emulated frames (about one second).
+ */
+const BATTERY_QUIET_FRAMES = 60;
+
+/**
+ * Compares two byte arrays.
+ * @param a The first array.
+ * @param b The second array.
+ * @returns The number of positions where they differ (the length difference counts too).
+ */
+function countDifferences(a: Uint8Array, b: Uint8Array): number {
+  let diff = Math.abs(a.length - b.length);
+  const n = Math.min(a.length, b.length);
+
+  for (let i = 0; i < n; i++) {
+    if (a[i] !== b[i]) diff++;
+  }
+
+  return diff;
+}
+
+/**
  * Options for creating an emulator session.
  * @props canvas The HTML canvas element where the emulator will render its output.
  * @props system The system definition for the emulator (e.g., Game Boy, Atari 2600).
@@ -29,6 +53,11 @@ export interface SessionOptions {
    * The initial volume level (0 to 100).
    */
   volume: number;
+  /**
+   * Called with the cartridge's battery RAM (a `.sav` image) after the game has
+   * saved. Only used by cartridges that have a battery.
+   */
+  onBatterySave?: (data: Uint8Array) => void;
 }
 
 /**
@@ -71,6 +100,15 @@ export class EmulatorSession {
   /** A map of keyboard key codes to emulator action keys. */
   private keyMap = new Map<string, number>();
 
+  /** True if the loaded cartridge has battery-backed RAM. */
+  private hasBattery = false;
+  /** True if the game wrote to its battery RAM and that was not handed over yet. */
+  private batteryPending = false;
+  /** Emulated frames since the last write to the battery RAM. */
+  private batteryQuiet = 0;
+  /** The battery RAM as last loaded or stored: a "save" is only a real change from it. */
+  private batteryBaseline: Uint8Array | null = null;
+
   /**
    * Creates a new emulator session with the specified options.
    * @param opts The options for configuring the emulator session.
@@ -87,10 +125,11 @@ export class EmulatorSession {
   /**
    * Starts the emulator session by loading the specified ROM and initializing audio and video rendering.
    * @param rom  The ROM data to load into the emulator.
+   * @param battery The previously stored in-game save (battery RAM) of this game, if any.
    * @throws Will throw an error if the ROM is invalid or not supported by the emulator.
    * @returns A promise that resolves when the emulator session has started successfully.
    */
-  async start(rom: Uint8Array): Promise<void> {
+  async start(rom: Uint8Array, battery: Uint8Array | null = null): Promise<void> {
     this.audioCtx = new AudioContext({ latencyHint: 'interactive' });
     void this.audioCtx.resume();
 
@@ -125,9 +164,20 @@ export class EmulatorSession {
       throw new Error("ROM refusée par l'émulateur (fichier invalide ou non supporté).");
     }
 
+    // --- In-game save (battery RAM) ---
+    this.hasBattery = this.emu.hasBattery();
+
+    if (this.hasBattery && battery && !this.emu.loadRam(battery)) {
+      console.warn('Stored in-game save ignored: it does not match this cartridge.');
+    }
+
+    this.batteryBaseline = this.hasBattery ? this.emu.saveRam() : null;
+
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('blur', this.releaseAll);
+    window.addEventListener('pagehide', this.flushBattery);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
 
     this.raf = requestAnimationFrame(this.loop);
   }
@@ -141,6 +191,7 @@ export class EmulatorSession {
     if (this.destroyed) return;
 
     this.paused = true;
+    this.flushBattery();
     void this.audioCtx?.suspend();
     this.releaseAll();
     this.releasePad();
@@ -265,6 +316,7 @@ export class EmulatorSession {
    * It is recommended to call this method when the emulator session is no longer needed to free up resources.
    */
   destroy(): void {
+    this.flushBattery();
     this.destroyed = true;
 
     cancelAnimationFrame(this.raf);
@@ -272,6 +324,8 @@ export class EmulatorSession {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('blur', this.releaseAll);
+    window.removeEventListener('pagehide', this.flushBattery);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
 
     this.releaseAll();
 
@@ -302,6 +356,7 @@ export class EmulatorSession {
 
       while (this.queuedFrames < target && steps < MAX_STEPS_PER_TICK) {
         this.emu.stepFrame();
+        this.trackBattery();
         this.pushAudio();
         steps++;
       }
@@ -312,6 +367,68 @@ export class EmulatorSession {
     }
 
     this.raf = requestAnimationFrame(this.loop);
+  };
+
+  // ───────────── In-game save (battery RAM) ─────────────
+
+  /**
+   * Returns whether the loaded cartridge keeps an in-game save (battery RAM).
+   * @returns True if in-game saves are persisted for this game.
+   */
+  get hasBatterySave(): boolean {
+    return this.hasBattery;
+  }
+
+  /**
+   * Watches the battery RAM after each emulated frame. Once the game has
+   * written to it and then stopped for a moment, the save is considered done
+   * and handed to the `onBatterySave` callback.
+   */
+  private trackBattery(): void {
+    if (!this.hasBattery) return;
+
+    if (this.emu.consumeRamDirty()) {
+      this.batteryPending = true;
+      this.batteryQuiet = 0;
+    } else if (this.batteryPending) {
+      this.batteryQuiet++;
+    }
+
+    if (this.batteryPending && this.batteryQuiet >= BATTERY_QUIET_FRAMES) {
+      this.flushBattery();
+    }
+  }
+
+  /**
+   * Hands any unsaved battery RAM changes to the `onBatterySave` callback right
+   * away (used when pausing, hiding the page or leaving the game).
+   * Does nothing if the RAM is the same as the last stored save.
+   */
+  private flushBattery = (): void => {
+    if (!this.hasBattery || !this.emu) return;
+
+    // Catch a write from the very last frames, not yet noticed by trackBattery().
+    if (this.emu.consumeRamDirty()) this.batteryPending = true;
+    if (!this.batteryPending) return;
+
+    this.batteryPending = false;
+    this.batteryQuiet = 0;
+
+    const ram = this.emu.saveRam();
+    const changed = this.batteryBaseline ? countDifferences(ram, this.batteryBaseline) : ram.length;
+
+    // The game wrote to its RAM but left it as it was (it wrote a value then put
+    // it back, or rewrote the same data): that is not a save.
+    if (changed === 0) return;
+
+    console.debug(`[in-game save] ${changed} byte(s) changed`);
+
+    this.batteryBaseline = ram;
+    this.opts.onBatterySave?.(ram);
+  };
+
+  private onVisibilityChange = (): void => {
+    if (document.visibilityState === 'hidden') this.flushBattery();
   };
 
   /**

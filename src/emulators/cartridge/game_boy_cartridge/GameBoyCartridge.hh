@@ -125,15 +125,42 @@ class GameBoyCartridge {
    */
   GameBoyCartridgeState getState() const;
 
+  /** @brief True if the cartridge type has a battery (RAM survives power-off).
+   */
+  bool hasBattery() const { return hasBattery_; }
+
+  /** @brief Battery RAM contents (raw bytes, same layout as a .sav file). */
+  const std::vector<uint8_t>& batteryRam() const { return ramData; }
+
+  /**
+   * @brief Restores battery RAM. Fails if there is no battery or the size
+   * differs.
+   * @note Does not mark the RAM as modified.
+   */
+  bool loadBatteryRam(const uint8_t* data, std::size_t size);
+
+  /** @brief Returns true if the program changed external RAM since the last
+   * call. */
+  bool consumeRamDirty() {
+    const bool d = ramDirty_;
+    ramDirty_ = false;
+    return d;
+  }
+
  private:
   /** @brief Supported memory bank controller types. */
   enum class MBCType { None, MBC1, MBC2, MBC3, MBC5 };
+
+  /** @brief Writes one external RAM byte and tracks whether it changed. */
+  void storeRam(size_t offset, uint8_t value);
 
   /** @brief Detects MBC type, ROM size and RAM size from the header. */
   void detectMBC();
 
   std::vector<uint8_t> romData;  ///< Whole ROM image.
   std::vector<uint8_t> ramData;  ///< External (battery) RAM.
+  bool hasBattery_ = false;      ///< Cartridge type includes a battery.
+  bool ramDirty_ = false;        ///< RAM changed since consumeRamDirty().
 
   MBCType mbcType = MBCType::None;  ///< Detected MBC type.
   int romBankCount = 2;  ///< Number of 0x4000 ROM banks, min 2 (bank 0 + 1).

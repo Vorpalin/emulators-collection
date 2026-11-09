@@ -62,6 +62,17 @@ class GameBoy : public Console {
   bool isHalted() const override { return false; }
   void setKey(int key, bool pressed) override;
 
+  bool hasBattery() const override { return bus.getCartridge().hasBattery(); }
+  std::vector<uint8_t> saveRam() const override {
+    return bus.getCartridge().batteryRam();
+  }
+  bool loadRam(const uint8_t* data, std::size_t size) override {
+    return bus.getCartridge().loadBatteryRam(data, size);
+  }
+  bool consumeRamDirty() override {
+    return bus.getCartridge().consumeRamDirty();
+  }
+
   int width() const override { return kWidth; }
   int height() const override { return kHeight; }
   const uint8_t* framebuffer() const override { return framebuffer_.data(); }

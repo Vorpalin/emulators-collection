@@ -139,6 +139,10 @@ class GameBoyBus : public Bus {
    */
   const std::string& serialOutput() const { return serialOutput_; }
 
+  /** @brief Gives access to the cartridge (battery RAM, header info). */
+  GameBoyCartridge& getCartridge() { return cartridge; }
+  const GameBoyCartridge& getCartridge() const { return cartridge; }
+
   /** @brief Gives access to the joypad, to feed it host input. */
   GameBoyController& getJoypad() { return joypad; }
 

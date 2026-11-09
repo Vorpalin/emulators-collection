@@ -196,6 +196,43 @@ class EmulatorWrapper {
     return "";
   }
 
+  /**
+   * @brief Tells whether the loaded cartridge has battery-backed RAM.
+   *
+   * Only such cartridges (Game Boy, NES) keep an "in-game save".
+   */
+  bool hasBattery() const { return console_ && console_->hasBattery(); }
+
+  /**
+   * @brief Copies the battery RAM into a new JavaScript Uint8Array.
+   *
+   * The returned array owns its data (it does not alias WebAssembly memory),
+   * so it stays valid after the emulator keeps running.
+   */
+  val saveRam() const {
+    const std::vector<uint8_t> ram =
+        console_ ? console_->saveRam() : std::vector<uint8_t>{};
+    const val view(typed_memory_view(ram.size(), ram.data()));
+    return val::global("Uint8Array").new_(view);  // copies the bytes
+  }
+
+  /**
+   * @brief Restores battery RAM previously returned by saveRam().
+   * @retval false If there is no battery or the size does not match.
+   */
+  bool loadRam(const val& data) {
+    if (!console_) return false;
+    const auto bytes = convertJSArrayToNumberVector<uint8_t>(data);
+    return console_->loadRam(bytes.data(), bytes.size());
+  }
+
+  /**
+   * @brief True if the game changed its battery RAM since the last call.
+   *
+   * This is how the front-end notices that the game has saved.
+   */
+  bool consumeRamDirty() { return console_ && console_->consumeRamDirty(); }
+
  private:
   /**
    * @brief Currently loaded emulator instance.
@@ -227,5 +264,9 @@ EMSCRIPTEN_BINDINGS(emulators) {
       .function("audioFrameCount", &EmulatorWrapper::audioFrameCount)
       .function("audioPtr", &EmulatorWrapper::audioPtr)
       .function("loadState", &EmulatorWrapper::loadState)
-      .function("saveState", &EmulatorWrapper::saveState);
+      .function("saveState", &EmulatorWrapper::saveState)
+      .function("hasBattery", &EmulatorWrapper::hasBattery)
+      .function("saveRam", &EmulatorWrapper::saveRam)
+      .function("loadRam", &EmulatorWrapper::loadRam)
+      .function("consumeRamDirty", &EmulatorWrapper::consumeRamDirty);
 }

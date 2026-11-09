@@ -59,6 +59,19 @@ class NesCartridge {
   int mapperId() const { return mapper_id_; }
   bool hasBattery() const { return has_battery_; }
 
+  /// Battery-backed PRG-RAM (empty if the cartridge has no battery).
+  std::vector<uint8_t> batteryRam() const {
+    return (mapper_ && has_battery_) ? mapper_->PrgRam()
+                                     : std::vector<uint8_t>{};
+  }
+  bool loadBatteryRam(const uint8_t* data, std::size_t size) {
+    return mapper_ && has_battery_ && mapper_->LoadPrgRam(data, size);
+  }
+  /// True if the program wrote to PRG-RAM since the last call.
+  bool consumeRamDirty() {
+    return mapper_ && has_battery_ && mapper_->ConsumeRamDirty();
+  }
+
   nlohmann::json saveState() const;
   void loadState(const nlohmann::json& j);
 

@@ -90,6 +90,7 @@ class NesBus : public Bus {
   NesAPU& apu() { return apu_; }
   NesController& pad(std::size_t i) { return pads_[i]; }
   NesCartridge& cartridge() { return cartridge_; }
+  const NesCartridge& cartridge() const { return cartridge_; }
 
   void setState(const NesBusState& state);
   NesBusState getState() const;

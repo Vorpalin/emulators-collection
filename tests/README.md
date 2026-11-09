@@ -22,6 +22,7 @@ ROM is missing are simply not registered.
 | `nes_rom_runner`   | NES       | Blargg's `$6000` protocol                                         |
 | `gb_rom_runner`    | Game Boy  | Serial output (`Passed`/`Failed`) or Blargg's `$A000` RAM protocol |
 | `chip8_rom_runner` | CHIP-8    | Hash of the final framebuffer compared with a golden value        |
+| `battery_roundtrip` | GB, NES  | Battery RAM API (change detection, export/restore) on tiny synthetic ROMs, no download needed |
 
 ## Known failures
 

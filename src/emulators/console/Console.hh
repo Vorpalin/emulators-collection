@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <string>
+#include <vector>
 
 /**
  * @file Console.hh
@@ -96,4 +98,27 @@ class Console {
    * @return true if the state was successfully loaded, false otherwise.
    */
   virtual bool loadState(const std::string& json) = 0;
+
+  /// @name Battery-backed cartridge RAM ("in-game saves")
+  /// Systems whose cartridge has a battery (Game Boy, NES) expose that RAM so
+  /// a front-end can persist it. The default implementation has no battery.
+  /// @{
+
+  /// True if the loaded cartridge keeps its RAM with a battery.
+  virtual bool hasBattery() const { return false; }
+
+  /// Copy of the battery RAM (raw bytes, same layout as a `.sav` file).
+  virtual std::vector<uint8_t> saveRam() const { return {}; }
+
+  /// Restores battery RAM. Call after loadProgram(); the size must match.
+  virtual bool loadRam(const uint8_t* data, std::size_t size) {
+    (void)data;
+    (void)size;
+    return false;
+  }
+
+  /// True if the program changed the battery RAM since the last call
+  /// (that is how a front-end notices that the game has saved).
+  virtual bool consumeRamDirty() { return false; }
+  /// @}
 };

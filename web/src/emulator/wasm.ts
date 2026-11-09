@@ -101,6 +101,30 @@ export interface EmulatorInstance {
    * @returns A string representing the serialized state data of the emulator instance.
    */
   saveState(): string;
+  /**
+   * Tells whether the loaded cartridge has battery-backed RAM (an "in-game save").
+   * Only Game Boy and NES cartridges with a battery return true.
+   * @returns True if the game can keep a save between sessions.
+   */
+  hasBattery(): boolean;
+  /**
+   * Copies the battery RAM into a new array (same layout as a `.sav` file).
+   * @returns The battery RAM bytes, or an empty array if there is no battery.
+   */
+  saveRam(): Uint8Array;
+  /**
+   * Restores battery RAM previously returned by {@link saveRam}.
+   * Call it after `load()` and before the first frame.
+   * @param data - The battery RAM bytes. The size must match the cartridge.
+   * @returns True if the RAM was restored, false if there is no battery or the size differs.
+   */
+  loadRam(data: Uint8Array): boolean;
+  /**
+   * Tells whether the game changed its battery RAM since the previous call, then clears the flag.
+   * This is how the front-end detects that the game has just saved.
+   * @returns True if the battery RAM was modified.
+   */
+  consumeRamDirty(): boolean;
 }
 
 /**
