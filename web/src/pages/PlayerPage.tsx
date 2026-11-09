@@ -244,17 +244,8 @@ export default function PlayerPage() {
       bindings: bindingsFor(game.system),
       volume: effectiveVolume,
       onBatterySave: (data) => {
-        saveBattery(game.id, data)
-          .then(() => {
-            const message = t('gameSaved');
-
-            setStateMessage(message);
-            window.setTimeout(
-              () => setStateMessage((current) => (current === message ? null : current)),
-              3000,
-            );
-          })
-          .catch(() => setError(t('gameSaveFailed')));
+        // Silent on success; only tell the player if the save could not be stored.
+        saveBattery(game.id, data).catch(() => setError(t('gameSaveFailed')));
       },
     });
 
