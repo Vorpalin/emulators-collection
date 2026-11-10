@@ -3,6 +3,7 @@
 [![CI](https://github.com/Vorpalin/emulators-collection/actions/workflows/checks.yml/badge.svg)](https://github.com/Vorpalin/emulators-collection/actions/workflows/checks.yml)
 [![Security](https://github.com/Vorpalin/emulators-collection/actions/workflows/security.yml/badge.svg)](https://github.com/Vorpalin/emulators-collection/actions/workflows/security.yml)
 [![License](https://img.shields.io/github/license/Vorpalin/emulators-collection)](LICENSE)
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/Vorpalin/badge.svg)](https://hub.xerj.org/contributors/Vorpalin)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![WebAssembly](https://img.shields.io/badge/WebAssembly-Emscripten-654FF0.svg)](https://webassembly.org/)
 [![React](https://img.shields.io/badge/React-TypeScript-61DAFB.svg)](https://react.dev/)
