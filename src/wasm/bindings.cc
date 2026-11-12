@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "emulators/console/Console.hh"
@@ -53,6 +54,11 @@ class EmulatorWrapper {
    * If an audio sample rate has previously been configured with
    * setSampleRate(), it is applied to the newly created emulator.
    *
+   * The new emulator only replaces the current one once the ROM has been
+   * accepted. If loading fails, the previously loaded emulator (if any) is
+   * left untouched, so a rejected ROM can never leave a half-initialised
+   * machine behind that stepFrame() would then run.
+   *
    * @param type Emulator type to instantiate.
    * @param rom JavaScript array containing the ROM binary data.
    *
@@ -63,20 +69,23 @@ class EmulatorWrapper {
    * @retval false If the selected emulator fails to load the ROM.
    */
   bool load(const std::string& type, const val& rom) {
+    std::unique_ptr<Console> console;
     if (type == "chip8") {
-      console_ = std::make_unique<Chip8>();
+      console = std::make_unique<Chip8>();
     } else if (type == "atari2600") {
-      console_ = std::make_unique<Atari2600>();
+      console = std::make_unique<Atari2600>();
     } else if (type == "gameboy") {
-      console_ = std::make_unique<GameBoy>();
+      console = std::make_unique<GameBoy>();
     } else if (type == "nes") {
-      console_ = std::make_unique<Nes>();
+      console = std::make_unique<Nes>();
     } else {
       return false;
     }
-    if (sampleRate_ > 0) console_->setAudioSampleRate(sampleRate_);
+    if (sampleRate_ > 0) console->setAudioSampleRate(sampleRate_);
     const auto bytes = convertJSArrayToNumberVector<uint8_t>(rom);
-    return console_->loadProgram(bytes.data(), bytes.size());
+    if (!console->loadProgram(bytes.data(), bytes.size())) return false;
+    console_ = std::move(console);
+    return true;
   }
 
   /**
