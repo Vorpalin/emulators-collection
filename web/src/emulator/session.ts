@@ -86,6 +86,8 @@ export class EmulatorSession {
   private paused = false;
   /** Indicates whether the emulator session has been destroyed. */
   private destroyed = false;
+  /** Indicates whether the emulator instance has already been deleted. */
+  private emuDeleted = false;
   /** Indicates whether the audio is muted. */
   private muted = false;
   /** The current volume level (0 to 100). */
@@ -124,20 +126,51 @@ export class EmulatorSession {
 
   /**
    * Starts the emulator session by loading the specified ROM and initializing audio and video rendering.
+   *
+   * If startup fails, everything created so far (audio context, worklet node, emulator
+   * instance) is released before the error is rethrown. If {@link destroy} is called while
+   * startup is still in progress, startup stops quietly and releases what it created.
    * @param rom  The ROM data to load into the emulator.
    * @param battery The previously stored in-game save (battery RAM) of this game, if any.
    * @throws Will throw an error if the ROM is invalid or not supported by the emulator.
    * @returns A promise that resolves when the emulator session has started successfully.
    */
   async start(rom: Uint8Array, battery: Uint8Array | null = null): Promise<void> {
+    try {
+      await this.init(rom, battery);
+    } catch (err) {
+      const destroyedMeanwhile = this.destroyed;
+
+      // Release whatever was created before the failure, so that a refused ROM does not
+      // leak the audio context or the emulator instance. Both calls are idempotent.
+      this.destroy();
+      this.releaseResources();
+
+      // A failure caused by destroy() itself (e.g. the audio context was closed while the
+      // worklet was loading) is expected: the caller asked for the session to go away.
+      if (!destroyedMeanwhile) throw err;
+    }
+  }
+
+  /**
+   * Performs the asynchronous startup. After every `await`, the session may have been
+   * destroyed in the meantime (fast navigation, React StrictMode double-mount...), in
+   * which case nothing more must be created or registered.
+   * @param rom  The ROM data to load into the emulator.
+   * @param battery The previously stored in-game save (battery RAM) of this game, if any.
+   */
+  private async init(rom: Uint8Array, battery: Uint8Array | null): Promise<void> {
     this.audioCtx = new AudioContext({ latencyHint: 'interactive' });
     void this.audioCtx.resume();
 
     this.module = await loadEmulatorModule();
+    if (this.destroyed) return;
+
     this.emu = new this.module.Emulator();
 
     // --- Audio ---
     await this.audioCtx.audioWorklet.addModule(`${import.meta.env.BASE_URL}emu-audio-worklet.js`);
+    if (this.destroyed) return;
 
     this.node = new AudioWorkletNode(this.audioCtx, 'emu-audio', {
       outputChannelCount: [2],
@@ -156,6 +189,7 @@ export class EmulatorSession {
       this.audioCtx.resume(),
       new Promise<void>((resolve) => setTimeout(resolve, 1500)),
     ]);
+    if (this.destroyed) return;
 
     // --- ROM ---
     this.emu.setSampleRate(this.audioCtx.sampleRate);
@@ -265,7 +299,7 @@ export class EmulatorSession {
     if (action) this.emu.setKey(action.key, pressed);
   }
 
-  // ───────────── Save states ─────────────
+  // ─────────── Save states ───────────
 
   /**
    * Saves the current state of the emulator session as a string.
@@ -314,8 +348,11 @@ export class EmulatorSession {
    * Destroys the emulator session, releasing all resources and stopping the main loop.
    * After calling this method, the emulator session cannot be used again.
    * It is recommended to call this method when the emulator session is no longer needed to free up resources.
+   * Calling it more than once is safe.
    */
   destroy(): void {
+    if (this.destroyed) return;
+
     this.flushBattery();
     this.destroyed = true;
 
@@ -328,11 +365,25 @@ export class EmulatorSession {
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
 
     this.releaseAll();
+    this.releaseResources();
+  }
 
+  /**
+   * Releases the audio graph and the emulator instance. Each resource is released at most
+   * once, so this can safely be called again after {@link destroy}, which is what
+   * {@link start} does to free anything created while the session was being destroyed.
+   */
+  private releaseResources(): void {
     this.node?.disconnect();
-    void this.audioCtx?.close();
 
-    this.emu?.delete();
+    if (this.audioCtx && this.audioCtx.state !== 'closed') {
+      void this.audioCtx.close();
+    }
+
+    if (this.emu && !this.emuDeleted) {
+      this.emuDeleted = true;
+      this.emu.delete();
+    }
   }
 
   // ───────────── Main loop ─────────────
