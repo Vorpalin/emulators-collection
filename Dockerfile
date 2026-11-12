@@ -29,7 +29,8 @@ RUN emcmake cmake \
     && cp build-wasm/emulators.js build-wasm/emulators.wasm /out/wasm/
 
 # The development image only needs Node/Vite; do not ship the large Emscripten SDK.
-FROM node:25-bookworm-slim AS dev
+# Keep this on the same Node major as CI (.github/workflows/checks.yml) and the README.
+FROM node:24-bookworm-slim AS dev
 
 WORKDIR /src
 
