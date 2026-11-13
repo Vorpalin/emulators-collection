@@ -177,7 +177,9 @@ export default function PlayerPage() {
 
         const g = await loadLocalGame(gameId);
         if (!g) {
-          throw new Error('This game is not part of this browser library. Import its ROM in this browser to play it.');
+          throw new Error(
+            'This game is not part of this browser library. Import its ROM in this browser to play it.',
+          );
         }
 
         const bytes = await loadRom(g);

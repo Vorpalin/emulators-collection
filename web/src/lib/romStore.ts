@@ -80,7 +80,6 @@ export async function deleteRom(gameId: string): Promise<void> {
   });
 }
 
-
 /** Lists ROM identifiers available in this browser's IndexedDB. */
 export async function listRomIds(): Promise<string[]> {
   const database = await openEmulatorDatabase();
