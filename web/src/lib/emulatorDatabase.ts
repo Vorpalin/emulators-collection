@@ -1,14 +1,15 @@
 /**
  * Shared IndexedDB database for browser-local emulator data.
  *
- * Keep the database schema in one place: ROM binaries and battery-backed RAM
- * must coexist in the same database regardless of which module opens it first.
+ * All user-owned game data stays in this browser. Supabase is used only to
+ * bootstrap metadata for ROMs already present locally during the migration.
  */
 const DATABASE_NAME = 'emulators-collection';
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 3;
 
 export const ROM_STORE = 'roms';
 export const BATTERY_STORE = 'battery';
+export const GAME_STORE = 'games';
 
 let databasePromise: Promise<IDBDatabase> | undefined;
 
@@ -24,13 +25,14 @@ export function openEmulatorDatabase(): Promise<IDBDatabase> {
       request.onupgradeneeded = () => {
         const database = request.result;
 
-        // Create every store during the same version upgrade. This also
-        // migrates existing version-1 databases created by either old module.
         if (!database.objectStoreNames.contains(ROM_STORE)) {
           database.createObjectStore(ROM_STORE);
         }
         if (!database.objectStoreNames.contains(BATTERY_STORE)) {
           database.createObjectStore(BATTERY_STORE, { keyPath: 'gameId' });
+        }
+        if (!database.objectStoreNames.contains(GAME_STORE)) {
+          database.createObjectStore(GAME_STORE, { keyPath: 'id' });
         }
       };
 
