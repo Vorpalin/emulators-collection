@@ -32,8 +32,8 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function sourceLabel(game: Game): string {
-  return game.size_bytes != null ? formatSize(game.size_bytes) : 'ROM stored locally';
+function sourceLabel(game: Game, storedLocallyLabel: string): string {
+  return game.size_bytes != null ? formatSize(game.size_bytes) : storedLocallyLabel;
 }
 
 export default function GameCard({
@@ -81,7 +81,7 @@ export default function GameCard({
         </span>
         <span className="absolute right-3 top-3 inline-flex max-w-[45%] items-center gap-1.5 truncate rounded-lg border border-white/10 bg-slate-950/70 px-2.5 py-1 text-[11px] text-slate-400 backdrop-blur">
           <HardDrive className="h-3 w-3 shrink-0" />
-          {sourceLabel(game)}
+          {sourceLabel(game, t('romStoredLocally'))}
         </span>
         {system && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 opacity-0 backdrop-blur-sm transition duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
