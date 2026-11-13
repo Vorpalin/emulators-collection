@@ -79,3 +79,16 @@ export async function deleteRom(gameId: string): Promise<void> {
     transaction.onabort = () => reject(transaction.error ?? new Error('ROM deletion was aborted.'));
   });
 }
+
+
+/** Lists ROM identifiers available in this browser's IndexedDB. */
+export async function listRomIds(): Promise<string[]> {
+  const database = await openEmulatorDatabase();
+
+  return new Promise<string[]>((resolve, reject) => {
+    const transaction = database.transaction(ROM_STORE, 'readonly');
+    const request = transaction.objectStore(ROM_STORE).getAllKeys();
+    request.onsuccess = () => resolve(request.result.map(String));
+    request.onerror = () => reject(request.error);
+  });
+}
