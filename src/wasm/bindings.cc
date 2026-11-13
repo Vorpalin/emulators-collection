@@ -22,9 +22,10 @@ namespace {
  * @brief Copies a JavaScript byte array into a C++ vector.
  *
  * The bytes are copied in a single `TypedArray.set()` call through a view over
- * the vector's storage. This is much faster than convertJSArrayToNumberVector(),
- * which crosses the JavaScript/WebAssembly boundary once per element (a
- * multi-megabyte Game Boy ROM means millions of crossings).
+ * the vector's storage. This is much faster than
+ * convertJSArrayToNumberVector(), which crosses the JavaScript/WebAssembly
+ * boundary once per element (a multi-megabyte Game Boy ROM means millions of
+ * crossings).
  *
  * @param data A `Uint8Array` (or any array-like of byte values).
  *
