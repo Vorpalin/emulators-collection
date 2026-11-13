@@ -50,7 +50,9 @@ export function openEmulatorDatabase(): Promise<IDBDatabase> {
 
       request.onblocked = () => {
         databasePromise = undefined;
-        reject(new Error('IndexedDB upgrade is blocked by another tab. Close other app tabs and retry.'));
+        reject(
+          new Error('IndexedDB upgrade is blocked by another tab. Close other app tabs and retry.'),
+        );
       };
     });
   }
