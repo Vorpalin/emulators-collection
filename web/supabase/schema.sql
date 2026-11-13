@@ -1,3 +1,7 @@
+-- Supabase schema for Emulators Collection.
+-- ROM binaries are stored locally in each browser's IndexedDB database.
+-- Supabase stores only account data, game metadata and user settings.
+
 create table if not exists public.profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
   username    text not null check (username ~ '^[A-Za-z0-9_]{3,20}$'),
@@ -7,7 +11,6 @@ create table if not exists public.profiles (
 
 create unique index if not exists profiles_username_lower_idx
   on public.profiles (lower(username));
-
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -36,19 +39,9 @@ select u.id, 'user_' || substr(u.id::text, 1, 8), u.email
 from auth.users u
 where not exists (select 1 from public.profiles p where p.id = u.id);
 
-
-create or replace function public.is_username_available(name text)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select not exists (select 1 from public.profiles where lower(username) = lower(name));
-$$;
-
-grant execute on function public.is_username_available(text) to anon, authenticated;
-
+-- Username availability is enforced by profiles_username_lower_idx.
+-- Do not expose a public RPC for checking usernames: it enables enumeration.
+drop function if exists public.is_username_available(text);
 
 alter table public.profiles enable row level security;
 
@@ -67,41 +60,28 @@ revoke all on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
 grant update (username) on public.profiles to authenticated;
 
-
 create table if not exists public.games (
   id          uuid primary key default gen_random_uuid(),
   owner_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
   title       text not null,
   system      text not null check (system in ('chip8', 'atari2600', 'gameboy', 'nes')),
-  rom_path    text,
-  size_bytes  integer,
-  rom_url     text,
+  size_bytes  bigint,
   created_at  timestamptz not null default now()
 );
 create index if not exists games_owner_idx on public.games (owner_id, created_at desc);
 
-alter table public.games add column if not exists rom_path   text;
-alter table public.games add column if not exists size_bytes integer;
-alter table public.games add column if not exists rom_url    text;
-alter table public.games alter column rom_path   drop not null;
-alter table public.games alter column size_bytes drop not null;
-alter table public.games alter column rom_url    drop not null;
+alter table public.games add column if not exists size_bytes bigint;
+alter table public.games alter column owner_id set default auth.uid();
 
 alter table public.games drop constraint if exists games_rom_url_check;
-alter table public.games add constraint games_rom_url_check
-  check (rom_url is null or rom_url ~* '^(https://|http://localhost)');
-
 alter table public.games drop constraint if exists games_has_rom;
-alter table public.games add constraint games_has_rom
-  check (rom_path is not null or rom_url is not null);
+-- Legacy ROM reference columns are left untouched on existing databases so
+-- deployments can export old files before removing the old Storage bucket.
 
--- Allow the NES on databases created before it was supported (the inline check
--- above is auto-named games_system_check).
+-- Allow the NES on databases created before it was supported.
 alter table public.games drop constraint if exists games_system_check;
 alter table public.games add constraint games_system_check
   check (system in ('chip8', 'atari2600', 'gameboy', 'nes'));
-
-alter table public.games alter column owner_id set default auth.uid();
 
 alter table public.games enable row level security;
 
@@ -113,7 +93,6 @@ create policy "games: owner full access" on public.games
 
 revoke all on public.games from anon, authenticated;
 grant select, insert, update, delete on public.games to authenticated;
-
 
 create table if not exists public.user_settings (
   user_id      uuid primary key default auth.uid() references auth.users(id) on delete cascade,
@@ -131,25 +110,8 @@ create policy "settings: owner full access" on public.user_settings
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
-
 revoke all on public.user_settings from anon, authenticated;
 grant select, insert, update on public.user_settings to authenticated;
 
-insert into storage.buckets (id, name, public, file_size_limit)
-values ('roms', 'roms', false, 16777216)
-on conflict (id) do update set public = false, file_size_limit = 16777216;
-
-drop policy if exists "roms: read own" on storage.objects;
-create policy "roms: read own" on storage.objects
-  for select to authenticated
-  using (bucket_id = 'roms' and (storage.foldername(name))[1] = auth.uid()::text);
-
-drop policy if exists "roms: upload own" on storage.objects;
-create policy "roms: upload own" on storage.objects
-  for insert to authenticated
-  with check (bucket_id = 'roms' and (storage.foldername(name))[1] = auth.uid()::text);
-
-drop policy if exists "roms: delete own" on storage.objects;
-create policy "roms: delete own" on storage.objects
-  for delete to authenticated
-  using (bucket_id = 'roms' and (storage.foldername(name))[1] = auth.uid()::text);
+-- The legacy 'roms' Storage bucket is intentionally not recreated.
+-- Remove it from the Supabase dashboard after reviewing any existing files.

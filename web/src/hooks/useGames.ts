@@ -1,52 +1,30 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { fetchRom, MAX_ROM_BYTES } from '../lib/fetchRom';
+import { deleteRom, getRom, saveRom } from '../lib/romStore';
 import type { SystemId } from '../emulator/systems';
 import type { Game } from '../types';
 
-const BUCKET = 'roms';
-
 /**
  * Represents a new game to be added to the collection.
- * @interface NewGame
- * @property {string} title - The title of the game.
- * @property {SystemId} system - The system the game is for.
- * @property {File} file - The ROM file of the game.
  */
 export interface NewGame {
-  /**
-   * The title of the game.
-   */
   title: string;
-  /**
-   * The system the game is for.
-   */
   system: SystemId;
-  /**
-   * The ROM file of the game.
-   */
   file: File;
 }
 
 /**
- * Validates a ROM file based on its size.
- * @param file - The ROM file to validate.
- * @returns A string error message if the file is invalid, or null if the file is valid.
+ * Validates that an imported ROM contains data. Its maximum size is determined
+ * by the browser's available IndexedDB quota rather than a fixed app limit.
  */
 export function validateRomFile(file: File): string | null {
   if (file.size === 0) return 'The file is empty.';
-  if (file.size > MAX_ROM_BYTES) {
-    return `The ROM is too large (maximum ${MAX_ROM_BYTES / 1024 / 1024} MB).`;
-  }
   return null;
 }
 
 /**
- * A custom React hook for managing games in the application.
- * It provides functionalities to fetch, add, and remove games from the Supabase database.
- * It also handles loading and error states.
- *
- * @returns An object containing the list of games, loading state, error state, and functions to add, remove, and refresh games.
+ * Manages the user's game metadata in Supabase and ROM binaries in local
+ * browser storage. ROM files never leave the browser.
  */
 export function useGames() {
   const [games, setGames] = useState<Game[]>([]);
@@ -78,57 +56,52 @@ export function useGames() {
     const { data: auth, error: authErr } = await supabase.auth.getUser();
     if (authErr || !auth.user) throw new Error('Your session has expired. Please sign in again.');
 
-    const safeName = file.name.replace(/[^\w.-]+/g, '_');
-    const path = `${auth.user.id}/${crypto.randomUUID()}-${safeName}`;
-
-    const upload = await supabase.storage.from(BUCKET).upload(path, file, {
-      contentType: 'application/octet-stream',
-    });
-    if (upload.error) throw new Error(upload.error.message);
-
     const { data, error: err } = await supabase
       .from('games')
       .insert({
         owner_id: auth.user.id,
         title,
         system,
-        rom_path: path,
         size_bytes: file.size,
       })
       .select()
       .single();
-    if (err) {
-      await supabase.storage.from(BUCKET).remove([path]);
-      throw new Error(err.message);
+
+    if (err) throw new Error(err.message);
+
+    try {
+      await saveRom(data.id, file);
+    } catch (storageError) {
+      const { error: rollbackError } = await supabase.from('games').delete().eq('id', data.id);
+      if (rollbackError) {
+        console.error(
+          'Could not roll back game metadata after ROM storage failed:',
+          rollbackError.message,
+        );
+      }
+      throw storageError;
     }
+
     setGames((prev) => [data as Game, ...prev]);
   }, []);
 
   const remove = useCallback(async (game: Game): Promise<void> => {
     const { error: err } = await supabase.from('games').delete().eq('id', game.id);
     if (err) throw new Error(err.message);
+
     setGames((prev) => prev.filter((g) => g.id !== game.id));
 
-    if (game.rom_path) {
-      const { error: rmErr } = await supabase.storage.from(BUCKET).remove([game.rom_path]);
-      if (rmErr) console.error('Could not delete the ROM file:', rmErr.message);
+    try {
+      await deleteRom(game.id);
+    } catch (storageError) {
+      console.warn('Could not delete the local ROM file:', storageError);
     }
   }, []);
 
   return { games, loading, error, add, remove, refresh };
 }
 
-/**
- * Loads the ROM data for a given game.
- * @param game - The game object containing information about the ROM.
- * @returns A promise that resolves to a Uint8Array containing the ROM data.
- */
+/** Loads a ROM from this browser's IndexedDB store. */
 export async function loadRom(game: Game): Promise<Uint8Array> {
-  if (game.rom_path) {
-    const { data, error } = await supabase.storage.from(BUCKET).download(game.rom_path);
-    if (error || !data) throw new Error(error?.message ?? 'Could not download the ROM.');
-    return new Uint8Array(await data.arrayBuffer());
-  }
-  if (game.rom_url) return fetchRom(game.rom_url);
-  throw new Error('This game has no ROM attached.');
+  return getRom(game.id);
 }

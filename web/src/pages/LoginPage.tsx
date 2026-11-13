@@ -13,7 +13,7 @@ const RESET_COOLDOWN_SECONDS = 60;
 type Mode = 'signin' | 'signup' | 'forgot';
 
 /**
- * LoginPage component provides a user interface for signing in, signing up, and resetting passwords. It manages the state of the form inputs, handles form submission, and displays appropriate messages based on the user's actions and server responses.
+ * LoginPage component provides a user interface for signing in, signing up, and resetting passwords. It manages the state of the form inputs, handles form submission, and displays appropriate messages based on the user's actions.
  * @returns A React component that renders the login page for user authentication.
  */
 export default function LoginPage() {
@@ -82,18 +82,8 @@ export default function LoginPage() {
         return;
       }
 
-      const { data: free, error: rpcErr } = await supabase.rpc('is_username_available', {
-        name: username,
-      });
-      if (rpcErr) {
-        setError(rpcErr.message);
-        return;
-      }
-      if (!free) {
-        setError(t('usernameTaken'));
-        return;
-      }
-
+      // The case-insensitive unique index is the source of truth. Avoid a
+      // publicly callable availability RPC, which would expose usernames.
       const { data, error: err } = await supabase.auth.signUp({
         email,
         password,
