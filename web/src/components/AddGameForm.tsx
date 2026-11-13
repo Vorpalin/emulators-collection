@@ -184,7 +184,7 @@ export default function AddGameForm({ onSubmit, onCancel }: Props) {
         className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-60 text-slate-950 font-semibold px-4 py-2 rounded-xl text-sm flex items-center space-x-2 transition"
       >
         <Plus className="w-4 h-4" />
-        <span>{busy ? t('uploading') : t('add')}</span>
+        <span>{busy ? t('savingRom') : t('add')}</span>
       </button>
     </form>
   );
