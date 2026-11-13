@@ -27,7 +27,11 @@ function openDatabase(): Promise<IDBDatabase> {
       };
       request.onblocked = () => {
         databasePromise = undefined;
-        reject(new Error('Browser storage is blocked by another open tab. Close other app tabs and retry.'));
+        reject(
+          new Error(
+            'Browser storage is blocked by another open tab. Close other app tabs and retry.',
+          ),
+        );
       };
     });
   }
@@ -69,7 +73,8 @@ export async function saveRom(gameId: string, file: File): Promise<void> {
       transaction.objectStore(STORE_NAME).put(file, gameId);
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
-      transaction.onabort = () => reject(transaction.error ?? new Error('ROM storage was aborted.'));
+      transaction.onabort = () =>
+        reject(transaction.error ?? new Error('ROM storage was aborted.'));
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {

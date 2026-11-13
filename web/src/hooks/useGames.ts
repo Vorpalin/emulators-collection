@@ -74,7 +74,10 @@ export function useGames() {
     } catch (storageError) {
       const { error: rollbackError } = await supabase.from('games').delete().eq('id', data.id);
       if (rollbackError) {
-        console.error('Could not roll back game metadata after ROM storage failed:', rollbackError.message);
+        console.error(
+          'Could not roll back game metadata after ROM storage failed:',
+          rollbackError.message,
+        );
       }
       throw storageError;
     }
