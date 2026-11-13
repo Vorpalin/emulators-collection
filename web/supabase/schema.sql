@@ -75,8 +75,8 @@ alter table public.games alter column owner_id set default auth.uid();
 
 alter table public.games drop constraint if exists games_rom_url_check;
 alter table public.games drop constraint if exists games_has_rom;
-alter table public.games drop column if exists rom_path;
-alter table public.games drop column if exists rom_url;
+-- Legacy ROM reference columns are left untouched on existing databases so
+-- deployments can export old files before removing the old Storage bucket.
 
 -- Allow the NES on databases created before it was supported.
 alter table public.games drop constraint if exists games_system_check;
