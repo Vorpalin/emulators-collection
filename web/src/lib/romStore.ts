@@ -1,43 +1,4 @@
-const DATABASE_NAME = 'emulators-collection';
-const DATABASE_VERSION = 1;
-const STORE_NAME = 'roms';
-
-let databasePromise: Promise<IDBDatabase> | undefined;
-
-function openDatabase(): Promise<IDBDatabase> {
-  if (typeof indexedDB === 'undefined') {
-    return Promise.reject(new Error('Browser storage is not available in this environment.'));
-  }
-
-  if (!databasePromise) {
-    databasePromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-
-      request.onupgradeneeded = () => {
-        const database = request.result;
-        if (!database.objectStoreNames.contains(STORE_NAME)) {
-          database.createObjectStore(STORE_NAME);
-        }
-      };
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => {
-        databasePromise = undefined;
-        reject(request.error ?? new Error('Could not open browser storage.'));
-      };
-      request.onblocked = () => {
-        databasePromise = undefined;
-        reject(
-          new Error(
-            'Browser storage is blocked by another open tab. Close other app tabs and retry.',
-          ),
-        );
-      };
-    });
-  }
-
-  return databasePromise;
-}
+import { openEmulatorDatabase, ROM_STORE } from './emulatorDatabase';
 
 async function checkAvailableStorage(requiredBytes: number): Promise<void> {
   if (!navigator.storage?.estimate) return;
@@ -65,12 +26,12 @@ export async function saveRom(gameId: string, file: File): Promise<void> {
     // Persistence is a best-effort browser feature.
   }
 
-  const database = await openDatabase();
+  const database = await openEmulatorDatabase();
 
   try {
     await new Promise<void>((resolve, reject) => {
-      const transaction = database.transaction(STORE_NAME, 'readwrite');
-      transaction.objectStore(STORE_NAME).put(file, gameId);
+      const transaction = database.transaction(ROM_STORE, 'readwrite');
+      transaction.objectStore(ROM_STORE).put(file, gameId);
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () =>
@@ -88,11 +49,11 @@ export async function saveRom(gameId: string, file: File): Promise<void> {
 
 /** Loads a ROM saved in this browser. */
 export async function getRom(gameId: string): Promise<Uint8Array> {
-  const database = await openDatabase();
+  const database = await openEmulatorDatabase();
 
   const file = await new Promise<Blob | undefined>((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, 'readonly');
-    const request = transaction.objectStore(STORE_NAME).get(gameId);
+    const transaction = database.transaction(ROM_STORE, 'readonly');
+    const request = transaction.objectStore(ROM_STORE).get(gameId);
     request.onsuccess = () => resolve(request.result as Blob | undefined);
     request.onerror = () => reject(request.error);
   });
@@ -108,11 +69,11 @@ export async function getRom(gameId: string): Promise<Uint8Array> {
 
 /** Deletes a ROM from this browser. */
 export async function deleteRom(gameId: string): Promise<void> {
-  const database = await openDatabase();
+  const database = await openEmulatorDatabase();
 
   await new Promise<void>((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, 'readwrite');
-    transaction.objectStore(STORE_NAME).delete(gameId);
+    const transaction = database.transaction(ROM_STORE, 'readwrite');
+    transaction.objectStore(ROM_STORE).delete(gameId);
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
     transaction.onabort = () => reject(transaction.error ?? new Error('ROM deletion was aborted.'));
