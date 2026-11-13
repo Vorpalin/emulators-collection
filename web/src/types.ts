@@ -5,9 +5,7 @@ export interface Game {
   owner_id: string;
   title: string;
   system: SystemId;
-  rom_path: string | null;
   size_bytes: number | null;
-  rom_url: string | null;
   created_at: string;
 }
 
