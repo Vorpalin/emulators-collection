@@ -55,6 +55,15 @@ target_include_directories(emulator_options
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+# WebAssembly only: optimise for speed (the Emscripten toolchain's Release default
+# is -O2) and let the linker inline across the emulator libraries. LTO must be
+# requested when compiling *and* when linking, hence INTERFACE options on
+# emulator_options, which every library and the final module already use.
+if(EMSCRIPTEN)
+    target_compile_options(emulator_options INTERFACE -O3 -flto)
+    target_link_options(emulator_options INTERFACE -O3 -flto)
+endif()
+
 # ============================================================
 # CHIP-8
 # ============================================================

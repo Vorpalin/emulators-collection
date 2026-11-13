@@ -6,6 +6,24 @@ const TARGET_BUFFER_SECONDS = 0.08;
 const MAX_STEPS_PER_TICK = 4;
 
 /**
+ * Nominal frame rate (Hz) of each system. Only used to pace the emulation when the audio
+ * output cannot act as the clock (suspended or blocked audio context).
+ */
+const FRAME_RATES: Record<string, number> = {
+  chip8: 60,
+  atari2600: 59.92,
+  gameboy: 59.7275,
+  nes: 60.0988,
+};
+const DEFAULT_FRAME_RATE = 60;
+
+/**
+ * Longest wall-clock gap (ms) converted into emulated frames when pacing without audio,
+ * so that a stalled or backgrounded tab does not fast-forward the game when it wakes up.
+ */
+const MAX_WALL_DELTA_MS = 100;
+
+/**
  * A game "saves" by writing to its cartridge RAM, there is no save event. We
  * consider the save finished once the RAM has not changed for this many
  * emulated frames (about one second).
@@ -94,6 +112,12 @@ export class EmulatorSession {
   private volume: number;
   /** The number of audio frames queued for playback. */
   private queuedFrames = 0;
+  /** What currently drives the emulation speed: the audio output or the wall clock. */
+  private pacing: 'audio' | 'clock' = 'audio';
+  /** Timestamp (ms) of the last wall-clock pacing update, or 0 if there is none yet. */
+  private lastWallTime = 0;
+  /** Wall-clock time (ms) owed to the emulator, spent in whole frames. */
+  private wallDebt = 0;
   /** A set of currently pressed keyboard keys. */
   private pressed = new Set<string>();
   /** A set of currently pressed gamepad actions. */
@@ -225,6 +249,8 @@ export class EmulatorSession {
     if (this.destroyed) return;
 
     this.paused = true;
+    this.lastWallTime = 0;
+    this.wallDebt = 0;
     this.flushBattery();
     void this.audioCtx?.suspend();
     this.releaseAll();
@@ -392,25 +418,21 @@ export class EmulatorSession {
    * The main loop of the emulator session, responsible for updating the emulator state, processing input, and rendering video and audio.
    * This method is called repeatedly using requestAnimationFrame to achieve smooth updates.
    * It checks if the emulator session is paused or destroyed, and if not, it polls for gamepad input, steps the emulator forward, and pushes audio data to the audio worklet.
+   * The audio output is the clock while it is running; otherwise (suspended or blocked audio context) the wall clock takes over so that the game keeps running, silently.
    * The loop continues until the emulator session is destroyed or paused.
+   * @param now The timestamp (ms) given by requestAnimationFrame.
    */
-  private loop = (): void => {
+  private loop = (now: number): void => {
     if (this.destroyed || !this.module || !this.emu || !this.audioCtx || !this.node) {
       return;
     }
 
     if (!this.paused) {
       this.pollGamepad();
+      this.updatePacing(now);
 
-      const target = this.audioCtx.sampleRate * TARGET_BUFFER_SECONDS;
-      let steps = 0;
-
-      while (this.queuedFrames < target && steps < MAX_STEPS_PER_TICK) {
-        this.emu.stepFrame();
-        this.trackBattery();
-        this.pushAudio();
-        steps++;
-      }
+      const audioPaced = this.pacing === 'audio';
+      const steps = audioPaced ? this.stepWithAudioClock() : this.stepWithWallClock(now);
 
       if (steps > 0) {
         this.draw();
@@ -419,6 +441,78 @@ export class EmulatorSession {
 
     this.raf = requestAnimationFrame(this.loop);
   };
+
+  /**
+   * Chooses what drives the emulation speed: the audio output while the audio context is
+   * running, the wall clock otherwise. Resets the bookkeeping of both clocks on a change,
+   * because whatever the worklet last reported is stale after the switch.
+   * @param now The timestamp (ms) given by requestAnimationFrame.
+   */
+  private updatePacing(now: number): void {
+    const next = this.audioCtx.state === 'running' ? 'audio' : 'clock';
+    if (next === this.pacing) return;
+
+    this.pacing = next;
+    this.queuedFrames = 0;
+    this.lastWallTime = now;
+    this.wallDebt = 0;
+  }
+
+  /**
+   * Steps the emulator until the audio queue holds enough samples (the audio output drains
+   * the queue in real time, which is what keeps the game at the right speed).
+   * @returns The number of frames emulated.
+   */
+  private stepWithAudioClock(): number {
+    const target = this.audioCtx.sampleRate * TARGET_BUFFER_SECONDS;
+    let steps = 0;
+
+    while (this.queuedFrames < target && steps < MAX_STEPS_PER_TICK) {
+      this.stepFrame(true);
+      steps++;
+    }
+
+    return steps;
+  }
+
+  /**
+   * Steps the emulator according to the elapsed wall-clock time, at the nominal frame rate
+   * of the system. Used when no audio is playing, since an audio queue that is never
+   * drained would otherwise freeze the game after a few frames. No audio is produced.
+   * @param now The timestamp (ms) given by requestAnimationFrame.
+   * @returns The number of frames emulated.
+   */
+  private stepWithWallClock(now: number): number {
+    const frameMs = 1000 / (FRAME_RATES[this.opts.system.id] ?? DEFAULT_FRAME_RATE);
+
+    if (this.lastWallTime === 0) this.lastWallTime = now;
+    this.wallDebt += Math.min(now - this.lastWallTime, MAX_WALL_DELTA_MS);
+    this.lastWallTime = now;
+
+    let steps = 0;
+
+    while (this.wallDebt >= frameMs && steps < MAX_STEPS_PER_TICK) {
+      this.stepFrame(false);
+      this.wallDebt -= frameMs;
+      steps++;
+    }
+
+    // Running behind: drop the backlog instead of trying to catch up forever.
+    if (this.wallDebt >= frameMs) this.wallDebt = 0;
+
+    return steps;
+  }
+
+  /**
+   * Emulates exactly one frame.
+   * @param withAudio Whether to hand the generated samples to the audio worklet. This must
+   * be false when the audio output is not running, otherwise samples pile up unplayed.
+   */
+  private stepFrame(withAudio: boolean): void {
+    this.emu.stepFrame();
+    this.trackBattery();
+    if (withAudio) this.pushAudio();
+  }
 
   // ───────────── In-game save (battery RAM) ─────────────
 
@@ -555,6 +649,7 @@ export class EmulatorSession {
    * Handles the keydown event for the emulator session, updating the pressed state of the corresponding action in the emulator.
    * If the key is not mapped to any action or if the emulator session is paused, the event is ignored.
    * The default behavior of the key event is prevented to avoid unwanted side effects in the browser.
+   * A key press is also a user gesture, so it is used to start the audio output if the browser blocked it at startup.
    * @param e The keyboard event triggered by the keydown action.
    */
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -568,6 +663,8 @@ export class EmulatorSession {
 
     this.pressed.add(e.code);
     this.emu.setKey(key, true);
+
+    if (this.audioCtx.state === 'suspended') void this.audioCtx.resume();
   };
 
   /**

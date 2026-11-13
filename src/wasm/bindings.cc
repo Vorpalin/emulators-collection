@@ -1,6 +1,7 @@
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -14,6 +15,32 @@
 #include "emulators/console/nes/Nes.hh"
 
 using namespace emscripten;
+
+namespace {
+
+/**
+ * @brief Copies a JavaScript byte array into a C++ vector.
+ *
+ * The bytes are copied in a single `TypedArray.set()` call through a view over
+ * the vector's storage. This is much faster than
+ * convertJSArrayToNumberVector(), which crosses the JavaScript/WebAssembly
+ * boundary once per element (a multi-megabyte Game Boy ROM means millions of
+ * crossings).
+ *
+ * @param data A `Uint8Array` (or any array-like of byte values).
+ *
+ * @return The copied bytes. Empty if @p data is empty.
+ */
+std::vector<uint8_t> toBytes(const val& data) {
+  const auto length = data["length"].as<std::size_t>();
+  std::vector<uint8_t> bytes(length);
+  if (length > 0) {
+    val(typed_memory_view(length, bytes.data())).call<void>("set", data);
+  }
+  return bytes;
+}
+
+}  // namespace
 
 /**
  * @brief WebAssembly bridge exposing the emulator core to JavaScript.
@@ -48,8 +75,8 @@ class EmulatorWrapper {
    * @brief Creates and loads an emulator from a JavaScript ROM buffer.
    *
    * The emulator implementation is selected from @p type. The ROM data
-   * contained in @p rom is converted from a JavaScript array to a C++ byte
-   * vector before being passed to the emulator.
+   * contained in @p rom is copied to a C++ byte vector before being passed to
+   * the emulator.
    *
    * If an audio sample rate has previously been configured with
    * setSampleRate(), it is applied to the newly created emulator.
@@ -82,7 +109,7 @@ class EmulatorWrapper {
       return false;
     }
     if (sampleRate_ > 0) console->setAudioSampleRate(sampleRate_);
-    const auto bytes = convertJSArrayToNumberVector<uint8_t>(rom);
+    const auto bytes = toBytes(rom);
     if (!console->loadProgram(bytes.data(), bytes.size())) return false;
     console_ = std::move(console);
     return true;
@@ -231,7 +258,7 @@ class EmulatorWrapper {
    */
   bool loadRam(const val& data) {
     if (!console_) return false;
-    const auto bytes = convertJSArrayToNumberVector<uint8_t>(data);
+    const auto bytes = toBytes(data);
     return console_->loadRam(bytes.data(), bytes.size());
   }
 
