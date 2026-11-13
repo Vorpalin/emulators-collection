@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { deleteRom, getRom, saveRom } from '../lib/romStore';
+import { deleteRom, getRom, listRomIds, saveRom } from '../lib/romStore';
+import { deleteBattery } from '../lib/batteryStore';
+import { deleteGame, getGame, listGames, saveGame } from '../lib/gameStore';
 import type { SystemId } from '../emulator/systems';
 import type { Game } from '../types';
 
-/**
- * Represents a new game to be added to the collection.
- */
+/** Represents a new game to be added to the collection. */
 export interface NewGame {
   title: string;
   system: SystemId;
@@ -23,8 +23,33 @@ export function validateRomFile(file: File): string | null {
 }
 
 /**
- * Manages the user's game metadata in Supabase and ROM binaries in local
- * browser storage. ROM files never leave the browser.
+ * Imports metadata for legacy ROMs already present in this browser.
+ * Metadata belonging to ROMs stored by another browser is never imported.
+ */
+async function migrateLocalGameMetadata(): Promise<void> {
+  const romIds = await listRomIds();
+  if (romIds.length === 0) return;
+
+  const localGames = await listGames();
+  const knownIds = new Set(localGames.map((game) => game.id));
+  const missingIds = romIds.filter((id) => !knownIds.has(id));
+  if (missingIds.length === 0) return;
+
+  // Keep requests bounded for accounts with large libraries.
+  for (let offset = 0; offset < missingIds.length; offset += 100) {
+    const ids = missingIds.slice(offset, offset + 100);
+    const { data, error } = await supabase.from('games').select('*').in('id', ids);
+    if (error) throw new Error(error.message);
+
+    for (const game of (data ?? []) as Game[]) {
+      await saveGame(game);
+    }
+  }
+}
+
+/**
+ * Manages game metadata, ROM binaries and battery saves locally in this
+ * browser. Supabase is only used once to migrate metadata for legacy local ROMs.
  */
 export function useGames() {
   const [games, setGames] = useState<Game[]>([]);
@@ -33,16 +58,22 @@ export function useGames() {
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    const { data, error: err } = await supabase
-      .from('games')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (err) setError(err.message);
-    else {
+    try {
+      // Migration is best-effort: already migrated local games remain usable
+      // even if Supabase is temporarily unavailable.
+      try {
+        await migrateLocalGameMetadata();
+      } catch (migrationError) {
+        console.warn('Unable to migrate legacy local game metadata:', migrationError);
+      }
+
+      setGames(await listGames());
       setError(null);
-      setGames(data as Game[]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -56,46 +87,35 @@ export function useGames() {
     const { data: auth, error: authErr } = await supabase.auth.getUser();
     if (authErr || !auth.user) throw new Error('Your session has expired. Please sign in again.');
 
-    const { data, error: err } = await supabase
-      .from('games')
-      .insert({
-        owner_id: auth.user.id,
-        title,
-        system,
-        size_bytes: file.size,
-      })
-      .select()
-      .single();
+    const game: Game = {
+      id: crypto.randomUUID(),
+      owner_id: auth.user.id,
+      title,
+      system,
+      size_bytes: file.size,
+      created_at: new Date().toISOString(),
+    };
 
-    if (err) throw new Error(err.message);
-
+    await saveRom(game.id, file);
     try {
-      await saveRom(data.id, file);
-    } catch (storageError) {
-      const { error: rollbackError } = await supabase.from('games').delete().eq('id', data.id);
-      if (rollbackError) {
-        console.error(
-          'Could not roll back game metadata after ROM storage failed:',
-          rollbackError.message,
-        );
-      }
-      throw storageError;
+      await saveGame(game);
+    } catch (error) {
+      await deleteRom(game.id).catch(() => undefined);
+      throw error;
     }
 
-    setGames((prev) => [data as Game, ...prev]);
+    setGames((prev) => [game, ...prev]);
   }, []);
 
   const remove = useCallback(async (game: Game): Promise<void> => {
-    const { error: err } = await supabase.from('games').delete().eq('id', game.id);
-    if (err) throw new Error(err.message);
-
-    setGames((prev) => prev.filter((g) => g.id !== game.id));
-
-    try {
-      await deleteRom(game.id);
-    } catch (storageError) {
-      console.warn('Could not delete the local ROM file:', storageError);
-    }
+    // Do not delete the shared Supabase row: another browser may still have
+    // its own local ROM and metadata for this game.
+    await deleteRom(game.id);
+    await deleteBattery(game.id).catch((storageError) => {
+      console.warn('Could not delete the local battery save:', storageError);
+    });
+    await deleteGame(game.id);
+    setGames((prev) => prev.filter((entry) => entry.id !== game.id));
   }, []);
 
   return { games, loading, error, add, remove, refresh };
@@ -104,4 +124,9 @@ export function useGames() {
 /** Loads a ROM from this browser's IndexedDB store. */
 export async function loadRom(game: Game): Promise<Uint8Array> {
   return getRom(game.id);
+}
+
+/** Loads game metadata from this browser's IndexedDB store. */
+export function loadLocalGame(gameId: string): Promise<Game | undefined> {
+  return getGame(gameId);
 }
