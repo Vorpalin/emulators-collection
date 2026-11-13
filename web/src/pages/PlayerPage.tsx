@@ -15,8 +15,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { loadRom } from '../hooks/useGames';
+import { loadLocalGame, loadRom } from '../hooks/useGames';
 import { loadBattery, saveBattery } from '../lib/batteryStore';
 import { useSettings } from '../hooks/useSettings';
 import TouchControls, { useIsTouchDevice, useMediaQuery } from '../components/TouchControls';
@@ -174,15 +173,15 @@ export default function PlayerPage() {
 
     (async () => {
       try {
-        const { data, error: err } = await supabase
-          .from('games')
-          .select('*')
-          .eq('id', gameId)
-          .single();
+        if (!gameId) throw new Error('Missing game identifier.');
 
-        if (err) throw new Error(err.message);
+        const g = await loadLocalGame(gameId);
+        if (!g) {
+          throw new Error(
+            'This game is not part of this browser library. Import its ROM in this browser to play it.',
+          );
+        }
 
-        const g = data as Game;
         const bytes = await loadRom(g);
 
         if (cancelled) return;
