@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { deleteRom, getRom, listRomIds, saveRom } from '../lib/romStore';
 import { deleteBattery } from '../lib/batteryStore';
 import { deleteGame, getGame, listGames, saveGame } from '../lib/gameStore';
+import { LocalizedError, localizedMessage } from '../lib/errors';
 import type { SystemId } from '../emulator/systems';
 import type { Game } from '../types';
 
@@ -16,9 +17,10 @@ export interface NewGame {
 /**
  * Validates that an imported ROM contains data. Its maximum size is determined
  * by the browser's available IndexedDB quota rather than a fixed app limit.
+ * @returns A message in the current interface language if the file is invalid, otherwise null.
  */
 export function validateRomFile(file: File): string | null {
-  if (file.size === 0) return 'The file is empty.';
+  if (file.size === 0) return localizedMessage('romFileEmpty', 'The file is empty.');
   return null;
 }
 
@@ -85,7 +87,9 @@ export function useGames() {
     if (fileError) throw new Error(fileError);
 
     const { data: auth, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !auth.user) throw new Error('Your session has expired. Please sign in again.');
+    if (authErr || !auth.user) {
+      throw new LocalizedError('sessionExpired', 'Your session has expired. Sign in again.');
+    }
 
     const game: Game = {
       id: crypto.randomUUID(),

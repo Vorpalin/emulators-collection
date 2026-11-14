@@ -1,6 +1,7 @@
 import { loadEmulatorModule, type EmulatorInstance, type EmulatorModule } from './wasm';
 import type { SystemDef } from './systems';
 import { GAMEPAD_MAPPINGS, readGamepadActions } from './gamepad';
+import { LocalizedError } from '../lib/errors';
 
 const TARGET_BUFFER_SECONDS = 0.08;
 const MAX_STEPS_PER_TICK = 4;
@@ -136,10 +137,16 @@ export class EmulatorSession {
   /**
    * Creates a new emulator session with the specified options.
    * @param opts The options for configuring the emulator session.
+   * @throws {LocalizedError} If the canvas cannot provide a 2D rendering context.
    */
   constructor(private opts: SessionOptions) {
     const ctx = opts.canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D indisponible');
+    if (!ctx) {
+      throw new LocalizedError(
+        'canvasUnavailable',
+        'The 2D canvas is not available in this browser.',
+      );
+    }
 
     this.ctx2d = ctx;
     this.volume = opts.volume;
@@ -217,7 +224,10 @@ export class EmulatorSession {
     this.emu.setSampleRate(this.audioCtx.sampleRate);
 
     if (!this.emu.load(this.opts.system.id, rom)) {
-      throw new Error("ROM refusée par l'émulateur (fichier invalide ou non supporté).");
+      throw new LocalizedError(
+        'romRejected',
+        'The emulator rejected this ROM (invalid or unsupported file).',
+      );
     }
 
     // --- In-game save (battery RAM) ---
@@ -332,7 +342,7 @@ export class EmulatorSession {
    */
   saveState(): string {
     if (this.destroyed || !this.emu) {
-      throw new Error('Emulator session is not running.');
+      throw new LocalizedError('sessionNotRunning', 'The emulator session is not running.');
     }
 
     return this.emu.saveState();
@@ -346,11 +356,11 @@ export class EmulatorSession {
    */
   loadState(data: string): boolean {
     if (this.destroyed || !this.emu) {
-      throw new Error('Emulator session is not running.');
+      throw new LocalizedError('sessionNotRunning', 'The emulator session is not running.');
     }
 
     if (!data.trim()) {
-      throw new Error('Save state is empty.');
+      throw new LocalizedError('saveStateEmpty', 'The save state is empty.');
     }
 
     this.releaseAll();
