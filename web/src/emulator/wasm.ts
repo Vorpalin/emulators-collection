@@ -1,3 +1,5 @@
+import { LocalizedError } from '../lib/errors';
+
 /**
  * Interface representing an instance of an emulator, providing methods to load ROMs, control execution, manage input, and access audio and video data.
  * This interface defines the core functionality required to interact with an emulator instance, allowing for loading games, stepping through frames, handling input, and managing audio and video output.
@@ -170,7 +172,7 @@ export function loadEmulatorModule(): Promise<EmulatorModule> {
       .then((m) => m.default() as Promise<EmulatorModule>)
       .catch((err) => {
         modulePromise = null;
-        throw new Error('Impossible to load the WebAssembly module.', {
+        throw new LocalizedError('wasmLoadFailed', 'Could not load the WebAssembly module.', {
           cause: err,
         });
       });

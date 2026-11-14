@@ -1,6 +1,7 @@
 import { loadEmulatorModule, type EmulatorInstance, type EmulatorModule } from './wasm';
 import type { SystemDef } from './systems';
 import { GAMEPAD_MAPPINGS, readGamepadActions } from './gamepad';
+import { LocalizedError } from '../lib/errors';
 
 const TARGET_BUFFER_SECONDS = 0.08;
 const MAX_STEPS_PER_TICK = 4;
@@ -95,8 +96,6 @@ export class EmulatorSession {
   private gain!: GainNode;
   /** The 2D rendering context for the canvas. */
   private ctx2d: CanvasRenderingContext2D;
-  /** The image data used for rendering the emulator's framebuffer. */
-  private image: ImageData | null = null;
 
   /** The requestAnimationFrame ID for the main loop. */
   private raf = 0;
@@ -138,10 +137,16 @@ export class EmulatorSession {
   /**
    * Creates a new emulator session with the specified options.
    * @param opts The options for configuring the emulator session.
+   * @throws {LocalizedError} If the canvas cannot provide a 2D rendering context.
    */
   constructor(private opts: SessionOptions) {
     const ctx = opts.canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D indisponible');
+    if (!ctx) {
+      throw new LocalizedError(
+        'canvasUnavailable',
+        'The 2D canvas is not available in this browser.',
+      );
+    }
 
     this.ctx2d = ctx;
     this.volume = opts.volume;
@@ -219,7 +224,10 @@ export class EmulatorSession {
     this.emu.setSampleRate(this.audioCtx.sampleRate);
 
     if (!this.emu.load(this.opts.system.id, rom)) {
-      throw new Error("ROM refusée par l'émulateur (fichier invalide ou non supporté).");
+      throw new LocalizedError(
+        'romRejected',
+        'The emulator rejected this ROM (invalid or unsupported file).',
+      );
     }
 
     // --- In-game save (battery RAM) ---
@@ -334,7 +342,7 @@ export class EmulatorSession {
    */
   saveState(): string {
     if (this.destroyed || !this.emu) {
-      throw new Error('Emulator session is not running.');
+      throw new LocalizedError('sessionNotRunning', 'The emulator session is not running.');
     }
 
     return this.emu.saveState();
@@ -348,11 +356,11 @@ export class EmulatorSession {
    */
   loadState(data: string): boolean {
     if (this.destroyed || !this.emu) {
-      throw new Error('Emulator session is not running.');
+      throw new LocalizedError('sessionNotRunning', 'The emulator session is not running.');
     }
 
     if (!data.trim()) {
-      throw new Error('Save state is empty.');
+      throw new LocalizedError('saveStateEmpty', 'The save state is empty.');
     }
 
     this.releaseAll();
@@ -578,7 +586,7 @@ export class EmulatorSession {
 
   /**
    * Pushes audio data from the emulator to the audio worklet for playback.
-   * This method retrieves the audio frames from the emulator's audio buffer and sends them to the audio worklet node for processing.
+   * This method copies the audio frames of the emulator's audio buffer out of the WebAssembly memory and transfers them to the audio worklet node for processing.
    * It checks if the emulator module and audio buffer are available, and if there are any audio frames to push.
    * The method is called during each iteration of the main loop to ensure that audio playback remains in sync with the emulator's state.
    */
@@ -589,11 +597,13 @@ export class EmulatorSession {
 
     if (frames === 0) return;
 
-    const src = new Float32Array(this.module.HEAPF32.buffer, this.emu.audioPtr(), frames * 2);
+    // audioPtr() is a byte address while HEAPF32 is indexed in 4-byte floats. slice() copies
+    // the samples out of the WebAssembly memory with a single allocation, and the resulting
+    // buffer can be transferred (not copied again) to the worklet.
+    const start = this.emu.audioPtr() >>> 2;
+    const samples = this.module.HEAPF32.slice(start, start + frames * 2);
 
-    const copy = new Float32Array(src);
-
-    this.node.port.postMessage(copy, [copy.buffer]);
+    this.node.port.postMessage(samples, [samples.buffer]);
     this.queuedFrames += frames;
   }
 
@@ -614,14 +624,16 @@ export class EmulatorSession {
       canvas.height = h;
     }
 
-    if (!this.image || this.image.width !== w || this.image.height !== h) {
-      this.image = this.ctx2d.createImageData(w, h);
-    }
+    // View the framebuffer in place: ImageData wraps the array it is given instead of copying
+    // it, so putImageData() performs the only copy of the frame. (The view is created and
+    // consumed synchronously, so a growth of the WebAssembly memory cannot detach it.)
+    const pixels = new Uint8ClampedArray(
+      this.module.HEAPU8.buffer as ArrayBuffer,
+      this.emu.framebufferPtr(),
+      w * h * 4,
+    );
 
-    const pixels = new Uint8Array(this.module.HEAPU8.buffer, this.emu.framebufferPtr(), w * h * 4);
-
-    this.image.data.set(pixels);
-    this.ctx2d.putImageData(this.image, 0, 0);
+    this.ctx2d.putImageData(new ImageData(pixels, w, h), 0, 0);
   }
 
   // ───────────── Keyboard ─────────────

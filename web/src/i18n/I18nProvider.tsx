@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { setErrorTranslator } from '../lib/errors';
 
 export type Language = 'en' | 'fr';
 
@@ -71,7 +72,7 @@ const messages: Record<Language, Record<string, string>> = {
     tryAnotherFilter: 'Try another search or system filter.',
     addFirstGame: 'Add your first game',
     resetFilters: 'Reset filters',
-    deleteConfirm: 'Delete « {title} » from your library?',
+    deleteConfirm: 'Delete “{title}” from your library?',
     gameRemoved: '“{title}” was removed from your library.',
     dismiss: 'Dismiss',
     personalSetup: 'Personal setup',
@@ -166,8 +167,15 @@ const messages: Record<Language, Record<string, string>> = {
     touchHelp:
       'Use the on-screen buttons to play. Rotate your phone or use fullscreen for a bigger screen.',
     keyboardHelp:
-      'The keys are configured in the « Controls » tab. Click on the screen if the keyboard does not respond. A controller works too: press any button to connect it.',
+      'The keys are configured in the “Controls” tab. Click on the screen if the keyboard does not respond. A controller works too: press any button to connect it.',
     unsupportedSystem: 'Unsupported emulator system: {system}.',
+    canvasUnavailable: 'The 2D canvas is not available in this browser.',
+    romRejected: 'The emulator rejected this ROM (invalid or unsupported file).',
+    romFileEmpty: 'The file is empty.',
+    sessionExpired: 'Your session has expired. Please sign in again.',
+    sessionNotRunning: 'The emulator session is not running.',
+    saveStateEmpty: 'The save state is empty.',
+    wasmLoadFailed: 'Could not load the emulator (WebAssembly module).',
     dismissNotice: 'Dismiss',
     newVersion: 'A new version is available.',
     offlineReady: 'Emulators Collection is ready to work offline.',
@@ -341,6 +349,13 @@ const messages: Record<Language, Record<string, string>> = {
     keyboardHelp:
       'Les touches sont configurées dans l’onglet « Commandes ». Cliquez sur l’écran si le clavier ne répond pas. Une manette fonctionne également : appuyez sur un bouton pour la connecter.',
     unsupportedSystem: 'Système d’émulation non pris en charge : {system}.',
+    canvasUnavailable: 'Le canvas 2D n’est pas disponible dans ce navigateur.',
+    romRejected: 'L’émulateur a refusé cette ROM (fichier invalide ou non pris en charge).',
+    romFileEmpty: 'Le fichier est vide.',
+    sessionExpired: 'Votre session a expiré. Veuillez vous reconnecter.',
+    sessionNotRunning: 'La session d’émulation n’est pas en cours.',
+    saveStateEmpty: 'La sauvegarde est vide.',
+    wasmLoadFailed: 'Impossible de charger l’émulateur (module WebAssembly).',
     dismissNotice: 'Fermer',
     newVersion: 'Une nouvelle version est disponible.',
     offlineReady: 'Emulators Collection est prêt à fonctionner hors ligne.',
@@ -391,6 +406,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }),
     [language],
   );
+
+  // Errors raised outside React (emulator session, storage, WebAssembly loader) are written
+  // in the language currently displayed: see lib/errors.ts.
+  useEffect(() => {
+    setErrorTranslator(value.t);
+    return () => setErrorTranslator(null);
+  }, [value]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
