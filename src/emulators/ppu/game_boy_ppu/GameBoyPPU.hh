@@ -93,6 +93,18 @@ struct GameBoyPPUState {
   std::array<uint8_t, 0xA0> oam;
   std::array<uint8_t, SCREEN_WIDTH * SCREEN_HEIGHT> framebuffer;
   int dotCounter;
+  int windowLine = 0;  ///< Internal window line counter (see renderWindow*).
+
+  // --- Game Boy Color extension (absent from pre-CGB save states) ---
+  bool cgbMode = false;
+  std::array<uint8_t, 0x2000> vram1{};  ///< VRAM bank 1 (tile data + BG attrs).
+  uint8_t vramBank = 0;                 ///< VBK (0xFF4F) bank bit.
+  uint8_t bcps = 0;                     ///< BCPS (0xFF68).
+  uint8_t ocps = 0;                     ///< OCPS (0xFF6A).
+  uint8_t opri = 0;                     ///< OPRI (0xFF6C).
+  std::array<uint8_t, 64> bgPalette{};   ///< Background colour RAM.
+  std::array<uint8_t, 64> objPalette{};  ///< Sprite colour RAM.
+  std::array<uint16_t, SCREEN_WIDTH * SCREEN_HEIGHT> colorFramebuffer{};
 };
 
 /**
@@ -141,6 +153,12 @@ struct Sprite {
   bool paletteOBP1() const {
     return attributes & 0x10;
   }  ///< Bit 4: uses OBP1 instead of OBP0.
+
+  /// @name CGB-only attribute bits
+  /// @{
+  int cgbPalette() const { return attributes & 0x07; }  ///< Bits 0-2.
+  int cgbVramBank() const { return (attributes >> 3) & 1; }  ///< Bit 3.
+  /// @}
 };
 
 /**
@@ -224,8 +242,31 @@ class GameBoyPPU {
   void onStatInterrupt(std::function<void()> cb) { statInterrupt_ = cb; }
   /// @}
 
+  /** @brief Registers the callback raised at the start of every HBlank
+   *         (lines 0-143). Used by the CGB HBlank DMA. */
+  void onHBlank(std::function<void()> cb) { hblankCallback_ = cb; }
+
   /** @brief Read-only access to the PPU registers. */
   const PPURegisters& registers() const { return regs_; }
+
+  /**
+   * @brief Enables or disables Game Boy Color rendering.
+   * @details In CGB mode the PPU exposes VRAM bank 1, the colour palette RAM
+   *          (BCPS/BCPD/OCPS/OCPD), OPRI, and renders into colorFramebuffer().
+   *          When disabled the PPU behaves exactly like a DMG.
+   */
+  void setCgbMode(bool enabled) { cgbMode_ = enabled; }
+  /** @brief True when rendering in Game Boy Color mode. */
+  bool cgbMode() const { return cgbMode_; }
+
+  /**
+   * @brief CGB output: one RGB555 value (0bBBBBBGGGGGRRRRR) per pixel.
+   * @note Only meaningful when cgbMode() is true.
+   */
+  const std::array<uint16_t, SCREEN_WIDTH * SCREEN_HEIGHT>& colorFramebuffer()
+      const {
+    return colorFb_;
+  }
 
   /**
    * @brief Sets the PPU state from a serializable structure.
@@ -245,6 +286,26 @@ class GameBoyPPU {
   std::array<uint8_t, SCREEN_WIDTH * SCREEN_HEIGHT>
       framebuffer_{};   ///< Output pixels.
   int dotCounter_ = 0;  ///< Dot counter within the current line (0-455).
+  /// Internal window line counter: advances only on lines where the window is
+  /// really drawn, and restarts every frame. It is NOT simply `LY - WY`: a
+  /// game that parks the window off-screen (WX >= 167) or toggles it mid-frame
+  /// resumes from where the window left off.
+  int windowLineCounter_ = 0;
+
+  // --- Game Boy Color ---
+  bool cgbMode_ = false;                ///< CGB rendering enabled.
+  std::array<uint8_t, 0x2000> vram1_{};  ///< VRAM bank 1.
+  uint8_t vramBank_ = 0;                ///< Selected VRAM bank (VBK bit 0).
+  uint8_t bcps_ = 0;                    ///< BG palette index/auto-increment.
+  uint8_t ocps_ = 0;                    ///< OBJ palette index/auto-increment.
+  uint8_t opri_ = 0;                    ///< OBJ priority mode (bit 0).
+  std::array<uint8_t, 64> bgPalRam_{};   ///< 8 palettes x 4 colours x 2 bytes.
+  std::array<uint8_t, 64> objPalRam_{};  ///< 8 palettes x 4 colours x 2 bytes.
+  std::array<uint16_t, SCREEN_WIDTH * SCREEN_HEIGHT> colorFb_{};  ///< RGB555.
+  /// Per-line BG info used for sprite priority (CGB path only).
+  std::array<uint8_t, SCREEN_WIDTH> lineBgIndex_{};
+  std::array<bool, SCREEN_WIDTH> lineBgPriority_{};
+  std::function<void()> hblankCallback_;  ///< Called when HBlank starts.
   std::function<void()>
       frameReadyCallback_;  ///< Called when a frame is complete.
   std::function<void()>
@@ -285,5 +346,21 @@ class GameBoyPPU {
    * @param tileY Pixel row within the tile (0-7).
    * @return 2-bit color index (0-3).
    */
-  uint8_t readTilePixel(uint16_t tileDataAddr, int tileX, int tileY) const;
+  uint8_t readTilePixel(uint16_t tileDataAddr, int tileX, int tileY,
+                        int bank = 0) const;
+
+  /// @name Game Boy Color rendering
+  /// @{
+  /** @brief Renders BG + window for one line with attributes (CGB). */
+  void renderBgWindowLineCgb(int line);
+  /** @brief Renders sprites for one line with CGB attributes/priorities. */
+  void renderSpritesLineCgb(int line);
+  /** @brief Reads a colour (RGB555) from a palette RAM. */
+  static uint16_t paletteColor(const std::array<uint8_t, 64>& ram, int palette,
+                               int colorIndex);
+  /** @brief Reads one VRAM byte from an explicit bank (offset 0-0x1FFF). */
+  uint8_t vramAt(int bank, uint16_t offset) const {
+    return bank ? vram1_[offset & 0x1FFF] : vram[offset & 0x1FFF];
+  }
+  /// @}
 };
