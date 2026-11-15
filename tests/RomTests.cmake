@@ -104,6 +104,12 @@ rom_test(gb.dmg_sound.10_wave_trigger_on    gb_rom_runner "${GB_SOUND}/10-wave t
 rom_test(gb.dmg_sound.11_regs_after_power   gb_rom_runner "${GB_SOUND}/11-regs after power.gb" ARGS 8000 KNOWN_FAILURE)
 rom_test(gb.dmg_sound.12_wave_write_on      gb_rom_runner "${GB_SOUND}/12-wave write while on.gb" ARGS 8000 KNOWN_FAILURE)
 
+# Game Boy Color: cgb-acid2 reports on screen only, so the final framebuffer
+# hash is compared with a golden value (the image was checked pixel by pixel
+# against the reference screenshot; regenerate with:
+#   gb_frame_runner gb-acid2/cgb-acid2.gbc 120).
+rom_test(gb.cgb_acid2 gb_frame_runner gb-acid2/cgb-acid2.gbc ARGS 120 71a4a863fe5bcde0)
+
 # ----------------------------------------------------------- CHIP-8 --------
 # These ROMs report on screen only, so the final framebuffer hash is compared
 # with a golden value (regenerate with: chip8_rom_runner <rom> 900 --ascii).
