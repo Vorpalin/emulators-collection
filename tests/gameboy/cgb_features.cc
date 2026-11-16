@@ -39,7 +39,8 @@ static Bytes BuildRom(const Bytes& code, uint8_t cgbFlag) {
   for (std::size_t i = 0; i < entry.size(); ++i) rom[0x100 + i] = entry[i];
   rom[0x143] = cgbFlag;
   uint8_t sum = 0;
-  for (int i = 0x134; i < 0x14D; ++i) sum = static_cast<uint8_t>(sum - rom[i] - 1);
+  for (int i = 0x134; i < 0x14D; ++i)
+    sum = static_cast<uint8_t>(sum - rom[i] - 1);
   rom[0x14D] = sum;
   for (std::size_t i = 0; i < code.size(); ++i) rom[0x150 + i] = code[i];
   return rom;
@@ -64,7 +65,8 @@ int main() {
   // --- Main feature program -------------------------------------------------
   Bytes code;
   // 1. Arm KEY1, STOP -> double speed; read KEY1 back.
-  code = code + LdA(1) + LdhWr(0x4D) + Bytes{0x10, 0x00} + LdhRd(0x4D) + St(0xC000);
+  code = code + LdA(1) + LdhWr(0x4D) + Bytes{0x10, 0x00} + LdhRd(0x4D) +
+         St(0xC000);
   // 2. SVBK: banks 2 and 3 are distinct, SVBK=0 selects bank 1.
   code = code + LdA(2) + LdhWr(0x70) + LdA(0xAA) + St(0xD000);
   code = code + LdA(3) + LdhWr(0x70) + LdA(0xBB) + St(0xD000);
@@ -82,7 +84,8 @@ int main() {
   code = code + LdA(0) + LdhWr(0x4F) + LdFrom(0x8000) + St(0xC005);
   code = code + LdA(1) + LdhWr(0x4F) + LdFrom(0x8000) + St(0xC006);
   // 4. Palette index auto-increment (a read must not increment).
-  code = code + LdA(0x80) + LdhWr(0x68) + LdA(0x1F) + LdhWr(0x69) + LdA(0x00) + LdhWr(0x69);
+  code = code + LdA(0x80) + LdhWr(0x68) + LdA(0x1F) + LdhWr(0x69) + LdA(0x00) +
+         LdhWr(0x69);
   code = code + LdA(0x80) + LdhWr(0x68) + LdhRd(0x69) + St(0xC007);
   code = code + LdhRd(0x68) + St(0xC009);
   code = code + Bytes{0x18, 0xFE};  // JR -2
@@ -115,13 +118,13 @@ int main() {
 
   // --- HBlank HDMA: 2 blocks, one per HBlank ---------------------------------
   Bytes h;
-  h = h + Bytes{0x21, 0x00, 0xC1, 0x3E, 0x10};              // LD HL,C100 ; LD A,10
-  h = h + Bytes{0x22, 0x3C, 0xFE, 0x30, 0x20, 0xFA};        // fill 0x10..0x2F
+  h = h + Bytes{0x21, 0x00, 0xC1, 0x3E, 0x10};        // LD HL,C100 ; LD A,10
+  h = h + Bytes{0x22, 0x3C, 0xFE, 0x30, 0x20, 0xFA};  // fill 0x10..0x2F
   h = h + LdA(0xC1) + LdhWr(0x51) + LdA(0x00) + LdhWr(0x52);
   h = h + LdA(0x10) + LdhWr(0x53) + LdA(0x00) + LdhWr(0x54);  // -> 0x9000
-  h = h + LdA(0x81) + LdhWr(0x55);                           // HBlank DMA, 2 blocks
-  h = h + LdhRd(0x55) + St(0xC000);                          // just started
-  h = h + Spin(60);                                          // > a few frames
+  h = h + LdA(0x81) + LdhWr(0x55);   // HBlank DMA, 2 blocks
+  h = h + LdhRd(0x55) + St(0xC000);  // just started
+  h = h + Spin(60);                  // > a few frames
   h = h + LdhRd(0x55) + St(0xC001);
   h = h + LdFrom(0x9000) + St(0xC002);
   h = h + LdFrom(0x901F) + St(0xC003);
@@ -135,7 +138,8 @@ int main() {
   Expect("last byte copied", hb.getBus().read(0xC003), 0x2F);
 
   // --- Double speed doubles CPU throughput, not video time -------------------
-  const Bytes loop = {0x21, 0x00, 0x00, 0x23, 0x18, 0xFD};  // LD HL,0 ; INC HL ; JR
+  const Bytes loop = {0x21, 0x00, 0x00,
+                      0x23, 0x18, 0xFD};  // LD HL,0 ; INC HL ; JR
   const Bytes sw = LdA(1) + LdhWr(0x4D) + Bytes{0x10, 0x00} + loop;
   GameBoy slow, fast;
   Run(slow, BuildRom(loop, 0x80), 4);

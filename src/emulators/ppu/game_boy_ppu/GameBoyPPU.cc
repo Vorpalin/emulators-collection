@@ -604,8 +604,8 @@ void GameBoyPPU::renderBgWindowLineCgb(int line) {
     if (regs_.bgWindowDataLow()) {
       tileAddr = static_cast<uint16_t>(0x8000 + tileIndex * 16);
     } else {
-      tileAddr = static_cast<uint16_t>(0x9000 +
-                                       static_cast<int8_t>(tileIndex) * 16);
+      tileAddr =
+          static_cast<uint16_t>(0x9000 + static_cast<int8_t>(tileIndex) * 16);
     }
     const uint8_t colorIndex =
         readTilePixel(tileAddr, col, row, (attr >> 3) & 1);
@@ -627,8 +627,8 @@ void GameBoyPPU::renderBgWindowLineCgb(int line) {
 
   for (int x = std::max(0, windowX); x < SCREEN_WIDTH; x++) {
     const int winX = x - windowX;
-    const uint16_t mapOffset = static_cast<uint16_t>(
-        winMapBase + (windowLine / 8) * 32 + winX / 8);
+    const uint16_t mapOffset =
+        static_cast<uint16_t>(winMapBase + (windowLine / 8) * 32 + winX / 8);
 
     const uint8_t tileIndex = vram[mapOffset];
     const uint8_t attr = vram1_[mapOffset];
@@ -642,8 +642,8 @@ void GameBoyPPU::renderBgWindowLineCgb(int line) {
     if (regs_.bgWindowDataLow()) {
       tileAddr = static_cast<uint16_t>(0x8000 + tileIndex * 16);
     } else {
-      tileAddr = static_cast<uint16_t>(0x9000 +
-                                       static_cast<int8_t>(tileIndex) * 16);
+      tileAddr =
+          static_cast<uint16_t>(0x9000 + static_cast<int8_t>(tileIndex) * 16);
     }
     const uint8_t colorIndex =
         readTilePixel(tileAddr, col, row, (attr >> 3) & 1);
@@ -677,10 +677,9 @@ void GameBoyPPU::renderSpritesLineCgb(int line) {
   // Highest priority first. In CGB mode priority is the OAM index; when OPRI
   // bit 0 is set the DMG rule applies (smaller X wins, then OAM index).
   if (opri_ & 0x01) {
-    std::stable_sort(visible.begin(), visible.end(),
-                     [](const Entry& a, const Entry& b) {
-                       return a.sprite.x < b.sprite.x;
-                     });
+    std::stable_sort(
+        visible.begin(), visible.end(),
+        [](const Entry& a, const Entry& b) { return a.sprite.x < b.sprite.x; });
   }
 
   // A pixel belongs to the first (highest priority) sprite that is opaque

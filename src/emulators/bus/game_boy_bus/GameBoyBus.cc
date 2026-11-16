@@ -353,8 +353,8 @@ void GameBoyBus::write(uint16_t address, uint8_t value) {
         break;
       case 0xFF51:  // HDMA1: source high
         if (cgbMode_)
-          hdmaSource_ = static_cast<uint16_t>((hdmaSource_ & 0x00FF) |
-                                              (value << 8));
+          hdmaSource_ =
+              static_cast<uint16_t>((hdmaSource_ & 0x00FF) | (value << 8));
         break;
       case 0xFF52:  // HDMA2: source low (low 4 bits ignored)
         if (cgbMode_)

@@ -102,7 +102,7 @@ struct GameBoyPPUState {
   uint8_t bcps = 0;                     ///< BCPS (0xFF68).
   uint8_t ocps = 0;                     ///< OCPS (0xFF6A).
   uint8_t opri = 0;                     ///< OPRI (0xFF6C).
-  std::array<uint8_t, 64> bgPalette{};   ///< Background colour RAM.
+  std::array<uint8_t, 64> bgPalette{};  ///< Background colour RAM.
   std::array<uint8_t, 64> objPalette{};  ///< Sprite colour RAM.
   std::array<uint16_t, SCREEN_WIDTH * SCREEN_HEIGHT> colorFramebuffer{};
 };
@@ -156,7 +156,7 @@ struct Sprite {
 
   /// @name CGB-only attribute bits
   /// @{
-  int cgbPalette() const { return attributes & 0x07; }  ///< Bits 0-2.
+  int cgbPalette() const { return attributes & 0x07; }       ///< Bits 0-2.
   int cgbVramBank() const { return (attributes >> 3) & 1; }  ///< Bit 3.
   /// @}
 };
@@ -293,12 +293,12 @@ class GameBoyPPU {
   int windowLineCounter_ = 0;
 
   // --- Game Boy Color ---
-  bool cgbMode_ = false;                ///< CGB rendering enabled.
+  bool cgbMode_ = false;                 ///< CGB rendering enabled.
   std::array<uint8_t, 0x2000> vram1_{};  ///< VRAM bank 1.
-  uint8_t vramBank_ = 0;                ///< Selected VRAM bank (VBK bit 0).
-  uint8_t bcps_ = 0;                    ///< BG palette index/auto-increment.
-  uint8_t ocps_ = 0;                    ///< OBJ palette index/auto-increment.
-  uint8_t opri_ = 0;                    ///< OBJ priority mode (bit 0).
+  uint8_t vramBank_ = 0;                 ///< Selected VRAM bank (VBK bit 0).
+  uint8_t bcps_ = 0;                     ///< BG palette index/auto-increment.
+  uint8_t ocps_ = 0;                     ///< OBJ palette index/auto-increment.
+  uint8_t opri_ = 0;                     ///< OBJ priority mode (bit 0).
   std::array<uint8_t, 64> bgPalRam_{};   ///< 8 palettes x 4 colours x 2 bytes.
   std::array<uint8_t, 64> objPalRam_{};  ///< 8 palettes x 4 colours x 2 bytes.
   std::array<uint16_t, SCREEN_WIDTH * SCREEN_HEIGHT> colorFb_{};  ///< RGB555.

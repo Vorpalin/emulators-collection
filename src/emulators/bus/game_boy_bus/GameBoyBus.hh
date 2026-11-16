@@ -266,16 +266,16 @@ class GameBoyBus : public Bus {
   std::string serialOutput_;  ///< Serial bytes sent so far (diagnostics only).
 
   // --- Game Boy Color ---
-  bool cgbMode_ = false;           ///< Running a CGB-aware cartridge.
-  bool doubleSpeed_ = false;       ///< KEY1 bit 7.
-  bool speedSwitchArmed_ = false;  ///< KEY1 bit 0.
-  uint8_t svbk_ = 1;               ///< Selected WRAM bank (0xD000-0xDFFF).
+  bool cgbMode_ = false;                ///< Running a CGB-aware cartridge.
+  bool doubleSpeed_ = false;            ///< KEY1 bit 7.
+  bool speedSwitchArmed_ = false;       ///< KEY1 bit 0.
+  uint8_t svbk_ = 1;                    ///< Selected WRAM bank (0xD000-0xDFFF).
   std::array<uint8_t, 0x6000> wramExt;  ///< WRAM banks 2-7 (bank 1 is wram).
   uint16_t hdmaSource_ = 0;
-  uint16_t hdmaDest_ = 0;           ///< Offset in VRAM (0-0x1FF0).
-  uint8_t hdmaRemaining_ = 0;       ///< 16-byte blocks left.
-  bool hdmaActive_ = false;         ///< HBlank DMA pending.
-  uint32_t stallCycles_ = 0;        ///< M-cycles the CPU is stalled by DMA.
+  uint16_t hdmaDest_ = 0;      ///< Offset in VRAM (0-0x1FF0).
+  uint8_t hdmaRemaining_ = 0;  ///< 16-byte blocks left.
+  bool hdmaActive_ = false;    ///< HBlank DMA pending.
+  uint32_t stallCycles_ = 0;   ///< M-cycles the CPU is stalled by DMA.
 
   bool dmaActive = false;   ///< True while an OAM DMA transfer is running.
   bool frameReady = false;  ///< Set by the PPU when a frame is complete.
