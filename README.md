@@ -85,31 +85,31 @@ The project is designed so that additional systems can be integrated without cha
 The project is deliberately split into layers:
 
 ```text
-┌────────────────────────────────────┐
+┌─────────────────────────────────────┐
 │             React / Vite             │
 │   Library • Controls • Player UI     │
-└─────────────────┬──────────────────┘
+└─────────────────┬───────────────────┘
                    │
                    │ TypeScript
                    ▼
-┌────────────────────────────────────┐
+┌─────────────────────────────────────┐
 │          Emulator Session            │
 │                                      │
 │  Canvas • Audio • Input • Timing     │
 │  Battery saves • Save states         │
-└─────────────────┬──────────────────┘
+└─────────────────┬───────────────────┘
                    │
                    │ WebAssembly
                    ▼
-┌────────────────────────────────────┐
+┌─────────────────────────────────────┐
 │        EmulatorWrapper (Embind)      │
 │        src/wasm/bindings.cc          │
-└─────────────────┬──────────────────┘
+└─────────────────┬───────────────────┘
                    │
                    ▼
-┌────────────────────────────────────┐
+┌─────────────────────────────────────┐
 │          Console interface           │
-└─────────────────┬──────────────────┘
+└─────────────────┬───────────────────┘
                    │
       ┌───────────┴───────────┐
       │            │           │
@@ -228,7 +228,7 @@ and for the NES, which reuses the `CPU65` core:
                                 ┌─────────────────┐
                                 │ Cartridge + mapper │
                                 │ (Mapper000, 001...)│
-                                └─────────────────┘
+                                └──────────────────┘
 ```
 
 This separation makes hardware components reusable, testable and easier to reason about.
@@ -602,7 +602,7 @@ A new emulator should integrate with the existing architecture instead of introd
 ### 1. Create the system
 
 ```text
-src/emulators/console/<s>/
+src/emulators/console/<system>/
 ```
 
 ### 2. Implement `Console`
