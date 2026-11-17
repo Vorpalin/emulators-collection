@@ -94,8 +94,10 @@ void testStatInterruptUsesRisingEdge() {
   state.regs.ly = 0;
   state.regs.lyc = 1;
   ppu.setState(state);
-  ppu.tick(80); // OAM -> Transfer: signal falls, no request.
-  expect("STAT does not retrigger when signal remains high", requests, 0);
+  ppu.writeRegister(0xFF41, 0x20); // Re-evaluate enabled OAM STAT source.
+  expect("STAT rising edge requests interrupt", requests, 1);
+  ppu.tick(80); // OAM -> Transfer: signal falls.
+  expect("STAT does not request again on falling edge", requests, 1);
 }
 void testStatRegisterWriteMask() {
   GameBoyPPU ppu;
