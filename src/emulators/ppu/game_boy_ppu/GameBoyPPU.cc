@@ -438,7 +438,10 @@ void GameBoyPPU::writeRegister(uint16_t addr, uint8_t value) {
       regs_.lcdc = value;
       break;
     case 0xFF41:
-      regs_.stat = value;
+      // STAT bits 0-2 are PPU-owned; only interrupt enables (bits 3-6)
+      // are writable. Bit 7 reads as one.
+      regs_.stat = static_cast<uint8_t>((regs_.stat & 0x07) | (value & 0x78) |
+                                        0x80);
       break;
     case 0xFF42:
       regs_.scy = value;
@@ -541,7 +544,7 @@ uint8_t GameBoyPPU::readRegister(uint16_t addr) const {
     case 0xFF40:
       return regs_.lcdc;
     case 0xFF41:
-      return regs_.stat;
+      return static_cast<uint8_t>(regs_.stat | 0x80);
     case 0xFF42:
       return regs_.scy;
     case 0xFF43:
