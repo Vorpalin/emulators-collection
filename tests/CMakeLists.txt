@@ -31,6 +31,10 @@ add_executable(gb_cpu_interrupts gameboy/cpu_interrupts.cc)
 target_link_libraries(gb_cpu_interrupts PRIVATE gameboy)
 add_test(NAME gb.cpu_interrupts COMMAND gb_cpu_interrupts)
 
+add_executable(gb_timer_accuracy gameboy/timer_accuracy.cc)
+target_link_libraries(gb_timer_accuracy PRIVATE gameboy)
+add_test(NAME gb.timer_accuracy COMMAND gb_timer_accuracy)
+
 add_executable(chip8_rom_runner chip8/chip8_rom_runner.cc)
 target_link_libraries(chip8_rom_runner PRIVATE chip8)
 
