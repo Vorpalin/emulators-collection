@@ -123,6 +123,35 @@ void testDmgSpritePriorityUsesRawBgIndex() {
          ppu.framebuffer()[0], 0);
 }
 
+void testHigherPriorityHiddenSpriteBlocksLowerPrioritySprite() {
+  GameBoyPPU ppu;
+  prepareDmgLine(ppu);
+
+  auto state = ppu.getState();
+  state.regs.bgp = 0x04;   // BG colour 1 -> shade 1.
+  state.regs.obp0 = 0x0C;  // Higher-priority OBJ colour 1 -> shade 3.
+  state.regs.obp1 = 0x08;  // Lower-priority OBJ colour 1 -> shade 2.
+  state.vram[0] = 0xFF;    // BG tile 0: colour index 1.
+  state.vram[16] = 0xFF;   // OBJ tile 1: colour index 1.
+  state.vram[32] = 0xFF;   // OBJ tile 2: colour index 1.
+
+  // The first sprite has priority but is behind the BG. The second sprite
+  // must not show through it at the same pixel.
+  state.oam[0] = 16;
+  state.oam[1] = 8;
+  state.oam[2] = 1;
+  state.oam[3] = 0x80;
+  state.oam[4] = 16;
+  state.oam[5] = 8;
+  state.oam[6] = 2;
+  state.oam[7] = 0x10;  // OBP1, in front of BG.
+  ppu.setState(state);
+
+  renderFirstLine(ppu);
+  expect("hidden high-priority OBJ blocks lower OBJ",
+         ppu.framebuffer()[0], 1);
+}
+
 void testDmgEqualXUsesOamOrder() {
   GameBoyPPU ppu;
   prepareDmgLine(ppu);
@@ -155,6 +184,7 @@ int main() {
   testMemoryAccessLocks();
   testCgbPaletteAccessLocks();
   testDmgSpritePriorityUsesRawBgIndex();
+  testHigherPriorityHiddenSpriteBlocksLowerPrioritySprite();
   testDmgEqualXUsesOamOrder();
 
   std::printf("%s (%d failure%s)\n", failures ? "FAILED" : "PASSED",
