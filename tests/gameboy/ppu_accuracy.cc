@@ -83,6 +83,20 @@ void testLcdOffClearsStaleFrame() {
          ppu.colorFramebuffer()[0], 0x7FFF);
 }
 
+void testStatInterruptUsesRisingEdge() {
+  GameBoyPPU ppu;
+  int requests = 0;
+  ppu.onStatInterrupt([&requests]() { ++requests; });
+
+  auto state = ppu.getState();
+  state.regs.lcdc = 0x80;
+  state.regs.stat = 0x20; // OAM mode interrupt enabled.
+  state.regs.ly = 0;
+  state.regs.lyc = 1;
+  ppu.setState(state);
+  ppu.tick(80); // OAM -> Transfer: signal falls, no request.
+  expect("STAT does not retrigger when signal remains high", requests, 0);
+}
 void testStatRegisterWriteMask() {
   GameBoyPPU ppu;
   auto state = ppu.getState();
@@ -235,6 +249,7 @@ void testDmgEqualXUsesOamOrder() {
 int main() {
   testMemoryAccessLocks();
   testLcdOffClearsStaleFrame();
+  testStatInterruptUsesRisingEdge();
   testStatRegisterWriteMask();
   testCgbPaletteAccessLocks();
   testPpuFetchesVramDuringMode3();
