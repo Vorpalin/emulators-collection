@@ -365,6 +365,8 @@ void GameBoyPPU::renderSpritesLine(int line) {
                      return a.oamIndex > b.oamIndex;
                    });
 
+  std::array<bool, SCREEN_WIDTH> claimed{};
+
   for (const auto& entry : visibleSprites) {
     const Sprite& sprite = entry.sprite;
     const int top = static_cast<int>(sprite.y) - 16;
@@ -380,12 +382,17 @@ void GameBoyPPU::renderSpritesLine(int line) {
 
     for (int col = 0; col < 8; ++col) {
       const int screenX = left + col;
-      if (screenX < 0 || screenX >= SCREEN_WIDTH) continue;
+      if (screenX < 0 || screenX >= SCREEN_WIDTH || claimed[screenX]) continue;
 
       const int colInSprite = sprite.flipX() ? (7 - col) : col;
       const uint8_t colorIndex =
           readTilePixel(tileDataAddr, colInSprite, rowInSprite);
       if (colorIndex == 0) continue;  // OBJ colour 0 is transparent.
+
+      // An opaque pixel claims the position before BG priority is applied:
+      // a lower-priority OBJ must not show through a higher-priority OBJ
+      // merely because the latter is hidden behind the BG.
+      claimed[screenX] = true;
 
       // DMG priority uses the raw BG colour number, before BGP remapping.
       if (regs_.bgWindowEnabled() && sprite.priorityBehindBG() &&
