@@ -159,7 +159,7 @@ int main() {
 
   // --- OAM DMA: incremental transfer and CPU bus restriction ---------------
   Bytes oam;
-  oam = oam + LdA(0) + LdhWr(0x40);  // LCD off: OAM is externally readable.
+  oam = oam + LdA(0) + LdhWr(0x40);  // LCD off; OAM is readable.
   oam = oam + Bytes{0x21, 0x00, 0xC1, 0x06, 0xA0, 0xAF};
   oam = oam + Bytes{0x22, 0x3C, 0x05, 0x20, 0xFB};  // Fill C100-C19F.
   oam = oam + LdA(0xC1) + LdhWr(0x46);
