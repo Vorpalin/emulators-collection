@@ -137,6 +137,26 @@ int main() {
   Expect("first byte copied", hb.getBus().read(0xC002), 0x10);
   Expect("last byte copied", hb.getBus().read(0xC003), 0x2F);
 
+  // A block started by the PPU's HBlank callback must stall the CPU during
+  // the same bus step. Otherwise the next CPU instruction runs before the
+  // queued eight-M-cycle DMA stall is consumed.
+  for (uint16_t i = 0; i < 16; ++i)
+    hb.getBus().write(static_cast<uint16_t>(0xC100 + i),
+                      static_cast<uint8_t>(0xA0 + i));
+  auto dmaState = hb.getBus().getState();
+  dmaState.ppu.regs.setMode(PixelTransfer);
+  dmaState.ppu.regs.ly = 0;
+  dmaState.ppu.dotCounter = 170;  // next 12 dots enter HBlank
+  dmaState.hdmaSource = 0xC100;
+  dmaState.hdmaDest = 0x0100;
+  dmaState.hdmaRemaining = 1;
+  dmaState.hdmaActive = true;
+  hb.getBus().setState(dmaState);
+  const uint32_t hblankStepCycles = hb.getBus().step();
+  std::printf("== HBlank DMA stall timing\n");
+  Expect("callback stall included in same step", hblankStepCycles, 44);
+  Expect("callback DMA copied first byte", hb.getBus().read(0x9000), 0xA0);
+
   // --- Double speed doubles CPU throughput, not video time -------------------
   const Bytes loop = {0x21, 0x00, 0x00,
                       0x23, 0x18, 0xFD};  // LD HL,0 ; INC HL ; JR
