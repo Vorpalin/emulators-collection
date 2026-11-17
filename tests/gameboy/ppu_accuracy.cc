@@ -62,6 +62,27 @@ void testMemoryAccessLocks() {
   expect("LCD off: OAM is accessible", ppu.read(0xFE00), 0x33);
 }
 
+void testLcdOffClearsStaleFrame() {
+  GameBoyPPU ppu;
+  auto state = ppu.getState();
+  state.regs.lcdc = 0x80;
+  state.framebuffer.fill(3);
+  state.colorFramebuffer.fill(0);
+  state.cgbMode = true;
+  ppu.setState(state);
+
+  // Turning the LCD off must blank the output rather than preserve the last
+  // rendered image while emulation (and audio) continues.
+  state = ppu.getState();
+  state.regs.lcdc = 0x00;
+  ppu.setState(state);
+  ppu.tick(4);
+
+  expect("LCD off clears stale DMG framebuffer", ppu.framebuffer()[0], 0);
+  expect("LCD off clears stale CGB framebuffer",
+         ppu.colorFramebuffer()[0], 0x7FFF);
+}
+
 void testStatRegisterWriteMask() {
   GameBoyPPU ppu;
   auto state = ppu.getState();
@@ -213,6 +234,7 @@ void testDmgEqualXUsesOamOrder() {
 
 int main() {
   testMemoryAccessLocks();
+  testLcdOffClearsStaleFrame();
   testStatRegisterWriteMask();
   testCgbPaletteAccessLocks();
   testPpuFetchesVramDuringMode3();
