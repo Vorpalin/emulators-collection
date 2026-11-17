@@ -157,6 +157,20 @@ int main() {
   Expect("callback stall included in same step", hblankStepCycles, 44);
   Expect("callback DMA copied first byte", hb.getBus().read(0x9000), 0xA0);
 
+  // --- OAM DMA: incremental transfer and CPU bus restriction ---------------
+  Bytes oam;
+  oam = oam + LdA(0) + LdhWr(0x40);  // LCD off: OAM is externally readable.
+  oam = oam + Bytes{0x21, 0x00, 0xC1, 0x06, 0xA0, 0xAF};
+  oam = oam + Bytes{0x22, 0x3C, 0x05, 0x20, 0xFB};  // Fill C100-C19F.
+  oam = oam + LdA(0xC1) + LdhWr(0x46);
+  oam = oam + Bytes{0x18, 0xFE};  // CPU remains in ROM while DMA runs.
+  GameBoy oamGb;
+  Run(oamGb, BuildRom(oam, 0x00), 1);
+  std::printf("== OAM DMA\n");
+  Expect("OAM DMA completed", oamGb.getBus().getState().dmaActive, 0);
+  Expect("OAM DMA first byte", oamGb.getBus().read(0xFE00), 0x00);
+  Expect("OAM DMA last byte", oamGb.getBus().read(0xFE9F), 0x9F);
+
   // --- Double speed doubles CPU throughput, not video time -------------------
   const Bytes loop = {0x21, 0x00, 0x00,
                       0x23, 0x18, 0xFD};  // LD HL,0 ; INC HL ; JR
