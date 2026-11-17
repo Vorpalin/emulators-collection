@@ -214,8 +214,8 @@ void GameBoyBus::hdmaCopyBlock() {
     // VRAM and the 0xE000+ region are not valid HDMA sources.
     const bool valid = src < 0x8000 || (src >= 0xA000 && src < 0xE000);
     const uint8_t value = valid ? read(src) : 0xFF;
-    ppu.write(static_cast<uint16_t>(0x8000 | ((hdmaDest_ + i) & 0x1FFF)),
-              value);
+    ppu.writeVRAMDMA(static_cast<uint16_t>((hdmaDest_ + i) & 0x1FFF),
+                     value);
   }
   hdmaSource_ = static_cast<uint16_t>(hdmaSource_ + 16);
   hdmaDest_ = static_cast<uint16_t>((hdmaDest_ + 16) & 0x1FFF);
@@ -441,6 +441,6 @@ uint8_t GameBoyBus::read(uint16_t address) {
 void GameBoyBus::startOamDma(uint8_t sourceHigh) {
   uint16_t base = static_cast<uint16_t>(sourceHigh) << 8;
   for (uint16_t i = 0; i < 0xA0; ++i) {
-    ppu.write(0xFE00 + i, read(base + i));
+    ppu.writeOAMDMA(i, read(base + i));
   }
 }
