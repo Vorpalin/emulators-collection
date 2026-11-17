@@ -163,10 +163,11 @@ struct Sprite {
 
 /**
  * @class GameBoyPPU
- * @brief Scanline-based PPU: VRAM, OAM, LCD registers and rendering.
+ * @brief Scanline-rendered PPU: VRAM, OAM, LCD registers and rendering.
  *
  * Each scanline lasts 456 dots and goes through OAM scan, drawing and
- * HBlank; lines 144-153 are VBlank. The PPU renders each scanline
+ * HBlank; lines 144-153 are VBlank. CPU access restrictions are enforced for
+ * VRAM, OAM and CGB palette RAM. The PPU renders each scanline
  * (background, window, sprites) into a 160x144 framebuffer, and notifies the
  * rest of the system through callbacks (frame ready, VBlank and STAT
  * interrupts).
@@ -210,6 +211,11 @@ class GameBoyPPU {
   /** @brief Writes OAM. @param addr Bus address in 0xFE00-0xFE9F. @param value
    * Byte to write. */
   void writeOAM(uint16_t addr, uint8_t value);
+
+  /** @brief Writes VRAM as a DMA master, bypassing CPU/PPU access locks. */
+  void writeVRAMDMA(uint16_t addr, uint8_t value);
+  /** @brief Writes OAM as a DMA master, bypassing CPU/PPU access locks. */
+  void writeOAMDMA(uint16_t addr, uint8_t value);
 
   /** @brief Reads a PPU register. @param addr Bus address in 0xFF40-0xFF4B. */
   uint8_t readRegister(uint16_t addr) const;
@@ -312,6 +318,20 @@ class GameBoyPPU {
       vblankInterrupt_;  ///< Called to request a VBlank interrupt.
   std::function<void()>
       statInterrupt_;  ///< Called to request a STAT interrupt.
+
+  /** @brief Whether CPU accesses to VRAM are currently permitted. */
+  bool vramAccessible() const {
+    return !regs_.lcdEnabled() || regs_.mode() != PixelTransfer;
+  }
+  /** @brief Whether CPU accesses to OAM are currently permitted. */
+  bool oamAccessible() const {
+    return !regs_.lcdEnabled() ||
+           (regs_.mode() != OAMSearch && regs_.mode() != PixelTransfer);
+  }
+  /** @brief Whether CPU accesses to CGB palette RAM are currently permitted. */
+  bool paletteRamAccessible() const {
+    return !regs_.lcdEnabled() || regs_.mode() != PixelTransfer;
+  }
 
   /** @brief Switches PPU mode, updates STAT and fires STAT interrupts if
    * enabled. */
