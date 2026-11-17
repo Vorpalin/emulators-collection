@@ -318,6 +318,7 @@ class GameBoyPPU {
       vblankInterrupt_;  ///< Called to request a VBlank interrupt.
   std::function<void()>
       statInterrupt_;  ///< Called to request a STAT interrupt.
+  bool statSignal_ = false;  ///< Previous level of the combined STAT IRQ line.
 
   /** @brief Whether CPU accesses to VRAM are currently permitted. */
   bool vramAccessible() const {
@@ -350,6 +351,9 @@ class GameBoyPPU {
   /** @brief Compares LY with LYC, updates the coincidence flag and STAT
    * interrupt. */
   void checkLYC();
+  /** Updates the combined STAT interrupt signal and requests only its rising edge. */
+  void updateStatInterruptLine();
+
 
   /**
    * @brief Maps a 2-bit color index through a palette register.
