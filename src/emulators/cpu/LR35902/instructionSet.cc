@@ -888,11 +888,14 @@ void LR35902::ld_hl_a(uint32_t &cycles) {
 }
 
 void LR35902::halt() {
-  halted = true;
-  // Halt the CPU until an interrupt occurs
-  // This is a placeholder implementation; actual behavior may vary based on the
-  // emulator design In a real implementation, you would set a flag to indicate
-  // the CPU is halted
+  // HALT with IME disabled and an already-pending enabled interrupt triggers
+  // the hardware HALT bug instead of entering the halted state.
+  if (!IME && bus->interrupts.pending() != 0) {
+    haltBug = true;
+    halted = false;
+  } else {
+    halted = true;
+  }
 }
 
 void LR35902::ld_a_b() {
