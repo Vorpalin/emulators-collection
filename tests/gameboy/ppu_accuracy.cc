@@ -62,6 +62,22 @@ void testMemoryAccessLocks() {
   expect("LCD off: OAM is accessible", ppu.read(0xFE00), 0x33);
 }
 
+void testStatRegisterWriteMask() {
+  GameBoyPPU ppu;
+  auto state = ppu.getState();
+  state.regs.lcdc = 0x80;
+  state.regs.stat = static_cast<uint8_t>(
+      0x04 | static_cast<uint8_t>(OAMSearch));  // coincidence + Mode 2.
+  ppu.setState(state);
+
+  ppu.write(0xFF41, 0x00);
+  expect("STAT write preserves mode and coincidence bits",
+         ppu.read(0xFF41), 0x86);
+  ppu.write(0xFF41, 0x78);
+  expect("STAT write updates only interrupt-enable bits",
+         ppu.read(0xFF41), 0xFE);
+}
+
 void testCgbPaletteAccessLocks() {
   GameBoyPPU ppu;
   auto state = ppu.getState();
@@ -182,6 +198,7 @@ void testDmgEqualXUsesOamOrder() {
 
 int main() {
   testMemoryAccessLocks();
+  testStatRegisterWriteMask();
   testCgbPaletteAccessLocks();
   testDmgSpritePriorityUsesRawBgIndex();
   testHigherPriorityHiddenSpriteBlocksLowerPrioritySprite();
