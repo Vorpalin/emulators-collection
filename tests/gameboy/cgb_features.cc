@@ -137,9 +137,9 @@ int main() {
   Expect("first byte copied", hb.getBus().read(0xC002), 0x10);
   Expect("last byte copied", hb.getBus().read(0xC003), 0x2F);
 
-  // A block started by the PPU's HBlank callback must stall the CPU during
-  // the same bus step. Otherwise the next CPU instruction runs before the
-  // queued eight-M-cycle DMA stall is consumed.
+  // A block started by the PPU's HBlank callback must stall the CPU during the
+  // same bus step. Otherwise the next CPU instruction runs before the queued
+  // eight-M-cycle DMA stall is consumed.
   for (uint16_t i = 0; i < 16; ++i)
     hb.getBus().write(static_cast<uint16_t>(0xC100 + i),
                       static_cast<uint8_t>(0xA0 + i));
