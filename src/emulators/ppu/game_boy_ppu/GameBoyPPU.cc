@@ -149,6 +149,7 @@ void GameBoyPPU::tick(uint8_t cycles) {
     // frame visible while the CPU/APU continue running.
     framebuffer_.fill(0);
     colorFb_.fill(0x7FFF);
+    updateStatInterruptLine();
 
     // If LCD is disabled, reset the PPU state.
     regs_.setMode(HBlank);
