@@ -165,11 +165,20 @@ int main() {
   oam = oam + LdA(0xC1) + LdhWr(0x46);
   oam = oam + Bytes{0x18, 0xFE};  // CPU remains in ROM while DMA runs.
   GameBoy oamGb;
-  Run(oamGb, BuildRom(oam, 0x00), 1);
+  oamGb.loadProgram(BuildRom(oam, 0x00).data(), BuildRom(oam, 0x00).size());
+  auto& oamBus = oamGb.getBus();
+  for (int i = 0; i < 2000 && !oamBus.getState().dmaActive; ++i)
+    oamBus.step();
   std::printf("== OAM DMA\n");
-  Expect("OAM DMA completed", oamGb.getBus().getState().dmaActive, 0);
-  Expect("OAM DMA first byte", oamGb.getBus().read(0xFE00), 0x00);
-  Expect("OAM DMA last byte", oamGb.getBus().read(0xFE9F), 0x9F);
+  Expect("OAM DMA started", oamBus.getState().dmaActive, 1);
+  Expect("DMA blocks WRAM reads", oamBus.read(0xC100), 0xFF);
+  Expect("DMA permits HRAM reads", oamBus.read(0xFF80), 0x00);
+  Expect("OAM DMA has not copied instantly", oamBus.read(0xFE00), 0x00);
+  for (int i = 0; i < 100 && oamBus.getState().dmaActive; ++i)
+    oamBus.step();
+  Expect("OAM DMA completed", oamBus.getState().dmaActive, 0);
+  Expect("OAM DMA first byte", oamBus.read(0xFE00), 0x00);
+  Expect("OAM DMA last byte", oamBus.read(0xFE9F), 0x9F);
 
   // --- Double speed doubles CPU throughput, not video time -------------------
   const Bytes loop = {0x21, 0x00, 0x00,
