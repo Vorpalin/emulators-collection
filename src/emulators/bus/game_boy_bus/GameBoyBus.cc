@@ -176,6 +176,12 @@ void GameBoyBus::configureHardware() {
 
   doubleSpeed_ = false;
   speedSwitchArmed_ = false;
+  dmaActive = false;
+  dmaSource_ = 0;
+  dmaIndex_ = 0;
+  dmaDotCounter_ = 0;
+  dmaJustStarted_ = false;
+  dmaReadInProgress_ = false;
   svbk_ = 1;
   wramExt.fill(0);
   hdmaSource_ = 0;
