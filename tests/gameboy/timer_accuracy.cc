@@ -66,10 +66,12 @@ int main() {
   timer.write(0xFF04, 0);
   assert(timer.read(0xFF05) == 1);
 
-  // Changing TAC can also create a falling edge.
+  // Disabling TAC while its selected divider bit is high creates a
+  // falling edge and increments TIMA.
   timer.reset();
-  timer.tick(8);  // DIV bit 3 is high.
   timer.write(0xFF07, 0x05);
+  timer.tick(8);  // DIV bit 3 is high.
+  timer.write(0xFF07, 0x00);
   assert(timer.read(0xFF05) == 1);
 
   // Overflow is delayed by four T-cycles; TIMA can be written to cancel it.
