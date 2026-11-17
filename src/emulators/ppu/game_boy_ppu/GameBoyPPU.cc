@@ -144,7 +144,12 @@ void GameBoyPPU::reset() {
 
 void GameBoyPPU::tick(uint8_t cycles) {
   if (!regs_.lcdEnabled()) {
-    // If LCD is disabled, reset the PPU state
+    // With the LCD disabled, the display is blank; never leave the previous
+    // frame visible while the CPU/APU continue running.
+    framebuffer_.fill(0);
+    colorFb_.fill(0x7FFF);
+
+    // If LCD is disabled, reset the PPU state.
     regs_.setMode(HBlank);
     regs_.ly = 0;
     dotCounter_ = 0;
