@@ -278,7 +278,8 @@ void GameBoyPPU::renderBackgroundLine(int line) {
     int pixelColInTile = scrolledX % 8;
 
     uint16_t tileMapAddr = tileMapBase + (tileRow * 32) + tileCol;
-    uint8_t tileIndex = readVRAM(tileMapAddr - 0x8000);
+    // Internal PPU fetches bypass the CPU's Mode 3 VRAM access restriction.
+    uint8_t tileIndex = vramAt(0, tileMapAddr - 0x8000);
 
     uint16_t tileDataAddr;
     if (regs_.bgWindowDataLow()) {
@@ -317,7 +318,8 @@ void GameBoyPPU::renderWindowLine(int line) {
     int pixelColInTile = winPixelX % 8;
 
     uint16_t tileMapAddr = tileMapBase + (tileRow * 32) + tileCol;
-    uint8_t tileIndex = readVRAM(tileMapAddr - 0x8000);
+    // Internal PPU fetches bypass the CPU's Mode 3 VRAM access restriction.
+    uint8_t tileIndex = vramAt(0, tileMapAddr - 0x8000);
 
     uint16_t tileDataAddr;
     if (regs_.bgWindowDataLow()) {
