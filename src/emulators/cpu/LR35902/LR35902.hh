@@ -26,6 +26,7 @@ struct LR35902State {
   bool IME;
   uint8_t imeDelay;
   bool halted;
+  bool haltBug = false;
 };
 
 /**
@@ -145,6 +146,7 @@ class LR35902 : public CPU {
   bool IME;              ///< Interrupt Master Enable flag.
   uint8_t imeDelay = 0;  ///< Delay for enabling IME after the EI instruction.
   bool halted;           ///< True while the CPU is in the HALT state.
+  bool haltBug = false;  ///< Suppress the next opcode-fetch PC increment.
 
   GameBoyBus *bus;  ///< System bus (not owned).
 
