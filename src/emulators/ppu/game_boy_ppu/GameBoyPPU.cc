@@ -294,6 +294,7 @@ void GameBoyPPU::renderBackgroundLine(int line) {
         readTilePixel(tileDataAddr, pixelColInTile, pixelRowInTile);
     uint8_t shade = getColorFromPalette(regs_.bgp, colorIndex);
 
+    lineBgIndex_[x] = colorIndex;
     framebuffer_[line * SCREEN_WIDTH + x] = shade;
   }
 }
@@ -330,76 +331,95 @@ void GameBoyPPU::renderWindowLine(int line) {
         readTilePixel(tileDataAddr, pixelColInTile, pixelRowInTile);
     uint8_t shade = getColorFromPalette(regs_.bgp, colorIndex);
 
+    lineBgIndex_[x] = colorIndex;
     framebuffer_[line * SCREEN_WIDTH + x] = shade;
   }
 }
 
 void GameBoyPPU::renderSpritesLine(int line) {
-  int spriteHeight = regs_.spriteSize8x16() ? 16 : 8;
+  const int spriteHeight = regs_.spriteSize8x16() ? 16 : 8;
 
-  std::vector<Sprite> visibleSprites;
+  struct Entry {
+    Sprite sprite;
+    int oamIndex;
+  };
+  std::vector<Entry> visibleSprites;
   visibleSprites.reserve(10);
 
-  for (int i = 0; i < 40 && visibleSprites.size() < 10; i++) {
+  // The first ten sprites in OAM order are selected, even if partly off-screen.
+  for (int i = 0; i < 40 && visibleSprites.size() < 10; ++i) {
     const uint8_t* base = &oam[i * 4];
-    Sprite s{base[0], base[1], base[2], base[3]};
-
-    int spriteScreenY = static_cast<int>(s.y) - 16;
-    if (line >= spriteScreenY && line < spriteScreenY + spriteHeight) {
-      visibleSprites.push_back(s);
+    Sprite sprite{base[0], base[1], base[2], base[3]};
+    const int top = static_cast<int>(sprite.y) - 16;
+    if (line >= top && line < top + spriteHeight) {
+      visibleSprites.push_back({sprite, i});
     }
   }
 
-  // Priorité : les sprites avec un X plus petit sont dessinés par-dessus
-  // (on les traite donc en dernier dans la boucle, du plus grand X au plus
-  // petit)
+  // Draw lowest-priority sprites first: larger X first, then larger OAM index.
+  // This leaves the DMG winner (smallest X, then smallest OAM index) on top.
   std::stable_sort(visibleSprites.begin(), visibleSprites.end(),
-                   [](const Sprite& a, const Sprite& b) { return a.x > b.x; });
+                   [](const Entry& a, const Entry& b) {
+                     if (a.sprite.x != b.sprite.x)
+                       return a.sprite.x > b.sprite.x;
+                     return a.oamIndex > b.oamIndex;
+                   });
 
-  for (const auto& s : visibleSprites) {
-    int spriteScreenY = static_cast<int>(s.y) - 16;
-    int spriteScreenX = static_cast<int>(s.x) - 8;
+  for (const auto& entry : visibleSprites) {
+    const Sprite& sprite = entry.sprite;
+    const int top = static_cast<int>(sprite.y) - 16;
+    const int left = static_cast<int>(sprite.x) - 8;
 
-    int rowInSprite = line - spriteScreenY;
-    if (s.flipY()) rowInSprite = spriteHeight - 1 - rowInSprite;
+    int rowInSprite = line - top;
+    if (sprite.flipY()) rowInSprite = spriteHeight - 1 - rowInSprite;
 
-    uint8_t tileIndex = s.tileIndex;
-    if (spriteHeight == 16) tileIndex &= 0xFE;  // ignore le bit 0 en mode 8x16
+    uint8_t tileIndex = sprite.tileIndex;
+    if (spriteHeight == 16) tileIndex &= 0xFE;
+    const uint16_t tileDataAddr =
+        static_cast<uint16_t>(0x8000 + tileIndex * 16);
 
-    uint16_t tileDataAddr = 0x8000 + (static_cast<uint16_t>(tileIndex) * 16);
-
-    for (int col = 0; col < 8; col++) {
-      int screenX = spriteScreenX + col;
+    for (int col = 0; col < 8; ++col) {
+      const int screenX = left + col;
       if (screenX < 0 || screenX >= SCREEN_WIDTH) continue;
 
-      int colInSprite = s.flipX() ? (7 - col) : col;
-      uint8_t colorIndex =
+      const int colInSprite = sprite.flipX() ? (7 - col) : col;
+      const uint8_t colorIndex =
           readTilePixel(tileDataAddr, colInSprite, rowInSprite);
+      if (colorIndex == 0) continue;  // OBJ colour 0 is transparent.
 
-      if (colorIndex == 0) continue;  // 0 = transparent pour les sprites
-
-      if (s.priorityBehindBG()) {
-        uint8_t bgShade = framebuffer_[line * SCREEN_WIDTH + screenX];
-        uint8_t bgColor0 = getColorFromPalette(regs_.bgp, 0);
-        if (bgShade != bgColor0)
-          continue;  // le fond passe devant sauf s'il est "blanc"
+      // DMG priority uses the raw BG colour number, before BGP remapping.
+      if (regs_.bgWindowEnabled() && sprite.priorityBehindBG() &&
+          lineBgIndex_[screenX] != 0) {
+        continue;
       }
 
-      uint8_t palette = s.paletteOBP1() ? regs_.obp1 : regs_.obp0;
-      uint8_t shade = getColorFromPalette(palette, colorIndex);
-
-      framebuffer_[line * SCREEN_WIDTH + screenX] = shade;
+      const uint8_t palette =
+          sprite.paletteOBP1() ? regs_.obp1 : regs_.obp0;
+      framebuffer_[line * SCREEN_WIDTH + screenX] =
+          getColorFromPalette(palette, colorIndex);
     }
   }
 }
 
 void GameBoyPPU::writeVRAM(uint16_t addr, uint8_t value) {
+  if (addr < 0x2000 && vramAccessible()) {
+    writeVRAMDMA(addr, value);
+  }
+}
+
+void GameBoyPPU::writeVRAMDMA(uint16_t addr, uint8_t value) {
   if (addr < 0x2000) {
     (vramBank_ ? vram1_ : vram)[addr] = value;
   }
 }
 
 void GameBoyPPU::writeOAM(uint16_t addr, uint8_t value) {
+  if (addr < 0xA0 && oamAccessible()) {
+    writeOAMDMA(addr, value);
+  }
+}
+
+void GameBoyPPU::writeOAMDMA(uint16_t addr, uint8_t value) {
   if (addr < 0xA0) {
     oam[addr] = value;
   }
@@ -451,7 +471,8 @@ void GameBoyPPU::writeRegister(uint16_t addr, uint8_t value) {
       break;
     case 0xFF69:  // BCPD
       if (cgbMode_) {
-        bgPalRam_[bcps_ & 0x3F] = value;
+        // Auto-increment also occurs when the write is blocked in Mode 3.
+        if (paletteRamAccessible()) bgPalRam_[bcps_ & 0x3F] = value;
         if (bcps_ & 0x80) bcps_ = (bcps_ & 0x80) | ((bcps_ + 1) & 0x3F);
       }
       break;
@@ -460,7 +481,8 @@ void GameBoyPPU::writeRegister(uint16_t addr, uint8_t value) {
       break;
     case 0xFF6B:  // OCPD
       if (cgbMode_) {
-        objPalRam_[ocps_ & 0x3F] = value;
+        // Auto-increment also occurs when the write is blocked in Mode 3.
+        if (paletteRamAccessible()) objPalRam_[ocps_ & 0x3F] = value;
         if (ocps_ & 0x80) ocps_ = (ocps_ & 0x80) | ((ocps_ + 1) & 0x3F);
       }
       break;
@@ -482,17 +504,17 @@ void GameBoyPPU::write(uint16_t address, uint8_t value) {
 }
 
 uint8_t GameBoyPPU::readVRAM(uint16_t addr) const {
-  if (addr < 0x2000) {
+  if (addr < 0x2000 && vramAccessible()) {
     return vramAt(vramBank_, addr);
   }
-  return 0xFF;  // Invalid read
+  return 0xFF;  // Inaccessible or invalid read
 }
 
 uint8_t GameBoyPPU::readOAM(uint16_t addr) const {
-  if (addr < 0xA0) {
+  if (addr < 0xA0 && oamAccessible()) {
     return oam[addr];
   }
-  return 0xFF;  // Invalid read
+  return 0xFF;  // Inaccessible or invalid read
 }
 
 uint8_t GameBoyPPU::read(uint16_t address) {
@@ -538,11 +560,15 @@ uint8_t GameBoyPPU::readRegister(uint16_t addr) const {
     case 0xFF68:
       return cgbMode_ ? static_cast<uint8_t>(bcps_ | 0x40) : 0xFF;
     case 0xFF69:
-      return cgbMode_ ? bgPalRam_[bcps_ & 0x3F] : 0xFF;
+      return cgbMode_ && paletteRamAccessible()
+                 ? bgPalRam_[bcps_ & 0x3F]
+                 : 0xFF;
     case 0xFF6A:
       return cgbMode_ ? static_cast<uint8_t>(ocps_ | 0x40) : 0xFF;
     case 0xFF6B:
-      return cgbMode_ ? objPalRam_[ocps_ & 0x3F] : 0xFF;
+      return cgbMode_ && paletteRamAccessible()
+                 ? objPalRam_[ocps_ & 0x3F]
+                 : 0xFF;
     case 0xFF6C:
       return cgbMode_ ? static_cast<uint8_t>(0xFE | opri_) : 0xFF;
   }
