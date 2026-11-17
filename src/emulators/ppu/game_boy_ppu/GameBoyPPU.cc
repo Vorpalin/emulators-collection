@@ -140,6 +140,7 @@ void GameBoyPPU::reset() {
   colorFb_.fill(0x7FFF);
   lineBgIndex_.fill(0);
   lineBgPriority_.fill(false);
+  statSignal_ = false;
 }
 
 void GameBoyPPU::tick(uint8_t cycles) {
@@ -204,42 +205,29 @@ void GameBoyPPU::tick(uint8_t cycles) {
 
 void GameBoyPPU::changeMode(Mode newMode) {
   regs_.setMode(newMode);
-  bool interruptTriggered = false;
-  switch (newMode) {
-    case HBlank:
-      if (regs_.hblankInterruptEnabled()) {
-        interruptTriggered = true;
-      }
-      break;
-    case VBlank:
-      if (regs_.vblankInterruptEnabled()) {
-        interruptTriggered = true;
-      }
-      break;
-    case OAMSearch:
-      if (regs_.oamInterruptEnabled()) {
-        interruptTriggered = true;
-      }
-      break;
-    case PixelTransfer:
-      // No STAT interrupt for Pixel Transfer mode
-      break;
-  }
-
-  if (interruptTriggered && statInterrupt_) {
-    statInterrupt_();
-  }
+  updateStatInterruptLine();
 }
 
 void GameBoyPPU::checkLYC() {
   if (regs_.ly == regs_.lyc) {
-    regs_.stat |= 0x04;  // Set coincidence flag
-    if (regs_.lycInterruptEnabled() && statInterrupt_) {
-      statInterrupt_();
-    }
+    regs_.stat |= 0x04;
   } else {
-    regs_.stat &= ~0x04;  // Clear coincidence flag
+    regs_.stat &= static_cast<uint8_t>(~0x04);
   }
+  updateStatInterruptLine();
+}
+
+void GameBoyPPU::updateStatInterruptLine() {
+  // STAT sources are ORed onto one physical signal. The CPU receives an
+  // interrupt only on its low-to-high transition, not once per source/mode.
+  const bool statLine = regs_.lcdEnabled() &&
+      ((regs_.mode() == HBlank && regs_.hblankInterruptEnabled()) ||
+       (regs_.mode() == VBlank && regs_.vblankInterruptEnabled()) ||
+       (regs_.mode() == OAMSearch && regs_.oamInterruptEnabled()) ||
+       (regs_.coincidenceFlag() && regs_.lycInterruptEnabled()));
+
+  if (statLine && !statSignal_ && statInterrupt_) statInterrupt_();
+  statSignal_ = statLine;
 }
 
 void GameBoyPPU::renderScanline() {
@@ -443,12 +431,14 @@ void GameBoyPPU::writeRegister(uint16_t addr, uint8_t value) {
   switch (addr) {
     case 0xFF40:
       regs_.lcdc = value;
+      updateStatInterruptLine();
       break;
     case 0xFF41:
       // STAT bits 0-2 are PPU-owned; only interrupt enables (bits 3-6)
       // are writable. Bit 7 reads as one.
       regs_.stat = static_cast<uint8_t>((regs_.stat & 0x07) | (value & 0x78) |
                                         0x80);
+      updateStatInterruptLine();
       break;
     case 0xFF42:
       regs_.scy = value;
