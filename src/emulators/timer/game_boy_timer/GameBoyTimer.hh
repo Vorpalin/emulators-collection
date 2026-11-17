@@ -17,7 +17,8 @@ struct GameBoyTimerState {
   uint8_t timerModulo;      // Timer modulo (0xFF06)
   uint8_t timerControl;     // Timer control (0xFF07)
   uint16_t timerCycles;     // Internal counter for timer ticks
-  uint32_t dividerCounter;  // Internal counter for divider ticks
+  uint32_t dividerCounter;  // Legacy serialized field; unused by the edge-based timer.
+  uint8_t reloadDelay = 0;  // T-cycles remaining before TIMA reload after overflow.
 };
 
 /**
@@ -95,13 +96,15 @@ class GameBoyTimer {
    * @brief Calculate the timer threshold based on the current timer control.
    * @return The timer threshold.
    */
-  uint32_t timerThreshold() const;
+  uint8_t timerInput() const;
+  void incrementTIMA();
 
   uint16_t divider;         ///< Divider register (0xFF04)
   uint8_t timerCounter;     ///< Timer counter (0xFF05)
   uint8_t timerModulo;      ///< Timer modulo (0xFF06)
   uint8_t timerControl;     ///< Timer control (0xFF07)
   uint16_t timerCycles;     ///< Internal counter for timer ticks
-  uint32_t dividerCounter;  ///< Internal counter for divider ticks
+  uint32_t dividerCounter;  ///< Legacy state field; unused.
+  uint8_t reloadDelay = 0;  ///< Delayed TIMA overflow reload (0 = inactive).
   GameBoyInterruptController* interrupts;  ///< Handles timer interrupts
 };
