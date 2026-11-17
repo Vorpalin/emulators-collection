@@ -22,6 +22,10 @@ void to_json(nlohmann::json& j, const GameBoyBusState& state) {
       {"serialControl", state.serialControl},
 
       {"dmaActive", state.dmaActive},
+      {"dmaSource", state.dmaSource},
+      {"dmaIndex", state.dmaIndex},
+      {"dmaDotCounter", state.dmaDotCounter},
+      {"dmaJustStarted", state.dmaJustStarted},
 
       {"cgbMode", state.cgbMode},
       {"doubleSpeed", state.doubleSpeed},
@@ -50,6 +54,10 @@ void from_json(const nlohmann::json& j, GameBoyBusState& state) {
   j.at("serialControl").get_to(state.serialControl);
 
   j.at("dmaActive").get_to(state.dmaActive);
+  state.dmaSource = j.value("dmaSource", static_cast<uint16_t>(0));
+  state.dmaIndex = j.value("dmaIndex", static_cast<uint16_t>(0));
+  state.dmaDotCounter = j.value("dmaDotCounter", static_cast<uint8_t>(0));
+  state.dmaJustStarted = j.value("dmaJustStarted", false);
 
   // Game Boy Color fields: optional so that DMG-era save states still load.
   state.cgbMode = j.value("cgbMode", false);
@@ -78,6 +86,11 @@ void GameBoyBus::setState(const GameBoyBusState& state) {
   serialControl = state.serialControl;
 
   dmaActive = state.dmaActive;
+  dmaSource_ = state.dmaSource;
+  dmaIndex_ = state.dmaIndex;
+  dmaDotCounter_ = state.dmaDotCounter;
+  dmaJustStarted_ = state.dmaJustStarted;
+  dmaReadInProgress_ = false;
 
   cgbMode_ = state.cgbMode;
   doubleSpeed_ = state.doubleSpeed;
@@ -108,6 +121,10 @@ GameBoyBusState GameBoyBus::getState() const {
       .serialControl = serialControl,
 
       .dmaActive = dmaActive,
+      .dmaSource = dmaSource_,
+      .dmaIndex = dmaIndex_,
+      .dmaDotCounter = dmaDotCounter_,
+      .dmaJustStarted = dmaJustStarted_,
 
       .cgbMode = cgbMode_,
       .doubleSpeed = doubleSpeed_,
@@ -262,6 +279,11 @@ void GameBoyBus::reset() {
   serialControl = 0;
   serialOutput_.clear();
   dmaActive = false;
+  dmaSource_ = 0;
+  dmaIndex_ = 0;
+  dmaDotCounter_ = 0;
+  dmaJustStarted_ = false;
+  dmaReadInProgress_ = false;
   configureHardware();  // DMG vs CGB depends on the loaded cartridge
 }
 
@@ -277,7 +299,13 @@ uint32_t GameBoyBus::step() {
   // be started by a PPU callback while the peripherals are ticking, so its CPU
   // stall must be picked up by the same step rather than allowing an extra CPU
   // instruction on the next call.
-  uint32_t remaining = cpu.execute() * 4;
+  const uint32_t cpuMachineCycles =
+      dmaActive && (cpu.getPC() < 0xFF80 || cpu.getPC() > 0xFFFE)
+          ? 4
+          : cpu.execute();
+  const bool skipOamDmaTick = dmaJustStarted_;
+  dmaJustStarted_ = false;
+  uint32_t remaining = cpuMachineCycles * 4;
   uint32_t elapsed = 0;  // in 4.194304 MHz "real time" T-cycles
 
   // General-purpose DMA may already have queued stalls during the instruction;
@@ -294,6 +322,7 @@ uint32_t GameBoyBus::step() {
     ppu.tick(static_cast<uint8_t>(dots));
     timer.tick(static_cast<uint8_t>(chunk));
     apu.tick(dots);
+    if (!skipOamDmaTick) tickOamDma(dots);
     remaining -= chunk;
     elapsed += dots;
 
@@ -315,6 +344,12 @@ void GameBoyBus::getStereoSample(float& left, float& right) {
 }
 
 void GameBoyBus::write(uint16_t address, uint8_t value) {
+  // During OAM DMA the CPU can access HRAM only. The DMA engine itself uses
+  // dmaReadInProgress_ to bypass this CPU-facing restriction for source reads.
+  if (dmaActive && !dmaReadInProgress_ &&
+      (address < 0xFF80 || address > 0xFFFE))
+    return;
+
   if (address < 0x8000) {
     cartridge.write(address, value);
   } else if (address < 0xA000) {
@@ -398,6 +433,10 @@ void GameBoyBus::write(uint16_t address, uint8_t value) {
 }
 
 uint8_t GameBoyBus::read(uint16_t address) {
+  if (dmaActive && !dmaReadInProgress_ &&
+      (address < 0xFF80 || address > 0xFFFE))
+    return 0xFF;
+
   if (address < 0x8000) {
     return cartridge.read(address);
   } else if (address < 0xA000) {
@@ -448,8 +487,28 @@ uint8_t GameBoyBus::read(uint16_t address) {
 }
 
 void GameBoyBus::startOamDma(uint8_t sourceHigh) {
-  uint16_t base = static_cast<uint16_t>(sourceHigh) << 8;
-  for (uint16_t i = 0; i < 0xA0; ++i) {
-    ppu.writeOAMDMA(i, read(base + i));
+  dmaSource_ = static_cast<uint16_t>(sourceHigh) << 8;
+  dmaIndex_ = 0;
+  dmaDotCounter_ = 0;
+  dmaActive = true;
+  dmaJustStarted_ = true;
+}
+
+void GameBoyBus::tickOamDma(uint32_t dots) {
+  if (!dmaActive) return;
+
+  for (uint32_t dot = 0; dot < dots && dmaActive; ++dot) {
+    if (++dmaDotCounter_ < 4) continue;
+    dmaDotCounter_ = 0;
+
+    // OAM DMA transfers one byte every four PPU dots (one M-cycle).
+    dmaReadInProgress_ = true;
+    const uint8_t value =
+        read(static_cast<uint16_t>(dmaSource_ + dmaIndex_));
+    dmaReadInProgress_ = false;
+    ppu.writeOAMDMA(dmaIndex_, value);
+
+    ++dmaIndex_;
+    if (dmaIndex_ >= 0xA0) dmaActive = false;
   }
 }
