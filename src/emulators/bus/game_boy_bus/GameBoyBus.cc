@@ -268,25 +268,26 @@ void GameBoyBus::reset() {
 void GameBoyBus::tick() { step(); }
 
 uint32_t GameBoyBus::step() {
-  // One CPU instruction per step. `cycles` is in machine cycles (M-cycles) of
-  // the CPU clock, hence `* 4` for T-cycles. A CGB DMA that just ran also
-  // stalled the CPU for `stallCycles_` M-cycles.
   // STOP (0x10) with KEY1 armed toggles the CGB speed. The CPU core treats
   // STOP as a 2-byte NOP, so the switch is detected here, just before the
   // instruction runs.
   if (cgbMode_ && speedSwitchArmed_ && read(cpu.getPC()) == 0x10) onStop();
 
-  uint32_t cycles = cpu.execute();
-  cycles += stallCycles_;
+  // Execute the instruction first, then advance the peripherals. HBlank DMA
+  // can be started by a PPU callback while the peripherals are ticking, so
+  // its CPU stall must be picked up by the same step rather than allowing an
+  // extra CPU instruction on the next call.
+  uint32_t remaining = cpu.execute() * 4;
+  uint32_t elapsed = 0;  // in 4.194304 MHz "real time" T-cycles
+
+  // General-purpose DMA may already have queued stalls during the instruction;
+  // HBlank DMA may queue more from inside ppu.tick(). Drain both sources.
+  remaining += stallCycles_ * 4;
   stallCycles_ = 0;
 
-  // In double-speed mode the CPU and the timer run twice as fast, while the
-  // PPU and the APU keep their normal clock: they only see half the cycles.
-  // The work is split in small chunks because the component tick() functions
-  // take an 8-bit count (a general-purpose DMA can stall for thousands of
-  // cycles).
-  uint32_t remaining = cycles * 4;
-  uint32_t elapsed = 0;  // in 4.194304 MHz "real time" T-cycles
+  // In double-speed mode the CPU and timer run twice as fast, while the PPU
+  // and APU keep their normal clock. Keep chunks small enough for the
+  // peripherals' 8-bit tick() interfaces.
   while (remaining > 0) {
     const uint32_t chunk = std::min<uint32_t>(remaining, 64);
     const uint32_t dots = doubleSpeed_ ? chunk / 2 : chunk;
@@ -295,6 +296,14 @@ uint32_t GameBoyBus::step() {
     apu.tick(dots);
     remaining -= chunk;
     elapsed += dots;
+
+    // The PPU can invoke the HBlank DMA callback above. Account for its stall
+    // immediately, and allow the additional peripheral time to trigger any
+    // further callbacks before returning to the CPU.
+    if (stallCycles_ > 0) {
+      remaining += stallCycles_ * 4;
+      stallCycles_ = 0;
+    }
   }
   return elapsed;
 }
