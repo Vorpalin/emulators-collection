@@ -119,6 +119,21 @@ void renderFirstLine(GameBoyPPU& ppu) {
   ppu.tick(172);  // Pixel transfer -> HBlank; renders the line.
 }
 
+void testPpuFetchesVramDuringMode3() {
+  GameBoyPPU ppu;
+  prepareDmgLine(ppu);
+
+  auto state = ppu.getState();
+  state.regs.bgp = 0x0C;  // BG colour 1 -> shade 3.
+  state.vram[0x1800] = 1; // BG map selects tile 1.
+  state.vram[16] = 0xFF; // Tile 1: colour index 1 across the row.
+  ppu.setState(state);
+
+  renderFirstLine(ppu);
+  expect("PPU internal VRAM fetch works during Mode 3",
+         ppu.framebuffer()[0], 3);
+}
+
 void testDmgSpritePriorityUsesRawBgIndex() {
   GameBoyPPU ppu;
   prepareDmgLine(ppu);
@@ -200,6 +215,7 @@ int main() {
   testMemoryAccessLocks();
   testStatRegisterWriteMask();
   testCgbPaletteAccessLocks();
+  testPpuFetchesVramDuringMode3();
   testDmgSpritePriorityUsesRawBgIndex();
   testHigherPriorityHiddenSpriteBlocksLowerPrioritySprite();
   testDmgEqualXUsesOamOrder();
