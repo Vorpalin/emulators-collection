@@ -74,7 +74,8 @@ void GameBoyTimer::tick(uint8_t cycles) {
   }
   timerCycles += cycles;
 
-  timerCounter += cycles;
+  // TIMA advances only on timer input edges, not on every CPU cycle.
+  // timerCycles accumulates CPU cycles until the TAC-selected period elapses.
 
   // Determine the timer frequency based on the control register
   uint16_t timerFrequency = timerThreshold();
