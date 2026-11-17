@@ -4,6 +4,14 @@
 #include "emulators/interrupt_controller/game_boy_interrupt_controller/GameBoyInterruptController.hh"
 #include "emulators/timer/game_boy_timer/GameBoyTimer.hh"
 
+static void Tick(GameBoyTimer& timer, uint16_t cycles) {
+  while (cycles > 0) {
+    const auto chunk = static_cast<uint8_t>(cycles > 255 ? 255 : cycles);
+    timer.tick(chunk);
+    cycles = static_cast<uint16_t>(cycles - chunk);
+  }
+}
+
 int main() {
   GameBoyInterruptController interrupts;
   GameBoyTimer timer(&interrupts);
@@ -35,7 +43,7 @@ int main() {
   assert(timer.read(0xFF05) == 1);
   timer.reset();
   timer.write(0xFF07, 0x04);  // DIV bit 9 -> 1024 T-cycles
-  timer.tick(1023);
+  Tick(timer, 1023);
   assert(timer.read(0xFF05) == 0);
   timer.tick(1);
   assert(timer.read(0xFF05) == 1);
