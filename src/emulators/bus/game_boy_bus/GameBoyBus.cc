@@ -273,10 +273,10 @@ uint32_t GameBoyBus::step() {
   // instruction runs.
   if (cgbMode_ && speedSwitchArmed_ && read(cpu.getPC()) == 0x10) onStop();
 
-  // Execute the instruction first, then advance the peripherals. HBlank DMA
-  // can be started by a PPU callback while the peripherals are ticking, so
-  // its CPU stall must be picked up by the same step rather than allowing an
-  // extra CPU instruction on the next call.
+  // Execute the instruction first, then advance the peripherals. HBlank DMA can
+  // be started by a PPU callback while the peripherals are ticking, so its CPU
+  // stall must be picked up by the same step rather than allowing an extra CPU
+  // instruction on the next call.
   uint32_t remaining = cpu.execute() * 4;
   uint32_t elapsed = 0;  // in 4.194304 MHz "real time" T-cycles
 
