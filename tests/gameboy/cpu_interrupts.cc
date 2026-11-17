@@ -19,7 +19,7 @@ void expect(const char* name, int actual, int expected) {
   }
 }
 
-GameBoy makeGameBoy(const std::array<uint8_t, 3>& program) {
+void loadProgram(GameBoy& gb, const std::array<uint8_t, 3>& program) {
   std::vector<uint8_t> rom(0x8000, 0);
   rom[0x100] = program[0];
   rom[0x101] = program[1];
@@ -27,13 +27,12 @@ GameBoy makeGameBoy(const std::array<uint8_t, 3>& program) {
   rom[0x147] = 0x00; // ROM only
   rom[0x148] = 0x00; // 32 KiB
   rom[0x149] = 0x00; // no RAM
-  GameBoy gb;
   gb.loadProgram(rom.data(), rom.size());
-  return gb;
 }
 
 void testHaltBugSuppressesOneOpcodeFetchIncrement() {
-  GameBoy gb = makeGameBoy({0x76, 0x3E, 0x42}); // HALT; LD A,42
+  GameBoy gb;
+  loadProgram(gb, {0x76, 0x3E, 0x42}); // HALT; LD A,42
   auto& bus = gb.getBus();
   bus.interrupts.writeIE(GameBoyInterruptController::VBlank);
   bus.interrupts.request(GameBoyInterruptController::VBlank);
@@ -52,7 +51,8 @@ void testHaltBugSuppressesOneOpcodeFetchIncrement() {
 }
 
 void testHaltWakesWhenEnabledInterruptBecomesPending() {
-  GameBoy gb = makeGameBoy({0x76, 0x00, 0x00}); // HALT; NOP; NOP
+  GameBoy gb;
+  loadProgram(gb, {0x76, 0x00, 0x00}); // HALT; NOP; NOP
   auto& bus = gb.getBus();
   bus.interrupts.writeIE(GameBoyInterruptController::Joypad);
 
