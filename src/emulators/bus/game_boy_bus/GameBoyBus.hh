@@ -40,6 +40,10 @@ struct GameBoyBusState {
   uint8_t serialControl;
 
   bool dmaActive;
+  uint16_t dmaSource = 0;
+  uint16_t dmaIndex = 0;
+  uint8_t dmaDotCounter = 0;
+  bool dmaJustStarted = false;
 
   // --- Game Boy Color extension (absent from pre-CGB save states) ---
   bool cgbMode = false;
@@ -234,6 +238,7 @@ class GameBoyBus : public Bus {
    *        from `sourceHigh << 8` into OAM.
    */
   void startOamDma(uint8_t sourceHigh);
+  void tickOamDma(uint32_t dots);
 
   /**
    * @brief Picks DMG or CGB mode from the cartridge header and applies the
@@ -278,5 +283,10 @@ class GameBoyBus : public Bus {
   uint32_t stallCycles_ = 0;   ///< M-cycles the CPU is stalled by DMA.
 
   bool dmaActive = false;   ///< True while an OAM DMA transfer is running.
+  uint16_t dmaSource_ = 0;
+  uint16_t dmaIndex_ = 0;
+  uint8_t dmaDotCounter_ = 0;
+  bool dmaJustStarted_ = false;
+  bool dmaReadInProgress_ = false;
   bool frameReady = false;  ///< Set by the PPU when a frame is complete.
 };
