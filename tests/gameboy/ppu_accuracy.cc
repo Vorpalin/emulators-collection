@@ -11,8 +11,7 @@ int failures = 0;
 
 void expect(const char* name, int actual, int expected) {
   if (actual != expected) {
-    std::printf("FAIL %-42s got %02X, expected %02X\n", name, actual,
-                expected);
+    std::printf("FAIL %-42s got %02X, expected %02X\n", name, actual, expected);
     ++failures;
   } else {
     std::printf("ok   %-42s %02X\n", name, actual);
@@ -22,8 +21,8 @@ void expect(const char* name, int actual, int expected) {
 void setMode(GameBoyPPU& ppu, Mode mode, bool lcdEnabled = true) {
   auto state = ppu.getState();
   state.regs.lcdc = lcdEnabled ? 0x80 : 0x00;
-  state.regs.stat = static_cast<uint8_t>(
-      (state.regs.stat & 0xFC) | static_cast<uint8_t>(mode));
+  state.regs.stat = static_cast<uint8_t>((state.regs.stat & 0xFC) |
+                                         static_cast<uint8_t>(mode));
   ppu.setState(state);
 }
 
@@ -79,8 +78,8 @@ void testLcdOffClearsStaleFrame() {
   ppu.tick(4);
 
   expect("LCD off clears stale DMG framebuffer", ppu.framebuffer()[0], 0);
-  expect("LCD off clears stale CGB framebuffer",
-         ppu.colorFramebuffer()[0], 0x7FFF);
+  expect("LCD off clears stale CGB framebuffer", ppu.colorFramebuffer()[0],
+         0x7FFF);
 }
 
 void testStatInterruptUsesRisingEdge() {
@@ -90,13 +89,13 @@ void testStatInterruptUsesRisingEdge() {
 
   auto state = ppu.getState();
   state.regs.lcdc = 0x80;
-  state.regs.stat = 0x20; // OAM mode interrupt enabled.
+  state.regs.stat = 0x20;  // OAM mode interrupt enabled.
   state.regs.ly = 0;
   state.regs.lyc = 1;
   ppu.setState(state);
-  ppu.writeRegister(0xFF41, 0x20); // Re-evaluate enabled OAM STAT source.
+  ppu.writeRegister(0xFF41, 0x20);  // Re-evaluate enabled OAM STAT source.
   expect("STAT rising edge requests interrupt", requests, 1);
-  ppu.tick(80); // OAM -> Transfer: signal falls.
+  ppu.tick(80);  // OAM -> Transfer: signal falls.
   expect("STAT does not request again on falling edge", requests, 1);
 }
 void testStatRegisterWriteMask() {
@@ -108,11 +107,11 @@ void testStatRegisterWriteMask() {
   ppu.setState(state);
 
   ppu.write(0xFF41, 0x00);
-  expect("STAT write preserves mode and coincidence bits",
-         ppu.read(0xFF41), 0x86);
+  expect("STAT write preserves mode and coincidence bits", ppu.read(0xFF41),
+         0x86);
   ppu.write(0xFF41, 0x78);
-  expect("STAT write updates only interrupt-enable bits",
-         ppu.read(0xFF41), 0xFE);
+  expect("STAT write updates only interrupt-enable bits", ppu.read(0xFF41),
+         0xFE);
 }
 
 void testCgbPaletteAccessLocks() {
@@ -120,8 +119,8 @@ void testCgbPaletteAccessLocks() {
   auto state = ppu.getState();
   state.cgbMode = true;
   state.regs.lcdc = 0x80;
-  state.regs.stat = static_cast<uint8_t>(
-      (state.regs.stat & 0xFC) | static_cast<uint8_t>(PixelTransfer));
+  state.regs.stat = static_cast<uint8_t>((state.regs.stat & 0xFC) |
+                                         static_cast<uint8_t>(PixelTransfer));
   state.bgPalette[0] = 0x12;
   state.bgPalette[1] = 0x34;
   ppu.setState(state);
@@ -129,20 +128,20 @@ void testCgbPaletteAccessLocks() {
   ppu.write(0xFF68, 0x80);  // BG palette index 0, auto-increment enabled.
   expect("Mode 3: BG palette reads are blocked", ppu.read(0xFF69), 0xFF);
   ppu.write(0xFF69, 0x00);  // Data write is ignored, index still increments.
-  expect("Mode 3: blocked BG palette write increments index",
-         ppu.read(0xFF68), 0xC1);
+  expect("Mode 3: blocked BG palette write increments index", ppu.read(0xFF68),
+         0xC1);
 
   setMode(ppu, HBlank);
   ppu.write(0xFF68, 0x00);
-  expect("Mode 0: blocked palette write preserved CRAM",
-         ppu.read(0xFF69), 0x12);
+  expect("Mode 0: blocked palette write preserved CRAM", ppu.read(0xFF69),
+         0x12);
 }
 
 void prepareDmgLine(GameBoyPPU& ppu) {
   auto state = ppu.getState();
   state.regs.lcdc = 0x93;  // LCD on, unsigned tile data, OBJ and BG enabled.
-  state.regs.stat = static_cast<uint8_t>(
-      (state.regs.stat & 0xFC) | static_cast<uint8_t>(OAMSearch));
+  state.regs.stat = static_cast<uint8_t>((state.regs.stat & 0xFC) |
+                                         static_cast<uint8_t>(OAMSearch));
   state.regs.ly = 0;
   state.regs.bgp = 0x00;
   state.vram.fill(0);
@@ -161,14 +160,14 @@ void testPpuFetchesVramDuringMode3() {
   prepareDmgLine(ppu);
 
   auto state = ppu.getState();
-  state.regs.bgp = 0x0C;  // BG colour 1 -> shade 3.
-  state.vram[0x1800] = 1; // BG map selects tile 1.
-  state.vram[16] = 0xFF; // Tile 1: colour index 1 across the row.
+  state.regs.bgp = 0x0C;   // BG colour 1 -> shade 3.
+  state.vram[0x1800] = 1;  // BG map selects tile 1.
+  state.vram[16] = 0xFF;   // Tile 1: colour index 1 across the row.
   ppu.setState(state);
 
   renderFirstLine(ppu);
-  expect("PPU internal VRAM fetch works during Mode 3",
-         ppu.framebuffer()[0], 3);
+  expect("PPU internal VRAM fetch works during Mode 3", ppu.framebuffer()[0],
+         3);
 }
 
 void testDmgSpritePriorityUsesRawBgIndex() {
@@ -183,12 +182,11 @@ void testDmgSpritePriorityUsesRawBgIndex() {
   state.oam[0] = 16;
   state.oam[1] = 8;
   state.oam[2] = 1;
-  state.oam[3] = 0x80;     // Behind non-zero BG pixels.
+  state.oam[3] = 0x80;  // Behind non-zero BG pixels.
   ppu.setState(state);
 
   renderFirstLine(ppu);
-  expect("DMG OBJ-behind-BG uses raw BG colour index",
-         ppu.framebuffer()[0], 0);
+  expect("DMG OBJ-behind-BG uses raw BG colour index", ppu.framebuffer()[0], 0);
 }
 
 void testHigherPriorityHiddenSpriteBlocksLowerPrioritySprite() {
@@ -216,8 +214,7 @@ void testHigherPriorityHiddenSpriteBlocksLowerPrioritySprite() {
   ppu.setState(state);
 
   renderFirstLine(ppu);
-  expect("hidden high-priority OBJ blocks lower OBJ",
-         ppu.framebuffer()[0], 1);
+  expect("hidden high-priority OBJ blocks lower OBJ", ppu.framebuffer()[0], 1);
 }
 
 void testDmgEqualXUsesOamOrder() {
@@ -242,8 +239,8 @@ void testDmgEqualXUsesOamOrder() {
   ppu.setState(state);
 
   renderFirstLine(ppu);
-  expect("DMG equal-X sprite priority follows OAM order",
-         ppu.framebuffer()[0], 1);
+  expect("DMG equal-X sprite priority follows OAM order", ppu.framebuffer()[0],
+         1);
 }
 
 }  // namespace
@@ -259,7 +256,7 @@ int main() {
   testHigherPriorityHiddenSpriteBlocksLowerPrioritySprite();
   testDmgEqualXUsesOamOrder();
 
-  std::printf("%s (%d failure%s)\n", failures ? "FAILED" : "PASSED",
-              failures, failures == 1 ? "" : "s");
+  std::printf("%s (%d failure%s)\n", failures ? "FAILED" : "PASSED", failures,
+              failures == 1 ? "" : "s");
   return failures ? 1 : 0;
 }

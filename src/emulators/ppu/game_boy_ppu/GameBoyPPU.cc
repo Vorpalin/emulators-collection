@@ -221,7 +221,8 @@ void GameBoyPPU::checkLYC() {
 void GameBoyPPU::updateStatInterruptLine() {
   // STAT sources are ORed onto one physical signal. The CPU receives an
   // interrupt only on its low-to-high transition, not once per source/mode.
-  const bool statLine = regs_.lcdEnabled() &&
+  const bool statLine =
+      regs_.lcdEnabled() &&
       ((regs_.mode() == HBlank && regs_.hblankInterruptEnabled()) ||
        (regs_.mode() == VBlank && regs_.vblankInterruptEnabled()) ||
        (regs_.mode() == OAMSearch && regs_.oamInterruptEnabled()) ||
@@ -396,8 +397,7 @@ void GameBoyPPU::renderSpritesLine(int line) {
         continue;
       }
 
-      const uint8_t palette =
-          sprite.paletteOBP1() ? regs_.obp1 : regs_.obp0;
+      const uint8_t palette = sprite.paletteOBP1() ? regs_.obp1 : regs_.obp0;
       framebuffer_[line * SCREEN_WIDTH + screenX] =
           getColorFromPalette(palette, colorIndex);
     }
@@ -437,8 +437,8 @@ void GameBoyPPU::writeRegister(uint16_t addr, uint8_t value) {
     case 0xFF41:
       // STAT bits 0-2 are PPU-owned; only interrupt enables (bits 3-6)
       // are writable. Bit 7 reads as one.
-      regs_.stat = static_cast<uint8_t>((regs_.stat & 0x07) | (value & 0x78) |
-                                        0x80);
+      regs_.stat =
+          static_cast<uint8_t>((regs_.stat & 0x07) | (value & 0x78) | 0x80);
       updateStatInterruptLine();
       break;
     case 0xFF42:
@@ -568,15 +568,13 @@ uint8_t GameBoyPPU::readRegister(uint16_t addr) const {
     case 0xFF68:
       return cgbMode_ ? static_cast<uint8_t>(bcps_ | 0x40) : 0xFF;
     case 0xFF69:
-      return cgbMode_ && paletteRamAccessible()
-                 ? bgPalRam_[bcps_ & 0x3F]
-                 : 0xFF;
+      return cgbMode_ && paletteRamAccessible() ? bgPalRam_[bcps_ & 0x3F]
+                                                : 0xFF;
     case 0xFF6A:
       return cgbMode_ ? static_cast<uint8_t>(ocps_ | 0x40) : 0xFF;
     case 0xFF6B:
-      return cgbMode_ && paletteRamAccessible()
-                 ? objPalRam_[ocps_ & 0x3F]
-                 : 0xFF;
+      return cgbMode_ && paletteRamAccessible() ? objPalRam_[ocps_ & 0x3F]
+                                                : 0xFF;
     case 0xFF6C:
       return cgbMode_ ? static_cast<uint8_t>(0xFE | opri_) : 0xFF;
   }

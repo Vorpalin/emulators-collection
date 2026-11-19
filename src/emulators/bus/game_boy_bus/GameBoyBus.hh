@@ -282,7 +282,7 @@ class GameBoyBus : public Bus {
   bool hdmaActive_ = false;    ///< HBlank DMA pending.
   uint32_t stallCycles_ = 0;   ///< M-cycles the CPU is stalled by DMA.
 
-  bool dmaActive = false;   ///< True while an OAM DMA transfer is running.
+  bool dmaActive = false;  ///< True while an OAM DMA transfer is running.
   uint16_t dmaSource_ = 0;
   uint16_t dmaIndex_ = 0;
   uint8_t dmaDotCounter_ = 0;

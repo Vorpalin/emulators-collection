@@ -1,6 +1,5 @@
-#include "emulators/cpu/LR35902/LR35902.hh"
-
 #include "emulators/bus/game_boy_bus/GameBoyBus.hh"
+#include "emulators/cpu/LR35902/LR35902.hh"
 
 void LR35902::ld_bc_d16(uint32_t &cycles) {
   // Load 16-bit immediate value into BC register pair

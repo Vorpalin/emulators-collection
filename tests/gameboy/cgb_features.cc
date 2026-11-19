@@ -170,16 +170,14 @@ int main() {
   auto& oamBus = oamGb.getBus();
   oamBus.write(0xFF40, 0);
   oamBus.write(0xFE00, 0xEE);
-  for (int i = 0; i < 2000 && !oamBus.getState().dmaActive; ++i)
-    oamBus.step();
+  for (int i = 0; i < 2000 && !oamBus.getState().dmaActive; ++i) oamBus.step();
   std::printf("== OAM DMA\n");
   Expect("OAM DMA started", oamBus.getState().dmaActive, 1);
   Expect("DMA blocks WRAM reads", oamBus.read(0xC100), 0xFF);
   Expect("DMA permits HRAM reads", oamBus.read(0xFF80), 0x00);
-  Expect("OAM DMA has not copied instantly",
-         oamBus.getState().ppu.oam[0], 0xEE);
-  for (int i = 0; i < 100 && oamBus.getState().dmaActive; ++i)
-    oamBus.step();
+  Expect("OAM DMA has not copied instantly", oamBus.getState().ppu.oam[0],
+         0xEE);
+  for (int i = 0; i < 100 && oamBus.getState().dmaActive; ++i) oamBus.step();
   Expect("OAM DMA completed", oamBus.getState().dmaActive, 0);
   Expect("OAM DMA first byte", oamBus.read(0xFE00), 0x00);
   Expect("OAM DMA last byte", oamBus.read(0xFE9F), 0x9F);

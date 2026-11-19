@@ -237,8 +237,7 @@ void GameBoyBus::hdmaCopyBlock() {
     // VRAM and the 0xE000+ region are not valid HDMA sources.
     const bool valid = src < 0x8000 || (src >= 0xA000 && src < 0xE000);
     const uint8_t value = valid ? read(src) : 0xFF;
-    ppu.writeVRAMDMA(static_cast<uint16_t>((hdmaDest_ + i) & 0x1FFF),
-                     value);
+    ppu.writeVRAMDMA(static_cast<uint16_t>((hdmaDest_ + i) & 0x1FFF), value);
   }
   hdmaSource_ = static_cast<uint16_t>(hdmaSource_ + 16);
   hdmaDest_ = static_cast<uint16_t>((hdmaDest_ + 16) & 0x1FFF);
@@ -510,8 +509,7 @@ void GameBoyBus::tickOamDma(uint32_t dots) {
 
     // OAM DMA transfers one byte every four PPU dots (one M-cycle).
     dmaReadInProgress_ = true;
-    const uint8_t value =
-        read(static_cast<uint16_t>(dmaSource_ + dmaIndex_));
+    const uint8_t value = read(static_cast<uint16_t>(dmaSource_ + dmaIndex_));
     dmaReadInProgress_ = false;
     ppu.writeOAMDMA(dmaIndex_, value);
 

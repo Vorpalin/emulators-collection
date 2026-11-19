@@ -90,8 +90,7 @@ void GameBoyTimer::tick(uint8_t cycles) {
       --reloadDelay;
       if (reloadDelay == 0) {
         timerCounter = timerModulo;
-        if (interrupts)
-          interrupts->request(GameBoyInterruptController::Timer);
+        if (interrupts) interrupts->request(GameBoyInterruptController::Timer);
       }
     }
 

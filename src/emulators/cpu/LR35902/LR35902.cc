@@ -17,8 +17,7 @@ void to_json(nlohmann::json &j, const LR35902State &state) {
       {"L", state.L},           {"PC", state.PC},
       {"SP", state.SP},         {"F", state.F},
       {"IME", state.IME},       {"imeDelay", state.imeDelay},
-      {"halted", state.halted},
-      {"haltBug", state.haltBug},
+      {"halted", state.halted}, {"haltBug", state.haltBug},
   };
 }
 
