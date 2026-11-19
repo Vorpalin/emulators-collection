@@ -17,7 +17,7 @@ void to_json(nlohmann::json &j, const LR35902State &state) {
       {"L", state.L},           {"PC", state.PC},
       {"SP", state.SP},         {"F", state.F},
       {"IME", state.IME},       {"imeDelay", state.imeDelay},
-      {"halted", state.halted},
+      {"halted", state.halted}, {"haltBug", state.haltBug},
   };
 }
 
@@ -35,6 +35,7 @@ void from_json(const nlohmann::json &j, LR35902State &state) {
   j.at("IME").get_to(state.IME);
   j.at("imeDelay").get_to(state.imeDelay);
   j.at("halted").get_to(state.halted);
+  state.haltBug = j.value("haltBug", false);
 }
 
 void LR35902::setState(const LR35902State &state) {
@@ -51,6 +52,7 @@ void LR35902::setState(const LR35902State &state) {
   IME = state.IME;
   imeDelay = state.imeDelay;
   halted = state.halted;
+  haltBug = state.haltBug;
 }
 
 LR35902State LR35902::getState() const {
@@ -68,6 +70,7 @@ LR35902State LR35902::getState() const {
       .IME = IME,
       .imeDelay = imeDelay,
       .halted = halted,
+      .haltBug = haltBug,
   };
 }
 
@@ -85,6 +88,7 @@ LR35902::LR35902(GameBoyBus *bus) : CPU() {
   SP = 0xFFFE;     // Stack pointer initialized to top of stack
   IME = false;     // Interrupt Master Enable flag initialized to false
   halted = false;  // CPU is not halted initially
+  haltBug = false;
   this->bus = bus;
 }
 
@@ -106,6 +110,7 @@ void LR35902::reset() {
   SP = 0xFFFE;     // Stack pointer initialized to top of stack
   IME = false;     // Interrupt Master Enable flag initialized to false
   halted = false;  // CPU is not halted initially
+  haltBug = false;
 }
 
 void LR35902::setFlagZ(bool value) {
@@ -212,7 +217,13 @@ uint32_t LR35902::execute() {
     }
   }
   uint8_t opcode = read(cycles, PC);
-  PC++;  // Increment program counter
+  if (haltBug) {
+    // The HALT bug suppresses exactly one opcode-fetch increment. Immediate
+    // operands are consequently read from the opcode address, as on hardware.
+    haltBug = false;
+  } else {
+    PC++;
+  }
 
   switch (opcode) {
     case NOP:  // NOP

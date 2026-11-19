@@ -87,6 +87,24 @@ void GameBoy::setKey(int key, bool pressed) {
 }
 
 void GameBoy::convertFrame() {
+  if (bus.cgbMode()) {
+    // Game Boy Color: expand RGB555 to RGB888 (replicating the high bits so
+    // that 0x1F maps to 0xFF).
+    const auto& colors = bus.getColorFramebuffer();
+    for (std::size_t i = 0; i < colors.size(); ++i) {
+      const uint16_t c = colors[i];
+      const uint8_t r5 = c & 0x1F;
+      const uint8_t g5 = (c >> 5) & 0x1F;
+      const uint8_t b5 = (c >> 10) & 0x1F;
+      uint8_t* out = &framebuffer_[i * 4];
+      out[0] = static_cast<uint8_t>((r5 << 3) | (r5 >> 2));
+      out[1] = static_cast<uint8_t>((g5 << 3) | (g5 >> 2));
+      out[2] = static_cast<uint8_t>((b5 << 3) | (b5 >> 2));
+      out[3] = 255;
+    }
+    return;
+  }
+
   const auto& shades = bus.getFramebuffer();
   for (std::size_t i = 0; i < shades.size(); ++i) {
     const uint8_t v = kShades[shades[i] & 0x03];

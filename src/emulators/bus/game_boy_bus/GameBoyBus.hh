@@ -40,6 +40,21 @@ struct GameBoyBusState {
   uint8_t serialControl;
 
   bool dmaActive;
+  uint16_t dmaSource = 0;
+  uint16_t dmaIndex = 0;
+  uint8_t dmaDotCounter = 0;
+  bool dmaJustStarted = false;
+
+  // --- Game Boy Color extension (absent from pre-CGB save states) ---
+  bool cgbMode = false;
+  bool doubleSpeed = false;
+  bool speedSwitchArmed = false;
+  uint8_t svbk = 1;
+  std::array<uint8_t, 0x6000> wramExt{};  ///< WRAM banks 2-7.
+  uint16_t hdmaSource = 0;
+  uint16_t hdmaDest = 0;
+  uint8_t hdmaRemaining = 0;  ///< 16-byte blocks left.
+  bool hdmaActive = false;    ///< HBlank DMA in progress.
 };
 
 /**
@@ -75,9 +90,14 @@ void from_json(const nlohmann::json& j, GameBoyBusState& state);
  * | 0xFF00-0xFF0F   | I/O registers                        |
  * | 0xFF10-0xFF3F   | Audio registers                      |
  * | 0xFF40-0xFF4B   | PPU registers                        |
- * | 0xFF4C-0xFF7F   | Unused                               |
+ * | 0xFF4C-0xFF7F   | Unused / CGB registers (see below)   |
  * | 0xFF80-0xFFFE   | High RAM                             |
  * | 0xFFFF          | Interrupt Enable register            |
+ *
+ * Game Boy Color (enabled automatically when the cartridge header says so):
+ * KEY1 (0xFF4D) speed switch, VBK (0xFF4F) VRAM bank, HDMA1-5 (0xFF51-0xFF55),
+ * BCPS/BCPD/OCPS/OCPD/OPRI (0xFF68-0xFF6C, in the PPU) and SVBK (0xFF70) which
+ * banks 0xD000-0xDFFF over 7 WRAM banks.
  */
 class GameBoyBus : public Bus {
  public:
@@ -98,7 +118,9 @@ class GameBoyBus : public Bus {
    * @return false if the cartridge rejects the image.
    */
   bool loadROM(const uint8_t* data, std::size_t size) {
-    return cartridge.loadROM(data, size);
+    if (!cartridge.loadROM(data, size)) return false;
+    configureHardware();
+    return true;
   }
 
   /** @brief Resets all components to their power-on state. */
@@ -127,9 +149,29 @@ class GameBoyBus : public Bus {
 
   /**
    * @brief Executes one CPU instruction and advances PPU, timer and APU.
-   * @return Number of T-cycles (4.194304 MHz clock) the instruction took.
+   * @return Elapsed time in T-cycles of the fixed 4.194304 MHz clock. In CGB
+   *         double-speed mode the CPU runs twice as fast, so an instruction
+   *         counts for half as much real time: this keeps the video/audio
+   *         pacing of the caller independent of the CPU speed.
    */
   uint32_t step();
+
+  /**
+   * @brief Switches CPU speed when a STOP is about to execute.
+   * @details Called by step(). On a Game Boy Color with KEY1 bit 0 armed, this
+   *          toggles between normal and double speed.
+   */
+  void onStop();
+
+  /** @brief True when running in Game Boy Color mode. */
+  bool cgbMode() const { return cgbMode_; }
+  /** @brief True when the CGB CPU is in double-speed mode. */
+  bool doubleSpeed() const { return doubleSpeed_; }
+
+  /** @brief CGB RGB555 framebuffer (valid when cgbMode() is true). */
+  const std::array<uint16_t, 160 * 144>& getColorFramebuffer() const {
+    return ppu.colorFramebuffer();
+  }
 
   /**
    * @brief Bytes the program has sent over the serial port (SB/SC).
@@ -196,6 +238,23 @@ class GameBoyBus : public Bus {
    *        from `sourceHigh << 8` into OAM.
    */
   void startOamDma(uint8_t sourceHigh);
+  void tickOamDma(uint32_t dots);
+
+  /**
+   * @brief Picks DMG or CGB mode from the cartridge header and applies the
+   *        matching power-on state (CPU registers, banks, DMA, speed).
+   */
+  void configureHardware();
+
+  /** @brief WRAM byte for an offset in 0x0000-0x1FFF (SVBK-banked on CGB). */
+  uint8_t& wramAt(uint16_t offset);
+
+  /** @brief Copies one 16-byte HDMA block into VRAM and stalls the CPU. */
+  void hdmaCopyBlock();
+  /** @brief Handles a write to HDMA5 (0xFF55). */
+  void writeHdma5(uint8_t value);
+  /** @brief Value read from HDMA5 (0xFF55). */
+  uint8_t readHdma5() const;
 
   LR35902 cpu;                       ///< Sharp LR35902 CPU.
   GameBoyCartridge cartridge;        ///< Cartridge (ROM + external RAM).
@@ -211,6 +270,23 @@ class GameBoyBus : public Bus {
   uint8_t serialControl = 0;  ///< Serial transfer control (SC, 0xFF02).
   std::string serialOutput_;  ///< Serial bytes sent so far (diagnostics only).
 
-  bool dmaActive = false;   ///< True while an OAM DMA transfer is running.
+  // --- Game Boy Color ---
+  bool cgbMode_ = false;                ///< Running a CGB-aware cartridge.
+  bool doubleSpeed_ = false;            ///< KEY1 bit 7.
+  bool speedSwitchArmed_ = false;       ///< KEY1 bit 0.
+  uint8_t svbk_ = 1;                    ///< Selected WRAM bank (0xD000-0xDFFF).
+  std::array<uint8_t, 0x6000> wramExt;  ///< WRAM banks 2-7 (bank 1 is wram).
+  uint16_t hdmaSource_ = 0;
+  uint16_t hdmaDest_ = 0;      ///< Offset in VRAM (0-0x1FF0).
+  uint8_t hdmaRemaining_ = 0;  ///< 16-byte blocks left.
+  bool hdmaActive_ = false;    ///< HBlank DMA pending.
+  uint32_t stallCycles_ = 0;   ///< M-cycles the CPU is stalled by DMA.
+
+  bool dmaActive = false;  ///< True while an OAM DMA transfer is running.
+  uint16_t dmaSource_ = 0;
+  uint16_t dmaIndex_ = 0;
+  uint8_t dmaDotCounter_ = 0;
+  bool dmaJustStarted_ = false;
+  bool dmaReadInProgress_ = false;
   bool frameReady = false;  ///< Set by the PPU when a frame is complete.
 };

@@ -12,6 +12,7 @@ void to_json(nlohmann::json& j, const GameBoyTimerState& state) {
       {"timerControl", state.timerControl},
       {"timerCycles", state.timerCycles},
       {"dividerCounter", state.dividerCounter},
+      {"reloadDelay", state.reloadDelay},
   };
 }
 
@@ -22,6 +23,7 @@ void from_json(const nlohmann::json& j, GameBoyTimerState& state) {
   j.at("timerControl").get_to(state.timerControl);
   j.at("timerCycles").get_to(state.timerCycles);
   j.at("dividerCounter").get_to(state.dividerCounter);
+  state.reloadDelay = j.value("reloadDelay", static_cast<uint8_t>(0));
 }
 
 void GameBoyTimer::setState(const GameBoyTimerState& state) {
@@ -31,6 +33,7 @@ void GameBoyTimer::setState(const GameBoyTimerState& state) {
   timerControl = state.timerControl;
   timerCycles = state.timerCycles;
   dividerCounter = state.dividerCounter;
+  reloadDelay = state.reloadDelay;
 }
 
 GameBoyTimerState GameBoyTimer::getState() const {
@@ -41,6 +44,7 @@ GameBoyTimerState GameBoyTimer::getState() const {
   state.timerControl = timerControl;
   state.timerCycles = timerCycles;
   state.dividerCounter = dividerCounter;
+  state.reloadDelay = reloadDelay;
   return state;
 }
 
@@ -56,88 +60,86 @@ void GameBoyTimer::reset() {
   timerControl = 0;
   timerCycles = 0;
   dividerCounter = 0;
+  reloadDelay = 0;
   if (interrupts) interrupts->reset();
 }
 
+uint8_t GameBoyTimer::timerInput() const {
+  if (!(timerControl & 0x04)) return 0;
+
+  // TAC selects one of four DIV bits. TIMA increments on a falling edge of
+  // this signal, not after an independently accumulated period.
+  constexpr uint8_t selectedBits[] = {9, 3, 5, 7};
+  return static_cast<uint8_t>((divider >> selectedBits[timerControl & 0x03]) &
+                              0x01);
+}
+
+void GameBoyTimer::incrementTIMA() {
+  // During the overflow/reload window further timer edges are ignored.
+  if (reloadDelay != 0) return;
+
+  ++timerCounter;
+  if (timerCounter == 0) reloadDelay = 4;
+}
+
 void GameBoyTimer::tick(uint8_t cycles) {
-  // Update the divider register (0xFF04)
-  divider += cycles;
-  while (divider >= 256) {
-    divider -= 256;
-    divider =
-        (divider + 1) & 0xFF;  // Increment the divider and wrap around at 256
-  }
-
-  // Check if the timer is enabled
-  if (!(timerControl & 0x04)) {
-    return;  // Timer is disabled, do not update the timer counter
-  }
-  timerCycles += cycles;
-
-  timerCounter += cycles;
-
-  // Determine the timer frequency based on the control register
-  uint16_t timerFrequency = timerThreshold();
-
-  // Increment the timer counter based on the frequency
-  while (timerCycles >= timerFrequency) {
-    timerCycles -= timerFrequency;
-    timerCounter++;
-    if (timerCounter == 0) {       // Overflow occurred
-      timerCounter = timerModulo;  // Reset to modulo value
-      interrupts->request(
-          GameBoyInterruptController::Timer);  // Request timer interrupt
+  for (uint16_t i = 0; i < cycles; ++i) {
+    // TIMA reloads four T-cycles after overflowing. The interrupt is raised
+    // on the reload cycle, rather than immediately on the overflow edge.
+    if (reloadDelay > 0) {
+      --reloadDelay;
+      if (reloadDelay == 0) {
+        timerCounter = timerModulo;
+        if (interrupts) interrupts->request(GameBoyInterruptController::Timer);
+      }
     }
+
+    const uint8_t oldInput = timerInput();
+    ++divider;
+    const uint8_t newInput = timerInput();
+    if (oldInput && !newInput) incrementTIMA();
   }
 }
 
 uint8_t GameBoyTimer::read(uint16_t address) {
   switch (address) {
     case 0xFF04:
-      return static_cast<uint8_t>(divider & 0xFF);  // Divider register
+      return static_cast<uint8_t>(divider >> 8);
     case 0xFF05:
-      return timerCounter;  // Timer counter
+      return timerCounter;
     case 0xFF06:
-      return timerModulo;  // Timer modulo
+      return timerModulo;
     case 0xFF07:
-      return 0xF8 | timerControl;  // Timer control
+      return static_cast<uint8_t>(0xF8 | timerControl);
     default:
-      return 0xFF;  // Invalid read
+      return 0xFF;
   }
 }
 
 void GameBoyTimer::write(uint16_t address, uint8_t value) {
   switch (address) {
-    case 0xFF04:  // Writing to the divider register resets it
+    case 0xFF04: {
+      const uint8_t oldInput = timerInput();
       divider = 0;
-      dividerCounter = 0;
+      if (oldInput && !timerInput()) incrementTIMA();
       break;
-    case 0xFF05:  // Timer counter
+    }
+    case 0xFF05:
       timerCounter = value;
+      // Writing TIMA during the overflow delay cancels the pending reload
+      // and its interrupt.
+      if (reloadDelay > 0) reloadDelay = 0;
       break;
-    case 0xFF06:  // Timer modulo
+    case 0xFF06:
       timerModulo = value;
       break;
-    case 0xFF07:                    // Timer control
-      timerControl = value & 0x07;  // Only the lower 3 bits are used
+    case 0xFF07: {
+      const uint8_t oldInput = timerInput();
+      timerControl = value & 0x07;
+      if (oldInput && !timerInput()) incrementTIMA();
       break;
+    }
     default:
-      // Invalid write, do nothing
       break;
-  }
-}
-
-uint32_t GameBoyTimer::timerThreshold() const {
-  switch (timerControl & 0x03) {
-    case 0:
-      return 1024;  // 4096 Hz
-    case 1:
-      return 16;  // 262144 Hz
-    case 2:
-      return 64;  // 65536 Hz
-    case 3:
-      return 256;  // 16384 Hz
-    default:
-      return 1024;  // Default to 4096 Hz
   }
 }

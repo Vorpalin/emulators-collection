@@ -30,7 +30,7 @@ The emulators run directly in the browser through WebAssembly. No native emulato
 | **CHIP-8** | ✅ | CHIP-8 interpreter, 64×32 display |
 | **Super-CHIP 48** | ✅ | Extended CHIP-8 instructions, 128×64 display |
 | **Atari 2600** | ✅ | MOS 6507, MOS 6532 RIOT, TIA, cartridges |
-| **Game Boy** | ✅ | Sharp LR35902, PPU, timer, interrupts, joypad, APU, cartridges with battery-backed RAM |
+| **Game Boy / Game Boy Color** | ✅ | Sharp LR35902, PPU, timer, interrupts, joypad, APU, cartridges with battery-backed RAM. Game Boy Color (`.gbc`, detected from the cartridge header): colour palettes, VRAM/WRAM banking, double-speed mode, HDMA |
 | **NES** | ✅ | Ricoh 2A03 (6502), 2C02 PPU, 5-channel APU, mappers 0, 1, 2, 3, 4 (MMC3), 7, 66 (`.nes`), battery-backed RAM |
 
 The project is designed so that additional systems can be integrated without changing the architecture of the existing emulators. Accuracy is tracked with community test ROMs: see [Tests](#-tests) for what passes today and what is a known limitation.
@@ -486,7 +486,7 @@ The project also uses `clang-format` and `cppcheck` to enforce consistent code q
 
 # 🧪 Tests
 
-The emulator cores are checked with community test ROMs (blargg's suites, nestest, MMC3 tests, CHIP-8 test ROMs) driven by small native runners. The ROMs are downloaded, not committed:
+The emulator cores are checked with community test ROMs (blargg's suites, nestest, MMC3 tests, CHIP-8 test ROMs, cgb-acid2 for the Game Boy Color) and by synthetic Game Boy Color feature ROMs driven by small native runners. The ROMs are downloaded, not committed:
 
 ```bash
 sh tests/fetch_roms.sh build/test-roms

@@ -76,6 +76,9 @@ node_modules/
 dist/
 build/
 
+#VS code
+.vscode
+
 # Vite
 .vite/
 

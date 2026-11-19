@@ -44,6 +44,12 @@ export default function PlayerPage() {
   const [status, setStatus] = useState<Status>('loading');
   const [error, setError] = useState<string | null>(null);
 
+  // Game Boy Color games (cartridge header flag 0x80/0xC0 at 0x143) render in
+  // real colours, so the monochrome Game Boy palettes do not apply to them.
+  const isColorGameBoy =
+    game?.system === 'gameboy' && !!rom && (rom[0x143] === 0x80 || rom[0x143] === 0xc0);
+  const gbPalette = isColorGameBoy ? 'native' : undefined;
+
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState<number | null>(null);
@@ -498,11 +504,11 @@ export default function PlayerPage() {
                 className={
                   'block ' +
                   (display.blur ? 'display-soft-blur ' : '') +
-                  (display.palette === 'gb-green'
+                  ((gbPalette ?? display.palette) === 'gb-green'
                     ? 'display-gb-green'
-                    : display.palette === 'gb-gray'
+                    : (gbPalette ?? display.palette) === 'gb-gray'
                       ? 'display-gb-gray'
-                      : display.palette === 'gb-blue'
+                      : (gbPalette ?? display.palette) === 'gb-blue'
                         ? 'display-gb-blue'
                         : '') +
                   (display.integerScale ? ' display-integer-scale' : ' display-smooth-scale')
@@ -640,7 +646,7 @@ export default function PlayerPage() {
                 </select>
               </label>
             )}
-            {game?.system === 'gameboy' && (
+            {game?.system === 'gameboy' && !isColorGameBoy && (
               <label className="flex flex-col gap-1">
                 {t('gameBoyPalette')}
                 <select

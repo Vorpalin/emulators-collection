@@ -21,6 +21,8 @@ ROM is missing are simply not registered.
 | `nestest_cpu`      | NES       | Diffs the 6502 core with `nestest.log` (registers, flags, cycles) |
 | `nes_rom_runner`   | NES       | Blargg's `$6000` protocol                                         |
 | `gb_rom_runner`    | Game Boy  | Serial output (`Passed`/`Failed`) or Blargg's `$A000` RAM protocol |
+| `gb_frame_runner`  | Game Boy / Color | Hash of the final framebuffer compared with a golden value (cgb-acid2) |
+| `cgb_features`     | Game Boy Color | Speed switch, WRAM/VRAM banking, HDMA and palettes on synthetic ROMs, no download needed |
 | `chip8_rom_runner` | CHIP-8    | Hash of the final framebuffer compared with a golden value        |
 | `battery_roundtrip` | GB, NES  | Battery RAM API (change detection, export/restore) on tiny synthetic ROMs, no download needed |
 

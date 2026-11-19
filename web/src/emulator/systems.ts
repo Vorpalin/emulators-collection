@@ -99,7 +99,7 @@ export const SYSTEMS: Record<SystemId, SystemDef> = {
   gameboy: {
     id: 'gameboy',
     label: 'Game Boy',
-    extensions: ['.gb'],
+    extensions: ['.gb', '.gbc'],
     displayAspect: 160 / 144,
     actions: [
       { id: 'RIGHT', label: 'Right', key: 0 },

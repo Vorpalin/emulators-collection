@@ -1,3 +1,4 @@
+#include "emulators/bus/game_boy_bus/GameBoyBus.hh"
 #include "emulators/cpu/LR35902/LR35902.hh"
 
 void LR35902::ld_bc_d16(uint32_t &cycles) {
@@ -888,11 +889,14 @@ void LR35902::ld_hl_a(uint32_t &cycles) {
 }
 
 void LR35902::halt() {
-  halted = true;
-  // Halt the CPU until an interrupt occurs
-  // This is a placeholder implementation; actual behavior may vary based on the
-  // emulator design In a real implementation, you would set a flag to indicate
-  // the CPU is halted
+  // HALT with IME disabled and an already-pending enabled interrupt triggers
+  // the hardware HALT bug instead of entering the halted state.
+  if (!IME && bus->interrupts.pending() != 0) {
+    haltBug = true;
+    halted = false;
+  } else {
+    halted = true;
+  }
 }
 
 void LR35902::ld_a_b() {
@@ -1875,9 +1879,9 @@ void LR35902::reti(uint32_t &cycles) {
   // Return from interrupt and enable interrupts
   uint16_t address = popStack(cycles);  // Pop the return address from the stack
   PC = address;  // Set the program counter to the return address
-  ++cycles;      // Increment cycles for the return operation
+  ++cycles;      // Internal delay: RETI is 4 M-cycles in total (fetch + 2 pops
+                 // + 1 internal)
   IME = true;    // Enable interrupts
-  ++cycles;      // Increment cycles for the return operation
 }
 
 void LR35902::jp_c_a16(uint32_t &cycles) {
@@ -2002,10 +2006,12 @@ void LR35902::add_sp_r8(uint32_t &cycles) {
 }
 
 void LR35902::jp_hl(uint32_t &cycles) {
+  (void)cycles;  // JP HL does not consume additional cycles beyond the opcode
+                 // fetch
   // Jump to the address contained in registers H and L
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
   PC = address;  // Set the program counter to the new address
-  ++cycles;      // Increment cycles for the jump operation
+  // JP HL is a single M-cycle instruction: the opcode fetch already counted it.
 }
 
 void LR35902::ld_a16_a(uint32_t &cycles) {
