@@ -1879,9 +1879,9 @@ void LR35902::reti(uint32_t &cycles) {
   // Return from interrupt and enable interrupts
   uint16_t address = popStack(cycles);  // Pop the return address from the stack
   PC = address;  // Set the program counter to the return address
-  ++cycles;      // Increment cycles for the return operation
+  ++cycles;      // Internal delay: RETI is 4 M-cycles in total (fetch + 2 pops
+                 // + 1 internal)
   IME = true;    // Enable interrupts
-  ++cycles;      // Increment cycles for the return operation
 }
 
 void LR35902::jp_c_a16(uint32_t &cycles) {
@@ -2009,7 +2009,7 @@ void LR35902::jp_hl(uint32_t &cycles) {
   // Jump to the address contained in registers H and L
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
   PC = address;  // Set the program counter to the new address
-  ++cycles;      // Increment cycles for the jump operation
+  // JP HL is a single M-cycle instruction: the opcode fetch already counted it.
 }
 
 void LR35902::ld_a16_a(uint32_t &cycles) {
