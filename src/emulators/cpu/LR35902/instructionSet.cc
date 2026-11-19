@@ -2006,6 +2006,8 @@ void LR35902::add_sp_r8(uint32_t &cycles) {
 }
 
 void LR35902::jp_hl(uint32_t &cycles) {
+  (void)cycles;  // JP HL does not consume additional cycles beyond the opcode
+                 // fetch
   // Jump to the address contained in registers H and L
   uint16_t address = (H << 8) | L;  // Combine H and L to form the address
   PC = address;  // Set the program counter to the new address
