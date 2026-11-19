@@ -1,5 +1,5 @@
 # Build the WebAssembly modules with the Emscripten toolchain.
-FROM emscripten/emsdk:6.0.13 AS wasm-builder
+FROM emscripten/emsdk:7.0.0 AS wasm-builder
 
 ARG WARNINGS_AS_ERRORS=OFF
 
