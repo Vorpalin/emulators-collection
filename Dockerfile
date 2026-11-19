@@ -66,7 +66,7 @@ RUN VITE_BASE="${VITE_BASE}" \
 # the npm packages nor the Emscripten SDK end up in it.
 #   docker build --target production -t emulators-collection:prod \
 #       --build-arg VITE_SUPABASE_URL=... --build-arg VITE_SUPABASE_ANON_KEY=... .
-FROM nginxinc/nginx-unprivileged:1.28-alpine AS production
+FROM nginxinc/nginx-unprivileged:1.31-alpine AS production
 
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=site-builder /src/web/dist /usr/share/nginx/html
