@@ -11,14 +11,20 @@ import {
   Pause,
   Play,
   RotateCcw,
+  SlidersHorizontal,
   Upload,
   Volume2,
   VolumeX,
+  X,
 } from 'lucide-react';
 import { loadLocalGame, loadRom } from '../hooks/useGames';
 import { loadBattery, saveBattery } from '../lib/batteryStore';
 import { useSettings } from '../hooks/useSettings';
-import TouchControls, { useIsTouchDevice, useMediaQuery } from '../components/TouchControls';
+import TouchControls, {
+  COMPACT_LANDSCAPE_QUERY,
+  useIsTouchDevice,
+  useMediaQuery,
+} from '../components/TouchControls';
 import { useGamepadName } from '../emulator/gamepad';
 import { EmulatorSession } from '../emulator/session';
 import { SYSTEMS } from '../emulator/systems';
@@ -36,6 +42,11 @@ export default function PlayerPage() {
   const { settings, loading: settingsLoading, update, bindingsFor } = useSettings();
   const isTouch = useIsTouchDevice();
   const isLandscape = useMediaQuery('(orientation: landscape)');
+  const compactLandscape = useMediaQuery(COMPACT_LANDSCAPE_QUERY);
+  // A phone held sideways has very little vertical space: the player then takes
+  // over the whole viewport (no site header / footer) so the screen, the touch
+  // controls and the control bar are all visible at once without scrolling.
+  const immersive = isTouch && compactLandscape;
   const gamepad = useGamepadName();
   const { t } = useI18n();
 
@@ -420,29 +431,185 @@ export default function PlayerPage() {
   const aspect = display.ratio === '8:7' ? 8 / 7 : display.ratio === '4:3' ? 4 / 3 : nativeAspect;
   const playing = status === 'playing';
 
-  const bar =
-    'p-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 rounded-lg transition';
+  // Width of the game screen. It is bounded by the available *height* so the
+  // whole screen stays visible: in the immersive (landscape phone) layout the
+  // title bar and the control bar are subtracted from the dynamic viewport.
+  const screenWidth = immersive
+    ? `min(100%, calc((100dvh - 6rem) * ${aspect}))`
+    : `min(100%, calc(${isLandscape && isTouch ? 52 : 65}dvh * ${aspect}))`;
+
+  const bar = `${
+    immersive ? 'p-1.5' : 'p-2'
+  } bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 rounded-lg transition`;
+
+  // On touch devices the display options open as an overlay on top of the
+  // screen area (scrollable, never taller than that area) so they do not push
+  // the controls out of the viewport. On desktop they stay in the page flow.
+  const displayPanel = displayOptionsOpen && (
+    <section
+      aria-label={t('displaySettings')}
+      className={
+        'grid grid-cols-2 gap-x-3 gap-y-2 p-3 text-sm sm:grid-cols-3 sm:p-4 lg:grid-cols-4 ' +
+        (isTouch
+          ? 'absolute inset-x-0 bottom-0 z-40 max-h-full overflow-y-auto overscroll-contain border-t border-slate-700 bg-slate-950/85 shadow-2xl backdrop-blur-md'
+          : 'border-t border-slate-800 bg-slate-950')
+      }
+    >
+      <div className="col-span-full flex items-start justify-between gap-2">
+        <p className="text-xs text-slate-500">
+          {t('displayPerConsole', { console: system?.label ?? '' })}
+        </p>
+        <button
+          type="button"
+          onClick={() => setDisplayOptionsOpen(false)}
+          aria-label={t('dismiss')}
+          className="shrink-0 rounded-lg p-1 text-slate-400 transition hover:bg-slate-800 hover:text-slate-100"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <label className="flex min-h-8 items-center gap-2">
+        <input
+          type="checkbox"
+          checked={display.scanlines}
+          onChange={(e) => setDisplay((d) => ({ ...d, scanlines: e.target.checked }))}
+        />{' '}
+        {t('scanlines')}
+      </label>
+      <label className="flex min-h-8 items-center gap-2">
+        <input
+          type="checkbox"
+          checked={display.curvature}
+          onChange={(e) => setDisplay((d) => ({ ...d, curvature: e.target.checked }))}
+        />{' '}
+        {t('crtCurvature')}
+      </label>
+      <label className="flex min-h-8 items-center gap-2">
+        <input
+          type="checkbox"
+          checked={display.blur}
+          onChange={(e) => setDisplay((d) => ({ ...d, blur: e.target.checked }))}
+        />{' '}
+        {t('softBlur')}
+      </label>
+      <label className="flex min-h-8 items-center gap-2">
+        <input
+          type="checkbox"
+          checked={display.integerScale}
+          onChange={(e) => setDisplay((d) => ({ ...d, integerScale: e.target.checked }))}
+        />{' '}
+        {t('integerScaling')}
+      </label>
+      <label className="flex min-h-8 items-center gap-2">
+        <input
+          type="checkbox"
+          checked={display.glow}
+          onChange={(e) => setDisplay((d) => ({ ...d, glow: e.target.checked }))}
+        />{' '}
+        {t('screenGlow')}
+      </label>
+      {game?.system === 'nes' && (
+        <label className="flex flex-col gap-1">
+          {t('aspectRatio')}
+          <select
+            className="w-full rounded bg-slate-800 p-1.5"
+            value={display.ratio}
+            onChange={(e) => setDisplay((d) => ({ ...d, ratio: e.target.value }))}
+          >
+            <option value="native">{t('nativeRatio')}</option>
+            <option value="8:7">8:7 (NES)</option>
+            <option value="4:3">4:3</option>
+          </select>
+        </label>
+      )}
+      {game?.system === 'gameboy' && !isColorGameBoy && (
+        <label className="flex flex-col gap-1">
+          {t('gameBoyPalette')}
+          <select
+            className="w-full rounded bg-slate-800 p-1.5"
+            value={display.palette}
+            onChange={(e) => setDisplay((d) => ({ ...d, palette: e.target.value }))}
+          >
+            <option value="native">{t('originalPalette')}</option>
+            <option value="gb-green">{t('classicGreen')}</option>
+            <option value="gb-gray">{t('grayscale')}</option>
+            <option value="gb-blue">{t('bluePalette')}</option>
+          </select>
+        </label>
+      )}
+      <label className="flex flex-col gap-1">
+        {t('deviceFrame')}
+        <select
+          className="w-full rounded bg-slate-800 p-1.5"
+          value={display.deviceFrame}
+          onChange={(e) => setDisplay((d) => ({ ...d, deviceFrame: e.target.value }))}
+        >
+          <option value="none">{t('noFrame')}</option>
+          <option value="gameboy">Game Boy</option>
+          <option value="arcade">{t('arcadeFrame')}</option>
+        </select>
+      </label>
+      <button
+        type="button"
+        className="self-end rounded border border-slate-700 px-3 py-1.5"
+        onClick={() => setDisplay(DEFAULT_DISPLAY)}
+      >
+        {t('resetDisplay')}
+      </button>
+    </section>
+  );
 
   return (
     <div className="space-y-4">
-      <Link
-        to="/"
-        className="inline-flex items-center space-x-1.5 text-sm text-slate-400 hover:text-cyan-400"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span>{t('library')}</span>
-      </Link>
+      {!immersive && (
+        <Link
+          to="/"
+          className="inline-flex items-center space-x-1.5 text-sm text-slate-400 hover:text-cyan-400"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>{t('library')}</span>
+        </Link>
+      )}
 
       <div
         ref={frameRef}
         aria-busy={status === 'loading' || settingsLoading}
-        className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl"
+        style={
+          immersive
+            ? {
+                paddingLeft: 'env(safe-area-inset-left)',
+                paddingRight: 'env(safe-area-inset-right)',
+                paddingBottom: 'env(safe-area-inset-bottom)',
+              }
+            : undefined
+        }
+        className={
+          'flex flex-col overflow-hidden bg-slate-950 shadow-2xl ' +
+          (immersive
+            ? 'fixed inset-0 z-[60] rounded-none'
+            : 'relative rounded-2xl border border-slate-800')
+        }
       >
         {/* Title bar */}
-        <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
+        <div
+          className={`bg-slate-900/90 border-b border-slate-800 flex items-center justify-between ${
+            immersive ? 'px-3 py-1.5' : 'px-4 py-2.5'
+          }`}
+        >
           <div className="flex items-center space-x-3 min-w-0">
+            {immersive && (
+              <Link
+                to="/"
+                aria-label={t('returnLibrary')}
+                title={t('returnLibrary')}
+                className="shrink-0 rounded-lg p-1 text-slate-400 transition hover:text-cyan-400"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+            )}
+
             <span
-              className={`w-2.5 h-2.5 rounded-full ${
+              className={`shrink-0 w-2.5 h-2.5 rounded-full ${
                 playing && !paused ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'
               }`}
             />
@@ -452,14 +619,14 @@ export default function PlayerPage() {
             </span>
 
             {system && (
-              <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded font-mono">
+              <span className="shrink-0 bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded font-mono">
                 {system.label}
               </span>
             )}
 
             {gamepad && (
               <span
-                className="flex items-center space-x-1 text-xs text-emerald-400"
+                className="flex shrink-0 items-center space-x-1 text-xs text-emerald-400"
                 title={gamepad}
               >
                 <Gamepad2 className="w-3.5 h-3.5" />
@@ -470,91 +637,109 @@ export default function PlayerPage() {
         </div>
 
         {/* Screen (+ touch controls on mobile) */}
-        <TouchControls
-          system={system}
-          enabled={isTouch}
-          disabled={!playing || paused}
-          onAction={pressAction}
-        >
-          <div
-            className={`relative flex items-center justify-center bg-black p-3 sm:p-4 ${isLandscape && isTouch ? 'min-h-[160px]' : 'min-h-[240px] sm:min-h-[320px]'}`}
+        <div className={`relative ${immersive ? 'min-h-0 flex-1' : ''}`}>
+          <TouchControls
+            system={system}
+            enabled={isTouch}
+            disabled={!playing || paused}
+            onAction={pressAction}
           >
             <div
-              className={
-                'relative flex items-center justify-center overflow-hidden shadow-2xl ' +
-                (display.deviceFrame === 'gameboy'
-                  ? 'border-[14px] border-[#8b956d] rounded-[28px]'
-                  : display.deviceFrame === 'arcade'
-                    ? 'border-[10px] border-slate-700 rounded-xl'
-                    : 'border-4 border-slate-800 rounded-lg')
-              }
-              style={{
-                aspectRatio: String(aspect),
-                boxShadow:
-                  display.glow && playing
-                    ? `0 0 24px 4px ${glowColor}, 0 0 65px ${glowColor}`
-                    : undefined,
-                width: `min(100%, calc(${isLandscape && isTouch ? 52 : 65}vh * ${aspect}))`,
-              }}
+              className={`relative flex items-center justify-center bg-black ${
+                immersive
+                  ? 'p-1'
+                  : `p-3 sm:p-4 ${
+                      isLandscape && isTouch ? 'min-h-[160px]' : 'min-h-[240px] sm:min-h-[320px]'
+                    }`
+              }`}
             >
-              <canvas
-                ref={canvasRef}
-                role="img"
-                aria-label={t('gameScreen', { title: game?.title ?? t('game') })}
+              <div
                 className={
-                  'block ' +
-                  (display.blur ? 'display-soft-blur ' : '') +
-                  ((gbPalette ?? display.palette) === 'gb-green'
-                    ? 'display-gb-green'
-                    : (gbPalette ?? display.palette) === 'gb-gray'
-                      ? 'display-gb-gray'
-                      : (gbPalette ?? display.palette) === 'gb-blue'
-                        ? 'display-gb-blue'
-                        : '') +
-                  (display.integerScale ? ' display-integer-scale' : ' display-smooth-scale')
+                  'relative flex items-center justify-center overflow-hidden shadow-2xl ' +
+                  (display.deviceFrame === 'gameboy'
+                    ? immersive
+                      ? 'border-[8px] border-[#8b956d] rounded-[18px]'
+                      : 'border-[14px] border-[#8b956d] rounded-[28px]'
+                    : display.deviceFrame === 'arcade'
+                      ? immersive
+                        ? 'border-[6px] border-slate-700 rounded-lg'
+                        : 'border-[10px] border-slate-700 rounded-xl'
+                      : 'border-4 border-slate-800 rounded-lg')
                 }
-              />
-
-              {playing && (display.scanlines || display.curvature) && (
-                <div
-                  className={
-                    'pointer-events-none absolute inset-0 z-20 ' +
-                    (display.curvature ? 'display-curvature' : '')
-                  }
-                  style={{
-                    background: display.scanlines
-                      ? 'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06))'
+                style={{
+                  aspectRatio: String(aspect),
+                  boxShadow:
+                    display.glow && playing
+                      ? `0 0 24px 4px ${glowColor}, 0 0 65px ${glowColor}`
                       : undefined,
-                    backgroundSize: '100% 4px, 6px 100%',
-                  }}
+                  width: screenWidth,
+                }}
+              >
+                <canvas
+                  ref={canvasRef}
+                  role="img"
+                  aria-label={t('gameScreen', { title: game?.title ?? t('game') })}
+                  className={
+                    'block ' +
+                    (display.blur ? 'display-soft-blur ' : '') +
+                    ((gbPalette ?? display.palette) === 'gb-green'
+                      ? 'display-gb-green'
+                      : (gbPalette ?? display.palette) === 'gb-gray'
+                        ? 'display-gb-gray'
+                        : (gbPalette ?? display.palette) === 'gb-blue'
+                          ? 'display-gb-blue'
+                          : '') +
+                    (display.integerScale ? ' display-integer-scale' : ' display-smooth-scale')
+                  }
                 />
-              )}
 
-              {paused && (
-                <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center text-white z-30">
-                  <Pause className="w-12 h-12 text-amber-400 mb-2" />
-                  <span className="font-bold tracking-widest text-lg">{t('pause')}</span>
-                </div>
-              )}
+                {playing && (display.scanlines || display.curvature) && (
+                  <div
+                    className={
+                      'pointer-events-none absolute inset-0 z-20 ' +
+                      (display.curvature ? 'display-curvature' : '')
+                    }
+                    style={{
+                      background: display.scanlines
+                        ? 'linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06))'
+                        : undefined,
+                      backgroundSize: '100% 4px, 6px 100%',
+                    }}
+                  />
+                )}
 
-              {!playing && (
-                <div className="absolute inset-0 z-30 bg-slate-950 flex items-center justify-center">
-                  <button
-                    type="button"
-                    onClick={() => void start()}
-                    disabled={status !== 'ready' || settingsLoading}
-                    className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2 transition"
-                  >
-                    <Play className="w-5 h-5 fill-current" />
-                    <span role="status" aria-live="polite">
-                      {status === 'loading' || settingsLoading ? t('loading') : t('startGame')}
+                {paused && (
+                  <div className="absolute inset-0 bg-slate-950/70 flex flex-col items-center justify-center text-white z-30">
+                    <Pause className="w-8 h-8 sm:w-12 sm:h-12 text-amber-400 mb-1 sm:mb-2" />
+                    <span className="font-bold tracking-widest text-sm sm:text-lg">
+                      {t('pause')}
                     </span>
-                  </button>
-                </div>
-              )}
+                  </div>
+                )}
+
+                {!playing && (
+                  <div className="absolute inset-0 z-30 bg-slate-950 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => void start()}
+                      disabled={status !== 'ready' || settingsLoading}
+                      className={`bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold rounded-xl shadow-lg flex items-center space-x-2 transition ${
+                        immersive ? 'px-4 py-2 text-sm' : 'px-6 py-3'
+                      }`}
+                    >
+                      <Play className="w-5 h-5 fill-current" />
+                      <span role="status" aria-live="polite">
+                        {status === 'loading' || settingsLoading ? t('loading') : t('startGame')}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </TouchControls>
+          </TouchControls>
+
+          {isTouch && displayPanel}
+        </div>
 
         {error && playing && (
           <div
@@ -584,107 +769,15 @@ export default function PlayerPage() {
           </p>
         )}
 
-        {displayOptionsOpen && (
-          <section
-            aria-label={t('displaySettings')}
-            className="border-t border-slate-800 bg-slate-950 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm"
-          >
-            <p className="col-span-full text-xs text-slate-500">
-              {t('displayPerConsole', { console: system?.label ?? '' })}
-            </p>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={display.scanlines}
-                onChange={(e) => setDisplay((d) => ({ ...d, scanlines: e.target.checked }))}
-              />{' '}
-              {t('scanlines')}
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={display.curvature}
-                onChange={(e) => setDisplay((d) => ({ ...d, curvature: e.target.checked }))}
-              />{' '}
-              {t('crtCurvature')}
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={display.blur}
-                onChange={(e) => setDisplay((d) => ({ ...d, blur: e.target.checked }))}
-              />{' '}
-              {t('softBlur')}
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={display.integerScale}
-                onChange={(e) => setDisplay((d) => ({ ...d, integerScale: e.target.checked }))}
-              />{' '}
-              {t('integerScaling')}
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={display.glow}
-                onChange={(e) => setDisplay((d) => ({ ...d, glow: e.target.checked }))}
-              />{' '}
-              {t('screenGlow')}
-            </label>
-            {game?.system === 'nes' && (
-              <label className="flex flex-col gap-1">
-                {t('aspectRatio')}
-                <select
-                  className="rounded bg-slate-800 p-1.5"
-                  value={display.ratio}
-                  onChange={(e) => setDisplay((d) => ({ ...d, ratio: e.target.value }))}
-                >
-                  <option value="native">{t('nativeRatio')}</option>
-                  <option value="8:7">8:7 (NES)</option>
-                  <option value="4:3">4:3</option>
-                </select>
-              </label>
-            )}
-            {game?.system === 'gameboy' && !isColorGameBoy && (
-              <label className="flex flex-col gap-1">
-                {t('gameBoyPalette')}
-                <select
-                  className="rounded bg-slate-800 p-1.5"
-                  value={display.palette}
-                  onChange={(e) => setDisplay((d) => ({ ...d, palette: e.target.value }))}
-                >
-                  <option value="native">{t('originalPalette')}</option>
-                  <option value="gb-green">{t('classicGreen')}</option>
-                  <option value="gb-gray">{t('grayscale')}</option>
-                  <option value="gb-blue">{t('bluePalette')}</option>
-                </select>
-              </label>
-            )}
-            <label className="flex flex-col gap-1">
-              {t('deviceFrame')}
-              <select
-                className="rounded bg-slate-800 p-1.5"
-                value={display.deviceFrame}
-                onChange={(e) => setDisplay((d) => ({ ...d, deviceFrame: e.target.value }))}
-              >
-                <option value="none">{t('noFrame')}</option>
-                <option value="gameboy">Game Boy</option>
-                <option value="arcade">{t('arcadeFrame')}</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              className="rounded border border-slate-700 px-3 py-1.5"
-              onClick={() => setDisplay(DEFAULT_DISPLAY)}
-            >
-              {t('resetDisplay')}
-            </button>
-          </section>
-        )}
+        {!isTouch && displayPanel}
+
         {/* Control bar */}
-        <div className="bg-slate-900 border-t border-slate-800 p-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center space-x-2">
+        <div
+          className={`bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-x-3 gap-y-2 ${
+            immersive ? 'flex-nowrap px-3 py-1.5' : 'flex-wrap p-3'
+          }`}
+        >
+          <div className="flex items-center gap-2">
             {/* Pause */}
             <button
               type="button"
@@ -746,19 +839,23 @@ export default function PlayerPage() {
             />
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setDisplayOptionsOpen((v) => !v)}
               aria-expanded={displayOptionsOpen}
               aria-label={t('displaySettings')}
-              className="px-2.5 py-1 rounded-lg text-xs border border-cyan-500/40 text-cyan-400"
+              title={t('displaySettings')}
+              className={`inline-flex items-center gap-1.5 rounded-lg border border-cyan-500/40 text-xs text-cyan-400 ${
+                immersive ? 'p-1.5' : 'px-2.5 py-1.5'
+              }`}
             >
-              {t('displaySettings')}
+              <SlidersHorizontal className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('displaySettings')}</span>
             </button>
 
             {/* Volume */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={toggleMute}
@@ -780,7 +877,7 @@ export default function PlayerPage() {
                 value={muted ? 0 : effectiveVolume}
                 onChange={(e) => onVolume(Number(e.target.value))}
                 onPointerUp={() => void update({ volume: effectiveVolume })}
-                className="w-20 accent-cyan-500 h-1 bg-slate-800 rounded"
+                className="w-16 sm:w-20 accent-cyan-500 h-1 bg-slate-800 rounded"
               />
             </div>
 
@@ -800,7 +897,9 @@ export default function PlayerPage() {
         </div>
       </div>
 
-      <p className="text-xs text-slate-500">{isTouch ? t('touchHelp') : t('keyboardHelp')}</p>
+      {!immersive && (
+        <p className="text-xs text-slate-500">{isTouch ? t('touchHelp') : t('keyboardHelp')}</p>
+      )}
     </div>
   );
 }
