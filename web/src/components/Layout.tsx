@@ -143,6 +143,15 @@ export default function Layout() {
           <div id="mobile-navigation" className="border-t border-slate-800 py-3 md:hidden">
             <nav className="flex flex-col gap-1" aria-label={t('mobileNavigation')}>
               {navigation}
+              <a
+                href="https://github.com/Vorpalin/emulators-collection"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={tabClass({ isActive: false })}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Github className="h-4 w-4" /> {t('github')}
+              </a>
             </nav>
             <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-800 pt-3">
               <label className="sr-only" htmlFor="mobile-theme-preference">

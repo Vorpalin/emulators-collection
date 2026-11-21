@@ -39,6 +39,12 @@ export function useMediaQuery(query: string): boolean {
 export const useIsTouchDevice = () => useMediaQuery('(pointer: coarse)');
 
 /**
+ * Media query matching a phone held sideways: wide, but with very little vertical space.
+ * In that situation the controls and the screen have to share a very short viewport.
+ */
+export const COMPACT_LANDSCAPE_QUERY = '(orientation: landscape) and (max-height: 600px)';
+
+/**
  * SetAction type defines a function that sets the action state for a given control ID.
  * @param id - The ID of the control to set the action for.
  * @param pressed - A boolean indicating whether the control is pressed or released.
@@ -129,9 +135,18 @@ const DIRECTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT'] as const;
  * DPad component renders a directional pad for game controls.
  * @param held - A set of currently held control IDs.
  * @param setAction - A function to set the action state for the control.
+ * @param compact - Whether to render a smaller pad (phone held in landscape).
  * @returns The rendered DPad component.
  */
-function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
+function DPad({
+  held,
+  setAction,
+  compact = false,
+}: {
+  held: Held;
+  setAction: SetAction;
+  compact?: boolean;
+}) {
   const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const pointer = useRef<number | null>(null);
@@ -165,7 +180,7 @@ function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
   return (
     <div
       ref={ref}
-      className="relative w-36 h-36"
+      className={`relative ${compact ? 'w-28 h-28' : 'w-36 h-36'}`}
       role="group"
       aria-label={t('directionalPad')}
       style={noGestures}
@@ -206,19 +221,22 @@ function DPad({ held, setAction }: { held: Held; setAction: SetAction }) {
  * @param ids - An array of objects defining the IDs and labels for each pill.
  * @param held - A set of currently held control IDs.
  * @param setAction - A function to set the action state for the control.
+ * @param compact - Whether to render smaller pills (phone held in landscape).
  * @returns The rendered Pills component.
  */
 function Pills({
   ids,
   held,
   setAction,
+  compact = false,
 }: {
   ids: { id: string; label: string }[];
   held: Held;
   setAction: SetAction;
+  compact?: boolean;
 }) {
   return (
-    <div className="flex gap-3 justify-center">
+    <div className={`flex justify-center ${compact ? 'gap-2' : 'gap-3'}`}>
       {ids.map((p) => (
         <PadButton
           key={p.id}
@@ -226,7 +244,7 @@ function Pills({
           label={p.label.toUpperCase()}
           held={held}
           setAction={setAction}
-          className="px-4 py-2 rounded-full text-[11px] tracking-wider"
+          className={`rounded-full text-[11px] tracking-wider ${compact ? 'px-3 py-1.5' : 'px-4 py-2'}`}
         />
       ))}
     </div>
@@ -239,25 +257,33 @@ function Pills({
  * @param props - The properties for the GameBoyButtons component.
  * @returns The rendered GameBoyButtons component.
  */
-function GameBoyButtons(props: { held: Held; setAction: SetAction }) {
+function GameBoyButtons({
+  compact = false,
+  ...props
+}: {
+  held: Held;
+  setAction: SetAction;
+  compact?: boolean;
+}) {
   return (
-    <div className="space-y-4">
-      <div className="relative w-32 h-24 mx-auto">
+    <div className={compact ? 'space-y-2' : 'space-y-4'}>
+      <div className={`relative mx-auto ${compact ? 'w-28 h-20' : 'w-32 h-24'}`}>
         <PadButton
           id="B"
           label="B"
           {...props}
-          className="absolute left-0 bottom-0 w-14 h-14 rounded-full text-lg"
+          className={`absolute left-0 bottom-0 rounded-full ${compact ? 'w-12 h-12 text-base' : 'w-14 h-14 text-lg'}`}
         />
         <PadButton
           id="A"
           label="A"
           {...props}
-          className="absolute right-0 top-0 w-14 h-14 rounded-full text-lg"
+          className={`absolute right-0 top-0 rounded-full ${compact ? 'w-12 h-12 text-base' : 'w-14 h-14 text-lg'}`}
         />
       </div>
       <Pills
         {...props}
+        compact={compact}
         ids={[
           { id: 'SELECT', label: 'Select' },
           { id: 'START', label: 'Start' },
@@ -272,19 +298,27 @@ function GameBoyButtons(props: { held: Held; setAction: SetAction }) {
  * @param props - The properties for the AtariButtons component.
  * @returns The rendered AtariButtons component.
  */
-function AtariButtons(props: { held: Held; setAction: SetAction }) {
+function AtariButtons({
+  compact = false,
+  ...props
+}: {
+  held: Held;
+  setAction: SetAction;
+  compact?: boolean;
+}) {
   return (
-    <div className="space-y-4">
+    <div className={compact ? 'space-y-2' : 'space-y-4'}>
       <div className="flex justify-center">
         <PadButton
           id="FIRE"
           label="FIRE"
           {...props}
-          className="w-24 h-24 rounded-full text-sm tracking-wider"
+          className={`rounded-full tracking-wider ${compact ? 'w-18 h-18 text-xs' : 'w-24 h-24 text-sm'}`}
         />
       </div>
       <Pills
         {...props}
+        compact={compact}
         ids={[
           { id: 'SELECT', label: 'Select' },
           { id: 'RESET', label: 'Reset' },
@@ -301,16 +335,23 @@ const HEX_LAYOUT = ['1', '2', '3', 'C', '4', '5', '6', 'D', '7', '8', '9', 'E', 
  * @param props - The properties for the HexPad component.
  * @returns The rendered HexPad component.
  */
-function HexPad(props: { held: Held; setAction: SetAction }) {
+function HexPad({
+  compact = false,
+  ...props
+}: {
+  held: Held;
+  setAction: SetAction;
+  compact?: boolean;
+}) {
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className={`grid grid-cols-4 ${compact ? 'gap-1' : 'gap-2'}`}>
       {HEX_LAYOUT.map((h) => (
         <PadButton
           key={h}
           id={h}
           label={h}
           {...props}
-          className="w-14 h-14 rounded-xl text-lg font-mono"
+          className={`font-mono ${compact ? 'w-10 h-10 rounded-lg text-sm' : 'w-14 h-14 rounded-xl text-lg'}`}
         />
       ))}
     </div>
@@ -356,6 +397,7 @@ export default function TouchControls({
   children,
 }: Props) {
   const landscape = useMediaQuery('(orientation: landscape)');
+  const shortLandscape = useMediaQuery(COMPACT_LANDSCAPE_QUERY);
   const heldRef = useRef(new Set<string>());
   const [held, setHeld] = useState<Held>(new Set());
   const onActionRef = useRef(onAction);
@@ -394,8 +436,9 @@ export default function TouchControls({
   }, [releaseAll]);
 
   const touch = enabled && system !== null;
+  const compact = touch && shortLandscape;
 
-  const props = { held, setAction };
+  const props = { held, setAction, compact };
   let left: ReactNode = null;
   let right: ReactNode = null;
 
@@ -419,7 +462,7 @@ export default function TouchControls({
       ? {
           display: 'grid',
           alignItems: 'center',
-          gap: 8,
+          gap: compact ? 4 : 8,
           gridTemplateColumns: right ? 'auto minmax(0, 1fr) auto' : 'auto minmax(0, 1fr)',
           gridTemplateAreas: right ? '"left screen right"' : '"left screen"',
         }
@@ -439,8 +482,11 @@ export default function TouchControls({
   });
 
   return (
-    <div className={touch ? 'bg-black pb-4 px-2' : undefined} style={wrapper}>
-      <div style={{ gridArea: 'screen', minWidth: 0 }}>{children}</div>
+    <div
+      className={touch ? (compact ? 'bg-black h-full px-2 pb-1' : 'bg-black pb-4 px-2') : undefined}
+      style={wrapper}
+    >
+      <div style={{ gridArea: 'screen', minWidth: 0, minHeight: 0 }}>{children}</div>
       {left && <div style={cluster('left')}>{left}</div>}
       {right && <div style={cluster('right')}>{right}</div>}
     </div>
