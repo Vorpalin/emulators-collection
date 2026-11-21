@@ -313,7 +313,7 @@ emulators-collection/
 ├── docker/
 │   └── nginx.conf            # production image
 │
-├── scripts/                  # wiki generation, Prettier hook
+├── scripts/                  # run.sh (Docker launcher), wiki generation, Prettier hook
 │
 ├── src/
 │   ├── wasm/
@@ -372,6 +372,32 @@ Docker is the recommended way to build the WebAssembly modules and run the web a
 - A modern web browser
 
 The Dockerfile uses BuildKit cache mounts to speed up dependency installation. A regular legacy `docker build` without BuildKit will fail on the `RUN --mount` instruction.
+
+### Quick start script
+
+`scripts/run.sh` builds the image, starts the container and **removes the container as soon as it stops** (Ctrl+C, error or normal exit), so nothing is left behind:
+
+```bash
+./scripts/run.sh                 # development server (hot reload) on http://localhost:5173
+./scripts/run.sh --open          # same, and open the browser once the server is ready
+./scripts/run.sh --port 3000     # publish on another host port
+./scripts/run.sh prod            # production image (nginx) on http://localhost:8080
+./scripts/run.sh --remove-image  # also delete the Docker image on exit
+```
+
+If the script is not executable yet, run `chmod +x scripts/run.sh` once (or use `bash scripts/run.sh`).
+
+| Option | Effect |
+| --- | --- |
+| `dev` (default) / `prod` | Development server on port 5173, or the nginx production image on port 8080 |
+| `-p`, `--port PORT` | Host port to publish the app on |
+| `-o`, `--open` | Open the app in the default browser once it answers |
+| `--remove-image` | Remove the image on exit as well. By default it is kept so the next start is fast |
+| `-h`, `--help` | Show the help |
+
+The `prod` mode needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, read from the environment or from `web/.env.local` (see [Run the frontend](#run-the-frontend)). The app is published on all network interfaces, so you can also try it from a phone on the same network at `http://<your-computer-ip>:5173`.
+
+The commands below do the same thing by hand.
 
 ### Development image
 
