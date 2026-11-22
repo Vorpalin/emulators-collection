@@ -138,6 +138,20 @@ target_link_libraries(gameboy
 )
 
 # ============================================================
+# Zilog Z80 core (shared by the Sega Master System and Game Gear)
+# ============================================================
+
+add_library(z80 STATIC
+    src/emulators/cpu/Z80/Z80.cc
+)
+
+target_link_libraries(z80
+    PUBLIC
+        emulator_options
+        nlohmann_json::nlohmann_json
+)
+
+# ============================================================
 # NES
 # ============================================================
 
