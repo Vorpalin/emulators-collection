@@ -35,6 +35,15 @@ add_executable(gb_timer_accuracy gameboy/timer_accuracy.cc)
 target_link_libraries(gb_timer_accuracy PRIVATE gameboy)
 add_test(NAME gb.timer_accuracy COMMAND gb_timer_accuracy)
 
+# Z80 core: hand-assembled programs (results, flags, T-states, interrupts), no
+# downloaded files needed. The CP/M runner executes prelim/zexdoc/zexall.
+add_executable(z80_core z80/z80_core.cc)
+target_link_libraries(z80_core PRIVATE z80)
+add_test(NAME z80.core COMMAND z80_core)
+
+add_executable(z80_cpm_runner z80/z80_cpm_runner.cc)
+target_link_libraries(z80_cpm_runner PRIVATE z80)
+
 add_executable(chip8_rom_runner chip8/chip8_rom_runner.cc)
 target_link_libraries(chip8_rom_runner PRIVATE chip8)
 
@@ -44,3 +53,4 @@ target_link_libraries(battery_roundtrip PRIVATE gameboy nes)
 add_test(NAME battery.roundtrip COMMAND battery_roundtrip)
 
 include(${CMAKE_CURRENT_LIST_DIR}/RomTests.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/Z80Tests.cmake)

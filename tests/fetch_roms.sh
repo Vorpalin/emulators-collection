@@ -39,4 +39,5 @@ fetch_file() { # name url sha256
 fetch nes   https://github.com/christopherpow/nes-test-roms.git 95d8f621ae55cee0d09b91519a8989ae0e64753b
 fetch gb    https://github.com/retrio/gb-test-roms.git           c240dd7d700e5c0b00a7bbba52b53e4ee67b5f15
 fetch chip8 https://github.com/Timendus/chip8-test-suite.git     742e9eac9f5d44466c1c9d83fcaa8158c6683cb1
+fetch z80   https://github.com/superzazu/z80.git                d64fe10a2274e5e40019b1086bf7d8990cbc5f23
 fetch_file gb-acid2 https://github.com/mattcurrie/cgb-acid2/releases/download/v1.1/cgb-acid2.gbc 197fb0bcec544f0400527fc707e0a94f55435974986e6986b424ace5de81720e
