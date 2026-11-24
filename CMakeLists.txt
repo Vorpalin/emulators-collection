@@ -152,6 +152,20 @@ target_link_libraries(z80
 )
 
 # ============================================================
+# Sega VDP (Master System / Game Gear video chip)
+# ============================================================
+
+add_library(sega_vdp STATIC
+    src/emulators/ppu/sega_vdp/SegaVDP.cc
+)
+
+target_link_libraries(sega_vdp
+    PUBLIC
+        emulator_options
+        nlohmann_json::nlohmann_json
+)
+
+# ============================================================
 # NES
 # ============================================================
 

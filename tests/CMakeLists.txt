@@ -44,6 +44,12 @@ add_test(NAME z80.core COMMAND z80_core)
 add_executable(z80_cpm_runner z80/z80_cpm_runner.cc)
 target_link_libraries(z80_cpm_runner PRIVATE z80)
 
+# Sega VDP: Mode 4 rendering, ports, flags, interrupts and counters, driven
+# through the CPU-visible ports (no downloaded files needed).
+add_executable(sega_vdp_core sega_vdp/vdp_core.cc)
+target_link_libraries(sega_vdp_core PRIVATE sega_vdp)
+add_test(NAME sega_vdp.core COMMAND sega_vdp_core)
+
 add_executable(chip8_rom_runner chip8/chip8_rom_runner.cc)
 target_link_libraries(chip8_rom_runner PRIVATE chip8)
 
