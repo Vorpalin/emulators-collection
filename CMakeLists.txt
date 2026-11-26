@@ -166,6 +166,20 @@ target_link_libraries(sega_vdp
 )
 
 # ============================================================
+# Sega PSG (SN76489 sound chip of the Master System / Game Gear)
+# ============================================================
+
+add_library(sega_psg STATIC
+    src/emulators/audio/sega_psg/SegaPSG.cc
+)
+
+target_link_libraries(sega_psg
+    PUBLIC
+        emulator_options
+        nlohmann_json::nlohmann_json
+)
+
+# ============================================================
 # NES
 # ============================================================
 

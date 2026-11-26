@@ -50,6 +50,12 @@ add_executable(sega_vdp_core sega_vdp/vdp_core.cc)
 target_link_libraries(sega_vdp_core PRIVATE sega_vdp)
 add_test(NAME sega_vdp.core COMMAND sega_vdp_core)
 
+# Sega PSG: register protocol, tone/noise timing, volume curve, stereo and
+# sample rate (no downloaded files needed).
+add_executable(sega_psg_core sega_psg/psg_core.cc)
+target_link_libraries(sega_psg_core PRIVATE sega_psg)
+add_test(NAME sega_psg.core COMMAND sega_psg_core)
+
 add_executable(chip8_rom_runner chip8/chip8_rom_runner.cc)
 target_link_libraries(chip8_rom_runner PRIVATE chip8)
 

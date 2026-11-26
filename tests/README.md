@@ -28,6 +28,7 @@ ROM is missing are simply not registered.
 | `z80_core`         | Z80       | Results, flags, T-state timings, interrupts and undocumented opcodes on hand-assembled programs, no download needed |
 | `z80_cpm_runner`   | Z80       | Runs the CP/M `prelim`, `zexdoc` and `zexall` exercisers and fails on any `ERROR` in the output |
 | `sega_vdp_core`    | Master System / Game Gear | Mode 4 rendering (tiles, scroll, sprites, priority, masks), ports, flags, interrupts and counters through the CPU-visible ports, no download needed |
+| `sega_psg_core`    | Master System / Game Gear | SN76489 register protocol, tone and noise timing, volume curve, Game Gear stereo and sample rate, no download needed |
 
 ## Known failures
 
