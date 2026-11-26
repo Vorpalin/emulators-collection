@@ -56,6 +56,13 @@ add_executable(sega_psg_core sega_psg/psg_core.cc)
 target_link_libraries(sega_psg_core PRIVATE sega_psg)
 add_test(NAME sega_psg.core COMMAND sega_psg_core)
 
+# Master System bus: memory map, mappers, ports, joypads, interrupts, timing
+# and save states, plus a hand-assembled Z80 program running on the whole
+# machine (no downloaded files needed).
+add_executable(master_system_bus_core master_system/bus_core.cc)
+target_link_libraries(master_system_bus_core PRIVATE mastersystem)
+add_test(NAME master_system.bus COMMAND master_system_bus_core)
+
 add_executable(chip8_rom_runner chip8/chip8_rom_runner.cc)
 target_link_libraries(chip8_rom_runner PRIVATE chip8)
 
