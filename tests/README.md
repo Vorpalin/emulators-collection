@@ -30,6 +30,7 @@ ROM is missing are simply not registered.
 | `sega_vdp_core`    | Master System / Game Gear | Mode 4 rendering (tiles, scroll, sprites, priority, masks), ports, flags, interrupts and counters through the CPU-visible ports, no download needed |
 | `sega_psg_core`    | Master System / Game Gear | SN76489 register protocol, tone and noise timing, volume curve, Game Gear stereo and sample rate, no download needed |
 | `master_system_bus_core` | Master System / Game Gear | Memory map, Sega/Codemasters mappers, cartridge RAM, ports, joypads, interrupts, frame timing and save states, plus a hand-assembled Z80 program on the whole machine, no download needed |
+| `master_system_console_core` | Master System / Game Gear | `MasterSystem` and `GameGear` through the `Console` interface: picture size, RGBA output, audio, key mapping (joypad and Pause/Start), battery RAM and save states, using a Z80 program that mirrors the joypad into the backdrop colour |
 
 ## Known failures
 

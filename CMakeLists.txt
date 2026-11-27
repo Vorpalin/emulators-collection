@@ -180,11 +180,12 @@ target_link_libraries(sega_psg
 )
 
 # ============================================================
-# Sega Master System / Game Gear: bus, mapper and cartridge. Combined with the
-# Z80, VDP and PSG libraries above it forms the complete machine.
+# Sega Master System / Game Gear: console, bus, mapper and cartridge. Combined
+# with the Z80, VDP and PSG libraries above it forms the complete machine.
 # ============================================================
 
 add_library(mastersystem STATIC
+    src/emulators/console/master_system/MasterSystem.cc
     src/emulators/bus/master_system_bus/MasterSystemBus.cc
     src/emulators/cartridge/sega_cartridge/SegaCartridge.cc
 )

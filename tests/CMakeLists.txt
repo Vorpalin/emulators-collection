@@ -63,6 +63,12 @@ add_executable(master_system_bus_core master_system/bus_core.cc)
 target_link_libraries(master_system_bus_core PRIVATE mastersystem)
 add_test(NAME master_system.bus COMMAND master_system_bus_core)
 
+# MasterSystem / GameGear consoles through the generic Console interface:
+# picture size, RGBA output, audio, key mapping, battery RAM and save states.
+add_executable(master_system_console_core master_system/console_core.cc)
+target_link_libraries(master_system_console_core PRIVATE mastersystem)
+add_test(NAME master_system.console COMMAND master_system_console_core)
+
 add_executable(chip8_rom_runner chip8/chip8_rom_runner.cc)
 target_link_libraries(chip8_rom_runner PRIVATE chip8)
 
